@@ -1,373 +1,373 @@
-# Logging Cheat Sheet
+# Шпаргалка по логированию
 
-## Introduction
+## Введение
 
-This cheat sheet is focused on providing developers with concentrated guidance on building application logging mechanisms, especially related to security logging.
+Этот шпаргалка предназначена для предоставления разработчикам концентрированных рекомендаций по построению механизмов ведения логов приложений, особенно в части, касающейся безопасности.
 
-Many systems enable network device, operating system, web server, mail server and database server logging, but often custom application event logging is missing, disabled or poorly configured. It provides much greater insight than infrastructure logging alone. Web application (e.g. web site or web service) logging is much more than having web server logs enabled (e.g. using Extended Log File Format).
+Во многих системах ведение логов сетевых устройств, операционных систем, веб-серверов, почтовых серверов и серверов баз данных включено, но часто отсутствует, отключено или плохо настроено ведение логов пользовательских событий приложений. Оно предоставляет гораздо больше информации, чем просто инфраструктурное ведение логов. Ведение логов веб-приложений (например, веб-сайта или веб-службы) — это нечто большее, чем просто включение логов веб-сервера (например, с использованием Расширенного Формата Логов (Extended Log File Format)).
 
-Application logging should be consistent within the application, consistent across an organization's application portfolio and use industry standards where relevant, so the logged event data can be consumed, correlated, analyzed and managed by a wide variety of systems.
+Ведение логов приложений должно быть единообразным в рамках приложения, единообразным по всему портфолио приложений организации и использовать отраслевые стандарты там, где это уместно, чтобы данные о событиях, записанные в логах, могли быть использованы, коррелированы, проанализированы и управляемы широким спектром систем.
 
-## Purpose
+## Цель
 
-Application logging should always be included for security events. Application logs are invaluable data for:
+Ведение логов приложений всегда должно включаться для событий безопасности. Логи приложений являются бесценными данными для:
 
-- Identifying security incidents
-- Monitoring policy violations
-- Establishing baselines
-- Assisting non-repudiation controls (note that the trait non-repudiation is hard to achieve for logs because their trustworthiness is often just based on the logging party being audited properly while mechanisms like digital signatures are hard to utilize here)
-- Providing information about problems and unusual conditions
-- Contributing additional application-specific data for incident investigation which is lacking in other log sources
-- Helping defend against vulnerability identification and exploitation through attack detection
+- Определения инцидентов безопасности
+- Мониторинга нарушений политик
+- Установления базовых показателей
+- Поддержки механизмов неотказуемости (обратите внимание, что свойство неотказуемости трудно достичь для логов, поскольку их достоверность часто основывается лишь на надлежащем аудите стороны, ведущей логирование, в то время как механизмы, такие как цифровые подписи, здесь сложно использовать)
+- Предоставления информации о проблемах и необычных условиях
+- Внесения дополнительной специфичной для приложения информации для расследования инцидентов, которая отсутствует в других источниках логов
+- Помощи в защите от идентификации уязвимостей и эксплуатации через обнаружение атак
 
-Application logging might also be used to record other types of events too such as:
+Логирование приложений также может использоваться для записи других типов событий, таких как:
 
-- Security events
-- Business process monitoring e.g. sales process abandonment, transactions, connections
-- Anti-automation monitoring
-- Audit trails e.g. data addition, modification and deletion, data exports
-- Performance monitoring e.g. data load time, page timeouts
-- Compliance monitoring
-- Data for subsequent requests for information e.g. data subject access, freedom of information, litigation, police and other regulatory investigations
-- Legally sanctioned interception of data e.g. application-layer wire-tapping
-- Other business-specific requirements
+- События безопасности
+- Мониторинг бизнес-процессов, например, прекращение процесса продаж, транзакции, соединения
+- Мониторинг антиавтоматизации
+- Аудиторские следы, например, добавление, изменение и удаление данных, экспорт данных
+- Мониторинг производительности, например, время загрузки данных, таймауты страницы
+- Мониторинг соответствия
+- Данные для последующих запросов на информацию, например, доступ субъектов данных, запросы в рамках свободы информации, судебные разбирательства, полицейские и другие регуляторные расследования
+- Законно санкционированное перехватывание данных, например, перехват на уровне приложения
+- Другие специфичные для бизнеса требования
 
-Process monitoring, audit, and transaction logs/trails etc. are usually collected for different purposes than security event logging, and this often means they should be kept separate.
+Мониторинг процессов, аудит, и журналы транзакций и т.д. обычно собираются для других целей, чем ведение логов событий безопасности, и это часто означает, что они должны храниться отдельно.
 
-The types of events and details collected will tend to be different.
+Типы событий и собранные детали будут различаться.
 
-For example a [PCIDSS](https://www.pcisecuritystandards.org/pci_security/) audit log will contain a chronological record of activities to provide an independently verifiable trail that permits reconstruction, review and examination to determine the original sequence of attributable transactions. It is important not to log too much, or too little.
+Например, аудиторский журнал [PCIDSS](https://www.pcisecuritystandards.org/pci_security/) будет содержать хронологическую запись действий, чтобы предоставить независимо проверяемую трассу, которая позволяет восстановление, обзор и изучение для определения исходной последовательности атрибутивных транзакций. Важно не записывать слишком много или слишком мало.
 
-Use knowledge of the intended purposes to guide what, when and how much. The remainder of this cheat sheet primarily discusses security event logging.
+Используйте знание предполагаемых целей, чтобы направлять, что, когда и сколько нужно записывать. Остальная часть этого шпаргалки в первую очередь обсуждает ведение логов событий безопасности.
 
-## Design, implementation, and testing
+## Проектирование, реализация и тестирование
 
-### Event data sources
+### Источники данных о событиях
 
-The application itself has access to a wide range of information events that should be used to generate log entries. Thus, the primary event data source is the application code itself.
+Само приложение имеет доступ к широкому диапазону информационных событий, которые следует использовать для создания записей в логе. Таким образом, основным источником данных о событиях является сам код приложения.
 
-The application has the most information about the user (e.g. identity, roles, permissions) and the context of the event (target, action, outcomes), and often this data is not available to either infrastructure devices, or even closely-related applications.
+Приложение обладает наибольшим количеством информации о пользователе (например, идентификация, роли, разрешения) и контексте события (цель, действие, результаты), и часто эти данные недоступны ни устройствам инфраструктуры, ни даже близко связанным приложениям.
 
-Other sources of information about application usage that could also be considered are:
+Другие источники информации об использовании приложения, которые также могут быть рассмотрены:
 
-- Client software e.g. actions on desktop software and mobile devices in local logs or using messaging technologies, JavaScript exception handler via Ajax, web browser such as using Content Security Policy (CSP) reporting mechanism
-- Embedded instrumentation code
-- Network firewalls
-- Network and host intrusion detection systems (NIDS and HIDS)
-- Closely-related applications e.g. filters built into web server software, web server URL redirects/rewrites to scripted custom error pages and handlers
-- Application firewalls e.g. filters, guards, XML gateways, database firewalls, web application firewalls (WAFs)
-- Database applications e.g. automatic audit trails, trigger-based actions
-- Reputation monitoring services e.g. uptime or malware monitoring
-- Other applications e.g. fraud monitoring, CRM
-- Operating system e.g. mobile platform
+- Программное обеспечение клиента, например, действия на настольном ПО и мобильных устройствах в локальных логах или с использованием технологий обмена сообщениями, обработчик исключений JavaScript через Ajax, веб-браузер, например, с использованием механизма отчетности Политики Безопасности Контента (Content Security Policy, CSP)
+- Встроенный код инструментирования
+- Сетевые межсетевые экраны
+- Системы обнаружения вторжений на уровне сети и хоста (NIDS и HIDS)
+- Тесно связанные приложения, например, фильтры, встроенные в программное обеспечение веб-сервера, перенаправления/переписывания URL веб-сервера на скриптовые страницы ошибок и обработчики
+- Межсетевые экраны приложений, например, фильтры, стражи, XML-шлюзы, межсетевые экраны баз данных, межсетевые экраны веб-приложений (WAF)
+- Приложения базы данных, например, автоматические аудиторские следы, действия, основанные на триггерах
+- Сервисы мониторинга репутации, например, мониторинг времени работы или обнаружения вредоносного ПО
+- Другие приложения, например, мониторинг мошенничества, CRM
+- Операционные системы, например, мобильные платформы
 
-The degree of confidence in the event information has to be considered when including event data from systems in a different trust zone. Data may be missing, modified, forged, replayed and could be malicious – it must always be treated as untrusted data.
+Необходимо учитывать степень доверия к информации о событиях при включении данных о событиях из систем в другой зоне доверия. Данные могут отсутствовать, быть измененными, подделанными, повторно воспроизведенными и могут быть зловредными – их всегда следует рассматривать как ненадежные данные.
 
-Consider how the source can be verified, and how integrity and non-repudiation can be enforced.
-
-### Where to record event data
-
-Applications commonly write event log data to the file system or a database (SQL or NoSQL). Applications installed on desktops and on mobile devices may use local storage and local databases, as well as sending data to remote storage.
-
-Your selected framework may limit the available choices. All types of applications may send event data to remote systems (instead of or as well as more local storage).
+Рассмотрите, как может быть проверен источник, и как могут быть обеспечены целостность и неотказуемость.
+
+### Где записывать данные о событиях
+
+Приложения обычно записывают данные журнала событий в файловую систему или базу данных (SQL или NoSQL). Приложения, установленные на настольных компьютерах и мобильных устройствах, могут использовать локальное хранилище и локальные базы данных, а также отправлять данные в удаленное хранилище.
+
+Ваш выбранный фреймворк может ограничивать доступные варианты. Все типы приложений могут отправлять данные о событиях на удаленные системы (вместо или дополнительно к более локальному хранению).
 
-This could be a centralized log collection and management system (e.g. SIEM or SEM) or another application elsewhere. Consider whether the application can simply send its event stream, unbuffered, to stdout, for management by the execution environment.
+Это может быть централизованная система сбора и управления логами (например, SIEM или SEM) или другое приложение в другом месте. Рассмотрите возможность, может ли приложение просто отправить свой поток событий, необработанный, в stdout, для управления средой выполнения.
 
-- When using the file system, it is preferable to use a separate partition than those used by the operating system, other application files and user generated content
-    - For file-based logs, apply strict permissions concerning which users can access the directories, and the permissions of files within the directories
-    - In web applications, the logs should not be exposed in web-accessible locations, and if done so, should have restricted access and be configured with a plain text MIME type (not HTML)
-- When using a database, it is preferable to utilize a separate database account that is only used for writing log data and which has very restrictive database, table, function and command permissions
-- Use standard formats over secure protocols to record and send event data, or log files, to other systems e.g. Common Log File System (CLFS) or Common Event Format (CEF) over syslog; standard formats facilitate integration with centralised logging services
+- При использовании файловой системы предпочтительно использовать отдельный раздел, нежели те, которые используются операционной системой, другими файлами приложений и контентом, создаваемым пользователями.
+    - Для логов на основе файлов применяйте строгие разрешения относительно того, какие пользователи могут получать доступ к каталогам и какие разрешения на файлы внутри каталогов.
+    - В веб-приложениях логи не должны быть доступны в веб-доступных местах, и если это сделано, они должны иметь ограниченный доступ и быть настроены с MIME-типом простого текста (не HTML).
+- При использовании базы данных предпочтительно использовать отдельную учетную запись базы данных, которая используется только для записи данных лога и имеет очень ограниченные разрешения базы данных, таблиц, функций и команд.
+- Используйте стандартные форматы по защищенным протоколам для записи и отправки данных о событиях или файлов логов на другие системы, например, Common Log File System (CLFS) или Common Event Format (CEF) через syslog; стандартные форматы облегчают интеграцию с централизованными сервисами логирования.
 
-Consider separate files/tables for extended event information such as error stack traces or a record of HTTP request and response headers and bodies.
+Рассмотрите использование отдельных файлов/таблиц для расширенной информации о событиях, таких как трассы ошибок или запись заголовков и тел HTTP-запросов и ответов.
 
-### Which events to log
+### Какие события логировать
 
-The level and content of security monitoring, alerting, and reporting needs to be set during the requirements and design stage of projects, and should be proportionate to the information security risks. This can then be used to define what should be logged.
+Уровень и содержание мониторинга безопасности, оповещения и отчетности должны быть установлены на этапе требований и проектирования проектов и должны соответствовать рискам информационной безопасности. Это затем можно использовать для определения того, что следует логировать.
 
-There is no one size fits all solution, and a blind checklist approach can lead to unnecessary "alarm fog" that means real problems go undetected.
+Нет универсального решения, и слепой подход с чек-листом может привести к ненужному "туману тревог", из-за которого реальные проблемы остаются невыявленными.
 
-Where possible, always log:
+Где это возможно, всегда логируйте:
 
-- Input validation failures e.g. protocol violations, unacceptable encodings, invalid parameter names and values
-- Output validation failures e.g. database record set mismatch, invalid data encoding
-- Authentication successes and failures
-- Authorization (access control) failures
-- Session management failures e.g. cookie session identification value modification or suspicious JWT validation failures
-- Application errors and system events e.g. syntax and runtime errors, connectivity problems, performance issues, third party service error messages, file system errors, file upload virus detection, configuration changes
-- Application and related systems start-ups and shut-downs, and logging initialization (starting, stopping or pausing)
-- Use of higher-risk functionality including:
-    - User administration actions such as addition or deletion of users, changes to privileges, assigning users to tokens, adding or deleting tokens
-    - Use of systems administrative privileges or access by application administrators including all actions by those users
-    - Use of default or shared accounts or a "break-glass" account.
-    - Access to sensitive data such as payment cardholder data,
-    - Encryption activities such as use or rotation of cryptographic keys
-    - Creation and deletion of system-level objects
-    - Data import and export including screen-based reports
-    - Submission and processing of user-generated content - especially file uploads
-    - Deserialization failures
-    - Network connections and associated failures such as backend TLS failures (including certificate validation failures), or requests with an unexpected HTTP verb
-- Legal and other opt-ins e.g. permissions for mobile phone capabilities, terms of use, terms & conditions, personal data usage consent, permission to receive marketing communications
-- Suspicous business logic activities such as:
-    - Attempts to perform a set actions out of order/bypass flow control
-    - Actions which don't make sense in the business context
-    - Attempts to exceed limitations for particular actions
-
-Optionally consider if the following events can be logged and whether it is desirable information:
-
-- Sequencing failure
-- Excessive use
-- Data changes
-- Fraud and other criminal activities
-- Suspicious, unacceptable, or unexpected behavior
-- Modifications to configuration
-- Application code file and/or memory changes
-
-### Event attributes
-
-Each log entry needs to include sufficient information for the intended subsequent monitoring and analysis. It could be full content data, but is more likely to be an extract or just summary properties.
-
-The application logs must record "when, where, who and what" for each event.
-
-The properties for these will be different depending on the architecture, class of application and host system/device, but often include the following:
-
-- When
-    - Log date and time (international format)
-    - Event date and time - the event timestamp may be different to the time of logging e.g. server logging where the client application is hosted on remote device that is only periodically or intermittently online
-    - Interaction identifier `Note A`
-- Where
-    - Application identifier e.g. name and version
-    - Application address e.g. cluster/hostname or server IPv4 or IPv6 address and port number, workstation identity, local device identifier
-    - Service e.g. name and protocol
-    - Geolocation
-    - Window/form/page e.g. entry point URL and HTTP method for a web application, dialogue box name
-    - Code location e.g. script name, module name
-- Who (human or machine user)
-    - Source address e.g. user's device/machine identifier, user's IP address, cell/RF tower ID, mobile telephone number
-    - User identity (if authenticated or otherwise known) e.g. user database table primary key value, user name, license number
-- What
-    - Type of event `Note B`
-    - Severity of event `Note B` e.g. `{0=emergency, 1=alert, ..., 7=debug}, {fatal, error, warning, info, debug, trace}`
-    - Security relevant event flag (if the logs contain non-security event data too)
-    - Description
-
-Additionally consider recording:
-
-- Secondary time source (e.g. GPS) event date and time
-- Action - original intended purpose of the request e.g. Log in, Refresh session ID, Log out, Update profile
-- Object e.g. the affected component or other object (user account, data resource, file) e.g. URL, Session ID, User account, File
-- Result status - whether the ACTION aimed at the OBJECT was successful e.g. Success, Fail, Defer
-- Reason - why the status above occurred e.g. User not authenticated in database check ..., Incorrect credentials
-- HTTP Status Code (web applications only) - the status code returned to the user (often 200 or 301)
-- Request HTTP headers or HTTP User Agent (web applications only)
-- User type classification e.g. public, authenticated user, CMS user, search engine, authorized penetration tester, uptime monitor (see "Data to exclude" below)
-- Analytical confidence in the event detection `Note B` e.g. low, medium, high or a numeric value
-- Responses seen by the user and/or taken by the application e.g. status code, custom text messages, session termination, administrator alerts
-- Extended details e.g. stack trace, system error messages, debug information, HTTP request body, HTTP response headers and body
-- Internal classifications e.g. responsibility, compliance references
-- External classifications e.g. NIST Security Content Automation Protocol (SCAP), Mitre Common Attack Pattern Enumeration and Classification (CAPEC)
-
-For more information on these, see the "other" related articles listed at the end, especially the comprehensive article by Anton Chuvakin and Gunnar Peterson.
-
-**Note A:** The "Interaction identifier" is a method of linking all (relevant) events for a single user interaction (e.g. desktop application form submission, web page request, mobile app button click, web service call). The application knows all these events relate to the same interaction, and this should be recorded instead of losing the information and forcing subsequent correlation techniques to re-construct the separate events. For example, a single SOAP request may have multiple input validation failures and they may span a small range of times. As another example, an output validation failure may occur much later than the input submission for a long-running "saga request" submitted by the application to a database server.
-
-**Note B:** Each organisation should ensure it has a consistent, and documented, approach to classification of events (type, confidence, severity), the syntax of descriptions, and field lengths & data types including the format used for dates/times.
-
-### Data to exclude
-
-Never log data unless it is legally sanctioned. For example, intercepting some communications, monitoring employees, and collecting some data without consent may all be illegal.
-
-Never exclude any events from "known" users such as other internal systems, "trusted" third parties, search engine robots, uptime/process and other remote monitoring systems, pen testers, auditors. However, you may want to include a classification flag for each of these in the recorded data.
-
-The following should usually not be recorded directly in the logs, but instead should be removed, masked, sanitized, hashed, or encrypted:
-
-- Application source code
-- Session identification values (consider replacing with a hashed value if needed to track session specific events)
-- Access tokens
-- Sensitive personal data and some forms of personally identifiable information (PII) e.g. health, government identifiers, vulnerable people
-- Authentication passwords
-- Database connection strings
-- Encryption keys and other primary secrets
-- Bank account or payment card holder data
-- Data of a higher security classification than the logging system is allowed to store
-- Commercially-sensitive information
-- Information it is illegal to collect in the relevant jurisdictions
-- Information a user has opted out of collection, or not consented to e.g. use of do not track, or where consent to collect has expired
-
-Sometimes the following data can also exist, and whilst useful for subsequent investigation, it may also need to be treated in some special manner before the event is recorded:
-
-- File paths
-- Database connection strings
-- Internal network names and addresses
-- Non sensitive personal data (e.g. personal names, telephone numbers, email addresses)
-
-Consider using personal data de-identification techniques such as deletion, scrambling or pseudonymization of direct and indirect identifiers where the individual's identity is not required, or the risk is considered too great.
-
-In some systems, sanitization can be undertaken post log collection, and prior to log display.
-
-### Customizable logging
-
-It may be desirable to be able to alter the level of logging (type of events based on severity or threat level, amount of detail recorded). If this is implemented, ensure that:
-
-- The default level must provide sufficient detail for business needs
-- It should not be possible to completely deactivate application logging or logging of events that are necessary for compliance requirements
-- Alterations to the level/extent of logging must be intrinsic to the application (e.g. undertaken automatically by the application based on an approved algorithm) or follow change management processes (e.g. changes to configuration data, modification of source code)
-- The logging level must be verified periodically
-
-### Event collection
-
-If your development framework supports suitable logging mechanisms, use or build upon that. Otherwise, implement an application-wide log handler which can be called from other modules/components.
-
-Document the interface referencing the organisation-specific event classification and description syntax requirements.
-
-If possible create this log handler as a standard module that can be thoroughly tested, deployed in multiple applications, and added to a list of approved & recommended modules.
-
-- Perform input validation on event data from other trust zones to ensure it is in the correct format (and consider alerting and not logging if there is an input validation failure)
-- Perform sanitization on all event data to prevent log injection attacks e.g. carriage return (CR), line feed (LF) and delimiter characters (and optionally to remove sensitive data)
-- Encode data correctly for the output (logged) format
-- If writing to databases, read, understand, and apply the SQL injection cheat sheet
-- Ensure failures in the logging processes/systems do not prevent the application from otherwise running or allow information leakage
-- Synchronize time across all servers and devices `Note C`
-
-**Note C:** This is not always possible where the application is running on a device under some other party's control (e.g. on an individual's mobile phone, on a remote customer's workstation which is on another corporate network). In these cases, attempt to measure the time offset, or record a confidence level in the event timestamp.
-
-Where possible, record data in a standard format, or at least ensure it can be exported/broadcast using an industry-standard format.
-
-In some cases, events may be relayed or collected together in intermediate points. In the latter some data may be aggregated or summarized before forwarding on to a central repository and analysis system.
-
-### Verification
-
-Logging functionality and systems must be included in code review, application testing and security verification processes:
-
-- Ensure the logging is working correctly and as specified
-- Check that events are being classified consistently and the field names, types and lengths are correctly defined to an agreed standard
-- Ensure logging is implemented and enabled during application security, fuzz, penetration, and performance testing
-- Test the mechanisms are not susceptible to injection attacks
-- Ensure there are no unwanted side-effects when logging occurs
-- Check the effect on the logging mechanisms when external network connectivity is lost (if this is usually required)
-- Ensure logging cannot be used to deplete system resources, for example by filling up disk space or exceeding database transaction log space, leading to denial of service
-- Test the effect on the application of logging failures such as simulated database connectivity loss, lack of file system space, missing write permissions to the file system, and runtime errors in the logging module itself
-- Verify access controls on the event log data
-- If log data is utilized in any action against users (e.g. blocking access, account lock-out), ensure this cannot be used to cause denial of service (DoS) of other users
-
-### Network architecture
-
-As an example, the diagram below shows a service that provides business functionality to customers. We recommend creating a centralized system for collecting logs. There may be many such services, but all of them must securely collect logs in a centralized system.
-
-Applications of this business service are located in network segments:
-
-- FRONTEND 1 aka DMZ (UI)
-- MIDDLEWARE 1 (business application - service core)
-- BACKEND 1 (service database)
-
-The service responsible for collecting IT events, including security events, is located in the following segments:
-
-- BACKEND 2 (log storage)
-- MIDDLEWARE 3 - 2 applications:
-    - log loader application that download log from storage, pre-processes, and transfer to UI
-    - log collector that accepts logs from business applications, other infrastructure, cloud applications and saves in log storage
-- FRONTEND 2 (UI for viewing business service event logs)
-- FRONTEND 3 (applications that receive logs from cloud applications and transfer logs to log collector)
-    - It is allowed to combine the functionality of two applications in one
-
-For example, all external requests from users go through the API management service, see application in MIDDLEWARE 2 segment.
+- Сбои проверки входных данных, например, нарушения протоколов, неприемлемые кодировки, недопустимые имена и значения параметров
+- Сбои проверки выходных данных, например, несоответствие набора записей базы данных, недопустимая кодировка данных
+- Успехи и неудачи аутентификации
+- Отказы авторизации (контроля доступа)
+- Сбои управления сессиями, например, изменение значения идентификации cookie сессии или подозрительные сбои валидации JWT
+- Ошибки приложения и системные события, например, синтаксические и ошибки времени выполнения, проблемы с подключением, проблемы с производительностью, сообщения об ошибках сторонних сервисов, ошибки файловой системы, обнаружение вирусов при загрузке файлов, изменения конфигурации
+- Запуски и остановки приложения и связанных систем, а также инициализация логирования (запуск, остановка или приостановка)
+- Использование функций с повышенным риском, включая:
+    - Действия по администрированию пользователей, такие как добавление или удаление пользователей, изменение привилегий, назначение пользователей токенам, добавление или удаление токенов
+    - Использование системных административных привилегий или доступ администраторов приложений, включая все действия этих пользователей
+    - Использование учетных записей по умолчанию или общих учетных записей или "экстренной" учетной записи
+    - Доступ к конфиденциальным данным, таким как данные держателей платежных карт
+    - Действия по шифрованию, такие как использование или ротация криптографических ключей
+    - Создание и удаление объектов уровня системы
+    - Импорт и экспорт данных, включая экранные отчеты
+    - Отправка и обработка контента, созданного пользователями — особенно загрузка файлов
+    - Сбои десериализации
+    - Сетевые подключения и связанные с ними сбои, такие как сбои TLS на заднем плане (включая сбои проверки сертификатов) или запросы с неожиданным HTTP-глаголом
+- Юридические и другие соглашения, например, разрешения на использование возможностей мобильного телефона, условия использования, соглашения и условия, согласие на использование персональных данных, разрешение на получение маркетинговых коммуникаций
+- Подозрительные действия бизнес-логики, такие как:
+    - Попытки выполнить набор действий вне порядка/обойти управление потоком
+    - Действия, которые не имеют смысла в бизнес-контексте
+    - Попытки превысить ограничения для конкретных действий
+
+Опциональные события для логирования и желательность их логирования:
+
+- Сбой последовательности
+- Чрезмерное использование
+- Изменения данных
+- Мошенничество и другие преступные действия
+- Подозрительное, неприемлемое или неожиданное поведение
+- Изменения конфигурации
+- Изменения файлов кода приложения и/или памяти
+
+### Атрибуты события
+
+Каждая запись в логе должна включать достаточную информацию для последующего мониторинга и анализа. Это может быть полное содержимое данных, но чаще всего это будет извлечение или только сводные свойства.
+
+Логи приложения должны фиксировать "когда, где, кто и что" для каждого события.
+
+Свойства этих данных будут различаться в зависимости от архитектуры, класса приложения и системы/устройства хоста, но часто включают следующее:
+
+- Когда
+    - Дата и время записи лога (международный формат)
+    - Дата и время события — метка времени события может отличаться от времени логирования, например, запись логов на сервере, где клиентское приложение размещено на удаленном устройстве, которое только периодически или временно находится в сети
+    - Идентификатор взаимодействия `Примечание A`
+- Где
+    - Идентификатор приложения, например, название и версия
+    - Адрес приложения, например, кластер/hostname или IPv4 или IPv6-адрес сервера и номер порта, идентификатор рабочей станции, локальный идентификатор устройства
+    - Сервис, например, имя и протокол
+    - Геолокация
+    - Окно/форма/страница, например, URL начальной точки и HTTP-метод для веб-приложения, имя диалогового окна
+    - Местоположение кода, например, имя скрипта, имя модуля
+- Кто (пользователь-человек или машина)
+    - Исходный адрес, например, идентификатор устройства пользователя/машины, IP-адрес пользователя, ID вышки сотовой связи/РЧ, номер мобильного телефона
+    - Идентификатор пользователя (если аутентифицирован или известен другим образом), например, значение первичного ключа в таблице пользователей базы данных, имя пользователя, номер лицензии
+- Что
+    - Тип события `Примечание B`
+    - Важность события `Примечание B`, например, `{0=чрезвычайная ситуация, 1=предупреждение, ..., 7=отладка}, {фатальная ошибка, ошибка, предупреждение, информация, отладка, трассировка}`
+    - Флаг события, относящегося к безопасности (если логи содержат и данные о не связанных с безопасностью событиях)
+    - Описание
+
+Также рассмотрите возможность записи следующего:
+
+- Вспомогательный источник времени (например, GPS), дата и время события
+- Действие — исходная цель запроса, например, вход в систему, обновление ID сессии, выход из системы, обновление профиля
+- Объект, например, затронутый компонент или другой объект (учетная запись пользователя, ресурс данных, файл), например, URL, ID сессии, учетная запись пользователя, файл
+- Статус результата — был ли ДЕЙСТВИЕ по ОБЪЕКТУ успешным, например, Успех, Ошибка, Отложено
+- Причина — почему произошел указанный выше статус, например, Пользователь не аутентифицирован в базе данных..., Неверные учетные данные
+- HTTP статус-код (только для веб-приложений) — статус-код, возвращаемый пользователю (часто 200 или 301)
+- HTTP заголовки запроса или HTTP User-Agent (только для веб-приложений)
+- Классификация типа пользователя, например, публичный, аутентифицированный пользователь, пользователь CMS, поисковая система, авторизованный тестировщик на проникновение, монитор времени работы (см. "Данные для исключения" ниже)
+- Доверие к аналитической оценке события `Примечание B`, например, низкий, средний, высокий или числовое значение
+- Ответы, видимые пользователю и/или принятые приложением, например, статус-код, пользовательские текстовые сообщения, завершение сессии, уведомления администратора
+- Расширенные детали, например, трассировка стека, системные сообщения об ошибках, отладочная информация, тело HTTP-запроса, заголовки и тело HTTP-ответа
+- Внутренние классификации, например, ответственность, ссылки на соответствие требованиям
+- Внешние классификации, например, NIST Security Content Automation Protocol (SCAP), Mitre Common Attack Pattern Enumeration and Classification (CAPEC)
+
+Для получения дополнительной информации по этим вопросам см. "другие" связанные статьи, приведенные в конце, особенно исчерпывающую статью Антона Чувакина и Гуннара Петерсона.
+
+**Примечание A:** "Идентификатор взаимодействия" — это метод связывания всех (релевантных) событий для одного взаимодействия пользователя (например, отправка формы в настольном приложении, запрос веб-страницы, нажатие кнопки в мобильном приложении, вызов веб-службы). Приложение знает, что все эти события относятся к одному взаимодействию, и это должно быть записано, вместо того чтобы терять информацию и заставлять последующие корреляционные техники восстанавливать отдельные события. Например, один SOAP-запрос может иметь несколько сбоев проверки входных данных, и они могут охватывать небольшой промежуток времени. В другом примере сбой проверки выходных данных может произойти гораздо позже, чем отправка входных данных, для долгосрочного "запроса саги", отправленного приложением на сервер базы данных.
+
+**Примечание B:** Каждая организация должна обеспечить наличие согласованного и задокументированного подхода к классификации событий (тип, уверенность, важность), синтаксису описаний, а также длинам полей и типам данных, включая формат, используемый для дат/времени.
+
+### Данные для исключения
+
+Никогда не логируйте данные, если это не законно. Например, перехват некоторых сообщений, мониторинг сотрудников и сбор некоторых данных без согласия могут быть незаконными.
+
+Никогда не исключайте события от "известных" пользователей, таких как другие внутренние системы, "доверенные" третьи стороны, роботы поисковых систем, системы мониторинга времени работы/процессов и другие удаленные системы мониторинга, тестировщики на проникновение, аудиторы. Однако вы можете включить классификационный флаг для каждого из них в записываемых данных.
+
+Следующее обычно не должно записываться напрямую в логах, а вместо этого должно быть удалено, замаскировано, очищено, хешировано или зашифровано:
+
+- Исходный код приложения
+- Значения идентификации сессии (рассмотрите возможность замены на хешированное значение, если необходимо отслеживать события, относящиеся к конкретной сессии)
+- Токены доступа
+- Конфиденциальные личные данные и некоторые формы персональной идентифицируемой информации (PII), например, здоровье, государственные идентификаторы, уязвимые люди
+- Пароли аутентификации
+- Строки подключения к базе данных
+- Ключи шифрования и другие первичные секреты
+- Данные банковских счетов или данные держателей платежных карт
+- Данные более высокого уровня безопасности, чем разрешено хранить системе логирования
+- Коммерчески конфиденциальная информация
+- Информация, которую запрещено собирать в соответствующих юрисдикциях
+- Информация, от сбора которой пользователь отказался или не дал согласие, например, использование "do not track", или когда истек срок действия согласия на сбор данных
+
+Иногда также может существовать следующая информация, и, хотя она полезна для последующего расследования, ее также может потребоваться обработать особым образом перед записью события:
+
+- Пути к файлам
+- Строки подключения к базе данных
+- Внутренние сетевые имена и адреса
+- Несекретные персональные данные (например, личные имена, телефонные номера, адреса электронной почты)
+
+Рассмотрите возможность использования методов деидентификации персональных данных, таких как удаление, смешивание или псевдонимизация прямых и косвенных идентификаторов в случаях, когда идентификация личности не требуется или риск считается слишком высоким.
+
+В некоторых системах очистка данных может быть выполнена после сбора логов и перед их отображением.
+
+### Настраиваемое логирование
+
+Может быть целесообразно возможность изменения уровня логирования (тип событий на основе уровня угрозы или важности, количество записываемых данных). Если это реализовано, убедитесь, что:
+
+- Уровень по умолчанию должен обеспечивать достаточную детализацию для нужд бизнеса
+- Невозможно полностью отключить ведение логов приложений или событий, необходимых для соответствия требованиям
+- Изменения уровня/объема логирования должны быть неотъемлемой частью приложения (например, выполняться автоматически приложением на основе утвержденного алгоритма) или следовать процессам управления изменениями (например, изменения в данных конфигурации, модификация исходного кода)
+- Уровень логирования должен периодически проверяться
+
+### Сбор событий
+
+Если ваш фреймворк разработки поддерживает подходящие механизмы логирования, используйте их или стройте на их основе. В противном случае реализуйте универсальный обработчик логов, который можно вызывать из других модулей/компонентов.
+
+Документируйте интерфейс, ссылаясь на требования к синтаксису классификации событий и их описания, специфичные для организации.
+
+Если возможно, создайте этот обработчик логов в виде стандартного модуля, который можно тщательно протестировать, развернуть в нескольких приложениях и добавить в список одобренных и рекомендованных модулей.
+
+- Выполняйте проверку входных данных о событиях из других зон доверия, чтобы убедиться, что они имеют правильный формат (и рассматривайте возможность оповещения и не логирования при ошибке проверки входных данных)
+- Выполняйте очистку всех данных событий, чтобы предотвратить атаки на инъекции в логи, например, удаление символов возврата каретки (CR), перевода строки (LF) и разделителей (и, возможно, удаление конфиденциальных данных)
+- Правильно кодируйте данные для формата вывода (лога)
+- Если данные записываются в базу данных, прочитайте, поймите и примените шпаргалку по инъекциям SQL
+- Убедитесь, что сбои в процессах/системах логирования не препятствуют работе приложения или не допускают утечки информации
+- Синхронизируйте время на всех серверах и устройствах `Примечание C`
+
+**Примечание C:** Это не всегда возможно, когда приложение работает на устройстве под контролем другой стороны (например, на мобильном телефоне пользователя, на удаленной рабочей станции клиента, которая находится в другой корпоративной сети). В этих случаях попытайтесь измерить смещение времени или записать уровень доверия к метке времени события.
+
+По возможности записывайте данные в стандартном формате или, по крайней мере, убедитесь, что они могут быть экспортированы/транслированы с использованием стандартизированного формата.
+
+В некоторых случаях события могут быть переданы или собраны в промежуточных точках. В последнем случае некоторые данные могут быть агрегированы или обобщены перед передачей в центральное хранилище и систему анализа.
+
+### Проверка
+
+Функциональность логирования и системы должны включаться в процессы обзора кода, тестирования приложения и проверки безопасности:
+
+- Убедитесь, что логирование работает правильно и в соответствии с требованиями
+- Проверьте, что события классифицируются последовательно и имена полей, типы и длины корректно определены в соответствии с утвержденным стандартом
+- Убедитесь, что логирование включено и включено во время тестирования безопасности приложения, фуззинг-тестирования, тестирования на проникновение и тестирования производительности
+- Проверьте, что механизмы не подвержены атакам инъекций
+- Убедитесь, что при логировании не возникает нежелательных побочных эффектов
+- Проверьте эффект на механизмы логирования при потере внешнего сетевого подключения (если это обычно требуется)
+- Убедитесь, что логирование не может быть использовано для истощения ресурсов системы, например, заполнения дискового пространства или превышения объема журнала транзакций базы данных, что приводит к отказу в обслуживании
+- Проверьте эффект на приложение от сбоев логирования, таких как имитация потери соединения с базой данных, нехватка места на файловой системе, отсутствие прав на запись в файловую систему и ошибки времени выполнения в самом модуле логирования
+- Проверьте контроль доступа к данным журналов событий
+- Если данные журнала используются в каких-либо действиях против пользователей (например, блокирование доступа, блокировка учетной записи), убедитесь, что это не может быть использовано для создания отказа в обслуживании (DoS) других пользователей
+
+### Сетевая архитектура
+
+Как пример, диаграмма ниже показывает сервис, предоставляющий бизнес-функциональность клиентам. Мы рекомендуем создать централизованную систему для сбора логов. Может быть множество таких сервисов, но все они должны безопасно собирать логи в централизованной системе.
+
+Приложения этого бизнес-сервиса расположены в сетевых сегментах:
+
+- FRONTEND 1 также известен как DMZ (пользовательский интерфейс)
+- MIDDLEWARE 1 (бизнес-приложение — ядро сервиса)
+- BACKEND 1 (база данных сервиса)
+
+Сервис, ответственный за сбор событий ИТ, включая события безопасности, находится в следующих сегментах:
+
+- BACKEND 2 (хранилище логов)
+- MIDDLEWARE 3 - 2 приложения:
+    - приложение загрузчика логов, которое загружает логи из хранилища, предварительно обрабатывает и передает в UI
+    - сборщик логов, который принимает логи от бизнес-приложений, другой инфраструктуры, облачных приложений и сохраняет их в хранилище логов
+- FRONTEND 2 (интерфейс пользователя для просмотра журналов событий бизнес-сервиса)
+- FRONTEND 3 (приложения, которые получают логи от облачных приложений и передают логи в сборщик логов)
+    - Допускается совмещение функций двух приложений в одном
+
+Например, все внешние запросы от пользователей проходят через сервис управления API, см. приложение в сегменте MIDDLEWARE 2.
 
 ![MIDDLEWARE](https://raw.githubusercontent.com/OWASP/CheatSheetSeries/master/assets/Logging_Cheat_Sheet.drawio.png)
 
-As you can see in the image above, at the network level, the processes of saving and downloading logs require opening different network accesses (ports), arrows are highlighted in different colors. Also, saving and downloading are performed by different applications.
+Как видно на изображении выше, на сетевом уровне процессы сохранения и загрузки логов требуют открытия различных сетевых доступов (портов), стрелки выделены разными цветами. Также сохранение и загрузка выполняются разными приложениями.
 
-Full network segmentation cheat sheet by [sergiomarotco](https://github.com/sergiomarotco): [link](https://github.com/sergiomarotco/Network-segmentation-cheat-sheet)
+Полная шпаргалка по сетевой сегментации от [sergiomarotco](https://github.com/sergiomarotco): [ссылка](https://github.com/sergiomarotco/Network-segmentation-cheat-sheet)
 
-## Deployment and operation
+## Развертывание и эксплуатация
 
-### Release
+### Выпуск
 
-- Provide security configuration information by adding details about the logging mechanisms to release documentation
-- Brief the application/process owner about the application logging mechanisms
-- Ensure the outputs of the monitoring (see below) are integrated with incident response processes
+- Предоставьте информацию о конфигурации безопасности, добавив подробности о механизмах логирования в документацию по выпуску
+- Ознакомьте владельца приложения/процесса с механизмами логирования приложения
+- Убедитесь, что результаты мониторинга (см. ниже) интегрированы с процессами реагирования на инциденты
 
-### Operation
+### Эксплуатация
 
-Enable processes to detect whether logging has stopped, and to identify tampering or unauthorized access and deletion (see protection below).
+Включите процессы для обнаружения остановки логирования, а также для выявления фальсификаций или несанкционированного доступа и удаления (см. защиту ниже).
 
-### Protection
+### Защита
 
-The logging mechanisms and collected event data must be protected from mis-use such as tampering in transit, and unauthorized access, modification and deletion once stored. Logs may contain personal and other sensitive information, or the data may contain information regarding the application's code and logic.
+Механизмы логирования и собранные данные о событиях должны быть защищены от неправомерного использования, такого как фальсификация при передаче, несанкционированный доступ, модификация и удаление после хранения. Логи могут содержать личную и другую конфиденциальную информацию, или данные могут содержать информацию о коде и логике приложения.
 
-In addition, the collected information in the logs may itself have business value (to competitors, gossip-mongers, journalists and activists) such as allowing the estimate of revenues, or providing performance information about employees.
+Кроме того, собранная информация в логах может сама по себе иметь ценность для бизнеса (для конкурентов, распространителей слухов, журналистов и активистов), например, позволять оценить доходы или предоставить информацию о производительности сотрудников.
 
-This data may be held on end devices, at intermediate points, in centralized repositories and in archives and backups.
+Эти данные могут храниться на конечных устройствах, в промежуточных точках, в централизованных репозиториях и в архивах и резервных копиях.
 
-Consider whether parts of the data may need to be excluded, masked, sanitized, hashed, or encrypted during examination or extraction.
+Рассмотрите возможность исключения, маскирования, очистки, хеширования или шифрования некоторых данных во время их анализа или извлечения.
 
-At rest:
+В состоянии покоя:
 
-- Build in tamper detection so you know if a record has been modified or deleted
-- Store or copy log data to read-only media as soon as possible
-- All access to the logs must be recorded and monitored (and may need prior approval)
-- The privileges to read log data should be restricted and reviewed periodically
+- Встроите обнаружение изменений, чтобы знать, если запись была изменена или удалена
+- Сохраняйте или копируйте данные логов на носители только для чтения как можно быстрее
+- Весь доступ к логам должен быть записан и мониториться (и может потребовать предварительного одобрения)
+- Привилегии на чтение данных логов должны быть ограничены и периодически пересматриваться
 
-In transit:
+При передаче:
 
-- If log data is sent over untrusted networks (e.g. for collection, for dispatch elsewhere, for analysis, for reporting), use a secure transmission protocol
-- Consider whether the origin of the event data needs to be verified
-- Perform due diligence checks (regulatory and security) before sending event data to third parties
+- Если данные логов передаются по ненадежным сетям (например, для сбора, отправки в другое место, анализа, отчетности), используйте протокол защищенной передачи
+- Рассмотрите необходимость проверки источника данных о событиях
+- Выполняйте проверки надлежащей добросовестности (регулирования и безопасности) перед отправкой данных о событиях третьим сторонам
 
-See `NIST SP 800-92` Guide to Computer Security Log Management for more guidance.
+См. руководство `NIST SP 800-92` по управлению журналами безопасности компьютеров для получения дополнительных рекомендаций.
 
-### Monitoring of events
+### Мониторинг событий
 
-The logged event data needs to be available to review and there are processes in place for appropriate monitoring, alerting, and reporting:
+Данные событий, записанные в логах, должны быть доступны для просмотра, и должны существовать процессы для надлежащего мониторинга, оповещения и отчетности:
 
-- Incorporate the application logging into any existing log management systems/infrastructure e.g. centralized logging and analysis systems
-- Ensure event information is available to appropriate teams
-- Enable alerting and signal the responsible teams about more serious events immediately
-- Share relevant event information with other detection systems, to related organizations and centralized intelligence gathering/sharing systems
+- Интегрируйте логирование приложения в существующие системы/инфраструктуру управления логами, например, централизованные системы логирования и анализа
+- Убедитесь, что информация о событиях доступна соответствующим командам
+- Включите оповещения и немедленно уведомите ответственные команды о более серьезных событиях
+- Делитесь релевантной информацией о событиях с другими системами обнаружения, с родственными организациями и централизованными системами сбора и обмена информацией
 
-### Disposal of logs
+### Удаление логов
 
-Log data, temporary debug logs, and backups/copies/extractions, must not be destroyed before the duration of the required data retention period, and must not be kept beyond this time.
+Данные журналов, временные журналы отладки, резервные копии/копии/извлечения не должны уничтожаться до истечения требуемого периода хранения данных и не должны храниться дольше этого времени.
 
-Legal, regulatory and contractual obligations may impact on these periods.
+Юридические, регуляторные и договорные обязательства могут влиять на эти сроки.
 
-## Attacks on Logs
+## Атаки на логи
 
-Because of their usefulness as a defense, logs may be a target of attacks. See also OWASP [Log Injection](https://owasp.org/www-community/attacks/Log_Injection) and [CWE-117](https://cwe.mitre.org/data/definitions/117.html).
+Поскольку они полезны как средство защиты, логи могут стать целью атак. См. также OWASP [Log Injection](https://owasp.org/www-community/attacks/Log_Injection) и [CWE-117](https://cwe.mitre.org/data/definitions/117.html).
 
-### Confidentiality
+### Конфиденциальность
 
-Who should be able to read what? A confidentiality attack enables an unauthorized party to access sensitive information stored in logs.
+Кто должен иметь доступ к чтению чего? Атака на конфиденциальность позволяет несанкционированной стороне получить доступ к конфиденциальной информации, хранящейся в логах.
 
-- Logs contain PII of users. Attackers gather PII, then either release it or use it as a stepping stone for further attacks on those users.
-- Logs contain technical secrets such as passwords. Attackers use it as a stepping stone for deeper attacks.
+- Логи содержат персональные данные пользователей. Злоумышленники собирают персональные данные, а затем либо публикуют их, либо используют в качестве трамплина для дальнейших атак на этих пользователей.
+- Логи содержат технические секреты, такие как пароли. Злоумышленники используют их в качестве трамплина для более глубоких атак.
 
-### Integrity
+### Целостность
 
-Which information should be modifiable by whom?
+Какая информация должна быть доступна для изменения и кем?
 
-- An attacker with read access to a log uses it to exfiltrate secrets.
-- An attack leverages logs to connect with exploitable facets of logging platforms, such as sending in a payload over syslog in order to cause an out-of-bounds write.
+- Злоумышленник с доступом к чтению лога использует его для кражи секретов.
+- Атака использует логи для соединения с уязвимыми элементами платформы логирования, например, отправляя полезную нагрузку через syslog для создания записи за пределами допустимого.
 
-### Availability
+### Доступность
 
-What downtime is acceptable?
+Какое время простоя допустимо?
 
-- An attacker floods log files in order to exhaust disk space available for non-logging facets of system functioning. For example, the same disk used for log files might be used for SQL storage of application data.
-- An attacker floods log files in order to exhaust disk space available for further logging.
-- An attacker uses one log entry to destroy other log entries.
-- An attacker leverages poor performance of logging code to reduce application performance
+- Злоумышленник заполняет файлы логов, чтобы исчерпать доступное дисковое пространство для других функций системы, не связанных с логированием. Например, тот же диск, который используется для файлов логов, может использоваться для хранения данных SQL приложения.
+- Злоумышленник заполняет файлы логов, чтобы исчерпать доступное дисковое пространство для дальнейшего логирования.
+- Злоумышленник использует одну запись в логе, чтобы уничтожить другие записи.
+- Злоумышленник использует плохую производительность кода логирования для уменьшения производительности приложения.
 
-### Accountability
+### Ответственность
 
-Who is responsible for harm?
+Кто несет ответственность за ущерб?
 
-- An attacker prevent writes in order to cover their tracks.
-- An attacker prevent damages the log in order to cover their tracks.
-- An attacker causes the wrong identity to be logged in order to conceal the responsible party.
+- Злоумышленник предотвращает запись, чтобы скрыть свои следы.
+- Злоумышленник повреждает лог, чтобы скрыть свои следы.
+- Злоумышленник заставляет логироваться неверную личность, чтобы скрыть ответственное лицо.
 
-## Related articles
+## Связанные статьи
 
-- OWASP [ESAPI Documentation](https://owasp.org/www-project-enterprise-security-api/).
+- OWASP [Документация ESAPI](https://owasp.org/www-project-enterprise-security-api/).
 - OWASP [Logging Project](https://owasp.org/www-project-security-logging/).
 - IETF [syslog protocol](https://tools.ietf.org/rfc/rfc5424.txt).
 - Mitre [Common Event Expression (CEE)](http://cee.mitre.org/) (as of 2014 no longer actively developed).
