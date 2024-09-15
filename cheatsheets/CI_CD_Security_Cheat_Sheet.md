@@ -1,149 +1,149 @@
-# CI/CD Security Cheat Sheet
+# Шпаргалка по безопасности CI/CD
 
-## Introduction
+## Введение
 
-CI/CD pipelines and processes facilitate efficient, repeatable software builds and deployments; as such, they occupy an important role in the modern SDLC. However, given their importance and popularity, CI/CD pipelines are also an appealing target for malicious hackers, and their security cannot be ignored. This goal of this cheat sheet is to provide developers practical guidelines for reducing risk associated with these critical components. This cheat sheet will focus on securing the pipeline itself. It will begin by providing some brief background information before proceeding with specific CI/CD security best practices.
+Конвейеры и процессы CI/CD способствуют эффективной и повторяемой сборке и развертыванию программного обеспечения, а потому занимают важное место в современном SDLC. Однако, учитывая их важность и популярность, конвейеры CI/CD также представляют собой привлекательную цель для злоумышленников, и их безопасность не может быть проигнорирована. Цель данного справочника — предоставить разработчикам практические рекомендации по снижению рисков, связанных с этими критически важными компонентами. Этот справочник будет сосредоточен на обеспечении безопасности самого конвейера. Вначале будет представлена краткая справочная информация, после чего будут рассмотрены конкретные лучшие практики безопасности CI/CD.
 
-### Definition and Background
+### Определение и предыстория
 
-CI/CD refers to a set of largely automated processes used to build and deliver software; it is often portrayed as a pipeline consisting of a series of sequential, discrete steps. The pipeline generally begins when code under development is pushed to a repository and, if all steps complete successfully, ends with the software solution built, tested, and deployed to a production environment. CI/CD may be decomposed into two distinct parts: continuous integration (CI) and continuous delivery and/or continuous deployment (CD).  CI focuses on build and testing automation; continuous delivery focuses on promoting this built code to a staging or higher environment and, generally, performing additional automated testing. Continuous delivery and continuous deployment may not always be distinguished in definitions of CI/CD; however, according to [NIST](https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-204C.pdf), continuous delivery requires code to be manually pushed to production whereas continuous deployment automates even this step.
+CI/CD относится к набору в значительной степени автоматизированных процессов, используемых для создания и доставки программного обеспечения; часто он представляется как конвейер, состоящий из ряда последовательных, отдельных шагов. Конвейер обычно начинается, когда разрабатываемый код отправляется в репозиторий, и, если все шаги успешно выполнены, заканчивается построением, тестированием и развертыванием программного решения в рабочей среде. CI/CD может быть разбит на две основные части: непрерывная интеграция (CI) и непрерывная доставка и/или непрерывное развертывание (CD). CI фокусируется на автоматизации сборки и тестирования; непрерывная доставка ориентирована на продвижение собранного кода в промежуточную или более высокую среду и, как правило, проведение дополнительных автоматизированных тестов. Непрерывная доставка и непрерывное развертывание могут не всегда различаться в определениях CI/CD; однако, согласно [NIST](https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-204C.pdf), непрерывная доставка требует ручного переноса кода в рабочую среду, тогда как непрерывное развертывание автоматизирует даже этот шаг.
 
-The exact steps in a CI/CD pipeline may vary from organization to organization and from project to project; however, automation, and the repeatability and agility it brings, should be a core focus of any CI/CD implementation.
+Конкретные шаги в конвейере CI/CD могут варьироваться от организации к организации и от проекта к проекту; однако автоматизация и повторяемость и гибкость, которые она приносит, должны быть основным фокусом любой реализации CI/CD.
 
-### Understanding CI/CD Risk
+### Понимание рисков CI/CD
 
-Although CI/CD brings many benefits, it also increases an organization's attack surface. People, processes, and technology are all required for CI/CD and all can be avenues of attack; code repositories, automation servers such as Jenkins, deployment procedures, and the nodes responsible for running CI/CD pipelines are just a few examples of CI/CD components which can be exploited by malicious entities.  Furthermore, since CI/CD steps are frequently executed using high-privileged identities, successful attacks against CI/CD often have high damage potential. If an organization chooses to leverage the many benefits of CI/CD, it must also ensure it invests the resources required to properly secure it; the [Codecov](https://blog.gitguardian.com/codecov-supply-chain-breach/) and [SolarWinds](https://www.cyberark.com/resources/blog/the-anatomy-of-the-solarwinds-attack-chain) breaches are just two sobering examples of the potential impact of CI/CD compromise.
+Хотя CI/CD приносит много преимуществ, он также увеличивает поверхность атаки организации. Для CI/CD требуются люди, процессы и технологии, и все они могут стать каналами для атаки; репозитории кода, серверы автоматизации, такие как Jenkins, процедуры развертывания и узлы, ответственные за выполнение конвейеров CI/CD, — вот лишь несколько примеров компонентов CI/CD, которые могут быть использованы злоумышленниками. Кроме того, поскольку шаги CI/CD часто выполняются с использованием привилегированных учетных данных, успешные атаки на CI/CD часто имеют высокий потенциальный ущерб. Если организация решает воспользоваться всеми преимуществами CI/CD, она также должна обеспечить выделение ресурсов, необходимых для его надлежащей защиты; инциденты [Codecov](https://blog.gitguardian.com/codecov-supply-chain-breach/) и [SolarWinds](https://www.cyberark.com/resources/blog/the-anatomy-of-the-solarwinds-attack-chain) — это два отрезвляющих примера потенциальных последствий компрометации CI/CD.
 
-The specific methods attackers use to exploit CI/CD environments are diverse; however, certain risks are more prominent than others. Although one should not restrict themselves to knowledge of them, understanding the most prominent risks to CI/CD environments can help organizations allocate security resources more efficiently. [OWASP's Top 10 CI/CD Security Risks](https://owasp.org/www-project-top-10-ci-cd-security-risks/) is a valuable resources for this purpose; the project identifies the following as the top 10 CI/CD risks:
+Методы, которые используют злоумышленники для эксплуатации сред CI/CD, разнообразны; однако некоторые риски более заметны, чем другие. Хотя не стоит ограничиваться знанием только этих рисков, понимание наиболее значимых угроз для сред CI/CD может помочь организациям более эффективно распределять ресурсы безопасности. [OWASP Top 10 CI/CD Security Risks](https://owasp.org/www-project-top-10-ci-cd-security-risks/) является ценным ресурсом для этой цели; проект выделяет следующие 10 основных рисков CI/CD:
 
-- CICD-SEC-1: Insufficient Flow Control Mechanisms
-- CICD-SEC-2: Inadequate Identity and Access Management
-- CICD-SEC-3: Dependency Chain Abuse
-- CICD-SEC-4: Poisoned Pipeline Execution (PPE)
-- CICD-SEC-5: Insufficient PBAC (Pipeline-Based Access Controls)
-- CICD-SEC-6: Insufficient Credential Hygiene
-- CICD-SEC-7: Insecure System Configuration
-- CICD-SEC-8: Ungoverned Usage of Third-Party Services
-- CICD-SEC-9: Improper Artifact Integrity Validation
-- CICD-SEC-10: Insufficient Logging and Visibility
+- CICD-SEC-1: Недостаточные механизмы управления потоками
+- CICD-SEC-2: Недостаточное управление идентификацией и доступом
+- CICD-SEC-3: Злоупотребление цепочкой зависимостей
+- CICD-SEC-4: Исполнение зараженного конвейера (PPE)
+- CICD-SEC-5: Недостаточный контроль доступа на основе конвейеров (PBAC)
+- CICD-SEC-6: Низкий уровень гигиены учетных данных
+- CICD-SEC-7: Небезопасная конфигурация системы
+- CICD-SEC-8: Неконтролируемое использование сторонних сервисов
+- CICD-SEC-9: Неправильная проверка целостности артефактов
+- CICD-SEC-10: Недостаточная регистрация и видимость
 
-The remainder of this cheat sheet will focus on providing guidance for mitigating against these top 10 and other CI/CD risks.
+Оставшаяся часть этой шпаргалки будет сосредоточена на предоставлении рекомендаций по снижению этих и других рисков, связанных с CI/CD.
 
-## Secure Configuration
+## Безопасная конфигурация
 
-Time and effort must be invested into properly securing the components, such as SCM systems and automation servers (Jenkins, TeamCity, etc), that enable CI/CD processes. Regardless of the specific tools in use, one should never blindly rely on default vendor settings. At the same time, one must not adjust settings without fully understanding the implications, nor perform any needed configuration updates in an uncontrolled, entirely ad-hoc way. Change management and appropriate governance must be in place. Additionally, education is key; before leveraging a tool to perform critical, security sensitive operations such as code deployment, it is imperative one take time to understand the underlying technology. Secure configuration does not happen automatically; it requires education and planning.
+Необходимо вложить время и усилия в обеспечение безопасности компонентов, таких как системы управления исходным кодом (SCM) и серверы автоматизации (Jenkins, TeamCity и др.), которые обеспечивают процессы CI/CD. Независимо от используемых инструментов, никогда не следует полагаться на настройки по умолчанию, предоставленные поставщиками. В то же время нельзя изменять настройки, не полностью понимая их последствия, или выполнять необходимые обновления конфигурации в неконтролируемом, полностью произвольном порядке. Необходимо внедрить управление изменениями и соответствующее управление. Кроме того, важно обучение; перед использованием инструмента для выполнения критических операций, связанных с безопасностью, таких как развертывание кода, важно выделить время на изучение базовой технологии. Безопасная конфигурация не происходит автоматически; она требует образования и планирования.
 
-Furthermore, one must also take steps to ensure the security of the operating systems, container images, web servers, or other infrastructure used to run or support the CI/CD components identified above.  These systems must be kept appropriately patched, and an inventory of these assets, including software versions, should also be maintained. These technologies should be hardened according to standards such as [CIS Benchmarks](https://www.cisecurity.org/cis-benchmarks) or [STIGs](https://public.cyber.mil/stigs/downloads/) where appropriate.
+Кроме того, необходимо предпринять шаги для обеспечения безопасности операционных систем, контейнерных образов, веб-серверов или другой инфраструктуры, используемой для работы или поддержки вышеуказанных компонентов CI/CD. Эти системы должны быть надлежащим образом патчены, а также должен вестись инвентарь этих активов, включая версии программного обеспечения. Эти технологии должны быть защищены в соответствии с такими стандартами, как [CIS Benchmarks](https://www.cisecurity.org/cis-benchmarks) или [STIGs](https://public.cyber.mil/stigs/downloads/), где это уместно.
 
-Beyond these general principles, some specific guideline relevant to CI/CD configuration will be explored below.
+Помимо этих общих принципов, ниже будут рассмотрены некоторые конкретные рекомендации, относящиеся к конфигурации CI/CD.
 
-### Secure SCM Configuration
+### Безопасная конфигурация SCM
 
-CI/CD environments allow for code to be pushed to a repository and then deployed to a production environment with little to no manual intervention. However, this benefit can quickly become an attack vector if it allows untrusted, potentially malicious code to be deployed directly to a production system. Proper configuration of the SCM system can help mitigate this risk. Best practices include:
+Среда CI/CD позволяет отправлять код в репозиторий, а затем развертывать его в рабочей среде с минимальным или нулевым вмешательством человека. Однако это преимущество быстро становится вектором атаки, если оно позволяет небезопасному, потенциально вредоносному коду быть развернутым непосредственно в рабочей системе. Правильная конфигурация системы SCM может помочь снизить этот риск. Лучшие практики включают:
 
-- Avoid the use of auto-merge rules in platforms such as [Gitlab](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html), [Github](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/automatically-merging-a-pull-request), or Bitbucket.
-- Require pull requests to be reviewed before merging and ensure this review step cannot be bypassed.
-- Leverage [protected branches](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches).
-- Require commits to be signed
-- Carefully weigh the risk against the benefits of allowing ephemeral contributors. Limit the number and permissions of external contributions when possible.
-- Enable MFA where available
+- Избегать использования правил автоматического слияния в таких платформах, как [Gitlab](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html), [Github](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/automatically-merging-a-pull-request) или Bitbucket.
+- Требовать проверки запросов на слияние перед их объединением и гарантировать, что этот шаг проверки не может быть обойден.
+- Использовать [защищенные ветки](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches).
+- Требовать подписи коммитов
+- Тщательно взвешивать риск по отношению к преимуществам, предоставляемым временными участниками. Ограничьте количество и права внешних вкладчиков, когда это возможно.
+- Включать MFA, где это возможно
 
-### Pipeline and Execution Environment
+### Конвейер и среда выполнения
 
-In addition to SCM systems, it is imperative that the automation servers responsible for running the pipelines are also configured securely. Examples of these technologies include Travis, TeamCity, Jenkins, and CircleCI. While the exact hardening process will vary according to the specific platform used, some general best practices include:
+В дополнение к системам SCM, важно также обеспечить безопасную настройку серверов автоматизации, ответственных за выполнение конвейеров. Примеры таких технологий включают Travis, TeamCity, Jenkins и CircleCI. Хотя процесс усиления безопасности будет варьироваться в зависимости от используемой платформы, некоторые общие лучшие практики включают:
 
-- Perform builds in appropriately isolated nodes (see Jenkins example [here](https://www.jenkins.io/doc/book/security/controller-isolation/))
-- Ensure communication between the SCM and CI/CD platform is secured using widely accepted protocols such as TLS 1.2 or greater.
-- Restrict access to CI/CD environments by IP if possible.
-- If feasible, store the CI config file outside the repository that is hosting the code being built. If the file is stored alongside the code, it is imperative that the file is reviewed before any merge request is approved.
-- Enable an appropriate level of logging (discussed more under [Visibility and Monitoring](#visibility-and-monitoring) below)
-- Incorporate language appropriate SAST, DAST, IaC vulnerability scanning and related tools into the pipeline.
-- Require manual approval and review before triggering production deployment.
-- If pipelines steps are executed in  Docker image, avoid using the `--privileged` flag [ref](https://research.nccgroup.com/2022/01/13/10-real-world-stories-of-how-weve-compromised-ci-cd-pipelines/)
-- Ensure the pipeline configuration code is version controlled ([ref](https://www.cisa.gov/sites/default/files/publications/ESF_SECURING_THE_SOFTWARE_SUPPLY_CHAIN_DEVELOPERS.PDF))
-- Enforce MFA where possible
+- Выполнять сборки на изолированных узлах (пример для Jenkins см. [здесь](https://www.jenkins.io/doc/book/security/controller-isolation/))
+- Обеспечить безопасное общение между системой SCM и платформой CI/CD, используя широко признанные протоколы, такие как TLS 1.2 или выше.
+- Ограничить доступ к средам CI/CD по IP, если это возможно.
+- По возможности храните конфигурационный файл CI за пределами репозитория, в котором размещен код. Если файл хранится вместе с кодом, важно, чтобы он был проверен перед утверждением любого запроса на слияние.
+- Включить соответствующий уровень логирования (более подробно обсуждается в разделе [Видимость и мониторинг](#видимость-и-мониторинг) ниже)
+- Включить в конвейер подходящие для языка инструменты SAST, DAST, уязвимости IaC и связанные с ними инструменты.
+- Требовать ручного одобрения и проверки перед запуском развертывания в рабочей среде.
+- Если шаги конвейера выполняются в образе Docker, избегайте использования флага `--privileged` ([ссылка](https://research.nccgroup.com/2022/01/13/10-real-world-stories-of-how-weve-compromised-ci-cd-pipelines/))
+- Обеспечьте контроль версий кода конфигурации конвейера ([ссылка](https://www.cisa.gov/sites/default/files/publications/ESF_SECURING_THE_SOFTWARE_SUPPLY_CHAIN_DEVELOPERS.PDF))
+- Внедрить MFA, где это возможно
 
 ## IAM
 
-Identity and Access Management (IAM) is the process of managing digital identities and controlling their access to digital resources. Examples of identities include system accounts, roles, groups, or individual user accounts. IAM has wide applications well beyond CI/CD, but mismanagement of identities and their underlying credentials are among the most prominent risks impacting CI/CD environments. The following subsections will highlight some IAM related security best practices that are especially relevant to CI/CD environments.
+Управление идентификацией и доступом (IAM) — это процесс управления цифровыми идентификациями и контроля их доступа к цифровым ресурсам. Примеры идентификаций включают системные учетные записи, роли, группы или индивидуальные учетные записи пользователей. IAM имеет широкое применение, выходящее далеко за пределы CI/CD, но неправильное управление идентификациями и их основными учетными данными является одним из наиболее значительных рисков, влияющих на среды CI/CD. В следующих подразделах будут представлены некоторые лучшие практики безопасности, связанные с IAM, которые особенно важны для сред CI/CD.
 
-### Secrets Management
+### Управление секретами
 
-Secrets, such as API keys or passwords, are often required for a CI/CD pipeline to execute successfully. Secrets in CI/CD environment are often numerous, with at least some providing substantial access to sensitive systems or operations. This combination introduces a challenge: how does one securely manage secrets while also allowing automated CI/CD processes to access them as needed? Following some simple guidelines can help substantially mitigate, though certainly not eliminate, risk.
+Секреты, такие как API-ключи или пароли, часто необходимы для успешного выполнения конвейера CI/CD. В среде CI/CD секретов обычно много, и некоторые из них обеспечивают значительный доступ к конфиденциальным системам или операциям. Это сочетание представляет собой вызов: как безопасно управлять секретами, одновременно позволяя автоматизированным процессам CI/CD обращаться к ним по мере необходимости? Следование простым рекомендациям может помочь значительно снизить, хотя и не устранить полностью, риск.
 
-First, one should take steps to reduce the likelihood that secrets can be stolen in a usable format. Secrets should **never** be hardcoded in code repositories or CI/CD configuration files. Employ tools such as [git-leaks](https://github.com/gitleaks/gitleaks) or [git-secrets](https://github.com/awslabs/git-secrets) to detect such secrets. Strive to prevent secrets from ever being committed in the first place and perform ongoing monitoring to detect any deviations. Secrets must also be removed from other artifacts such as Docker images and compiled binaries. Secrets must always be encrypted using industry accepted standards. Encryption must be applied while secrets are at-rest in a file-system, vault, or similar store; however, one must also ensure these secrets are not disclosed or persisted in cleartext as a consequence of use in the CI/CD pipeline. For example, secrets must not be printed out to the console, logged, or stored in a system's command history files (such as `~/.bash-history`). A third-party solution such as [HashiCorp Vault](https://www.hashicorp.com/products/vault), [AWS Secrets Manager](https://aws.amazon.com/secrets-manager/), [AKeyless](https://www.akeyless.io/), or [CyberArk](https://www.cyberark.com/) may be used for this purpose.
+Во-первых, необходимо предпринять шаги, чтобы уменьшить вероятность кражи секретов в пригодном для использования формате. Секреты **никогда** не должны быть жестко закодированы в репозиториях кода или конфигурационных файлах CI/CD. Используйте инструменты, такие как [git-leaks](https://github.com/gitleaks/gitleaks) или [git-secrets](https://github.com/awslabs/git-secrets), для обнаружения таких секретов. Стремитесь предотвратить попадание секретов в коммиты в первую очередь и проводите постоянный мониторинг для обнаружения любых отклонений. Секреты также должны быть удалены из других артефактов, таких как образы Docker и скомпилированные бинарные файлы. Секреты всегда должны шифроваться в соответствии с принятыми в отрасли стандартами. Шифрование должно применяться, пока секреты находятся в состоянии покоя в файловой системе, хранилище или аналогичном месте; однако также необходимо гарантировать, что эти секреты не будут раскрыты или сохранены в виде обычного текста в результате использования в конвейере CI/CD. Например, секреты не должны выводиться на консоль, логироваться или сохраняться в файлах истории команд системы (таких как `~/.bash-history`). Для этих целей можно использовать стороннее решение, такое как [HashiCorp Vault](https://www.hashicorp.com/products/vault), [AWS Secrets Manager](https://aws.amazon.com/secrets-manager/), [AKeyless](https://www.akeyless.io/), или [CyberArk](https://www.cyberark.com/).
 
-Second, one must take steps to reduce impact in the event that secrets are stolen in a format that is usable by an attacker. Using temporary credentials or OTPs is one method for reducing impact. Furthermore, one may impose IP based or other restrictions that prevent even valid credentials from accessing resources if these further requirements are not met.The [Least Privilege](#least-privilege) and [Identity Lifecycle Management](#identity-lifecycle-management) sections below provide further guidance on techniques to mitigate risk related to secrets theft.
+Во-вторых, необходимо предпринять шаги по снижению последствий в случае кражи секретов в формате, пригодном для использования злоумышленником. Использование временных учетных данных или OTP — один из методов снижения последствий. Кроме того, можно ввести ограничения по IP или другие ограничения, которые предотвращают доступ к ресурсам даже при наличии действительных учетных данных, если эти дополнительные требования не выполнены. Разделы [Минимально необходимые привилегии](#минимально-необходимые-привилегии) и [Управление жизненным циклом идентификаций](#управление-жизненным-циклом-идентификаций) ниже предоставляют дополнительные рекомендации по методам снижения риска, связанного с кражей секретов.
 
-For additional guidance on securely managing secrets, please reference the [Secrets Management Cheat Sheet](Secrets_Management_Cheat_Sheet.md).
+Для получения дополнительных рекомендаций по безопасному управлению секретами, пожалуйста, обратитесь к [Шпаргалке по управлению секретами](Secrets_Management_Cheat_Sheet.md).
 
-### Least Privilege
+### Минимально необходимые привилегии
 
-Least privilege, defined by [NIST](https://csrc.nist.gov/glossary/term/least_privilege) as:
+Минимально необходимые привилегии, определенные [NIST](https://csrc.nist.gov/glossary/term/least_privilege) как:
 
-> The principle that a security architecture is designed so that each entity is granted the minimum system resources and authorizations that the entity needs to perform its function".
+> "Принцип, согласно которому архитектура безопасности разрабатывается так, чтобы каждый объект получал минимум системных ресурсов и разрешений, необходимых для выполнения его функций".
 
-In the context of CI/CD environments, this principle should be applied to at least three main areas: the secrets used within pipeline steps to access external resources, the access one pipeline or step has to other resources configured in the CI/CD platform (Palo Alto Networks, n.d.), and the permissions of the OS user executing the pipeline.
+В контексте сред CI/CD этот принцип должен применяться как минимум к трем основным областям: секреты, используемые в шагах конвейера для доступа к внешним ресурсам, доступ одного конвейера или шага к другим ресурсам, настроенным в платформе CI/CD (Palo Alto Networks, n.d.), и разрешения ОС для пользователя, выполняющего конвейер.
 
-Regardless of the specific application, the general guidance remains the same: access must be justified, not assumed. One should adopt a "deny by default" mindset. Any identities used within the pipeline must be assigned only the minimum permissions necessary to do its job. For example, if a pipeline must access an AWS service in order to complete its task, the AWS credentials used in that pipeline must only be able to perform the specific operations on the  specific services and resources it requires to perform its task. Similarly, credential sharing across pipelines should be kept to a minimum; in particular, such sharing should not occur across pipelines having different levels of sensitivity or value. If pipeline A does not require access to the same secrets pipeline B requires, they should ideally not be shared. Finally, the OS accounts responsible for running the pipeline should not have root or comparable privileges; this will help mitigate impact in case of compromise.
+Независимо от конкретного применения, общее руководство остается неизменным: доступ должен быть обоснован, а не предполагаем. Следует применять подход «отказ по умолчанию». Любым идентификациям, используемым в конвейере, должны быть назначены только минимально необходимые разрешения для выполнения их задач. Например, если конвейеру необходимо получить доступ к сервису AWS для выполнения задачи, учетные данные AWS, используемые в этом конвейере, должны позволять выполнять только те операции на конкретных службах и ресурсах, которые требуются для выполнения задачи. Аналогично, совместное использование учетных данных между конвейерами должно быть сведено к минимуму; в частности, такое совместное использование не должно происходить между конвейерами с разным уровнем чувствительности или ценности. Если конвейеру A не требуется доступ к тем же секретам, что и конвейеру B, они не должны совместно использоваться. Наконец, учетные записи ОС, ответственные за выполнение конвейера, не должны иметь прав root или аналогичных привилегий; это поможет снизить последствия в случае компрометации.
 
-### Identity Lifecycle Management
+### Управление жизненным циклом идентификаций
 
-Although proper secrets management and application of the principle of least privilege are necessary for secure IAM, they are not sufficient. The lifecycle of identities, from creation to deprovisioning, must be carefully managed to reduce risk for CI/CD and other environments.
+Хотя правильное управление секретами и применение принципа минимально необходимых привилегий необходимы для обеспечения безопасности IAM, они не являются достаточными. Жизненный цикл идентификаций, от создания до прекращения, должен быть тщательно управляемым, чтобы снизить риски для сред CI/CD и других сред.
 
-In the initial or "Joiner" phase of Identity Management (as defined in the [ILM Playbook](https://www.idmanagement.gov/playbooks/ilm/)), considerations include using a centralized IdP rather than allowing local accounts, disallowing shared accounts, disallowing self-provisioning of identities, and only allowing email accounts with domains controlled by the organization responsible for the CI/CD environment (OWASP, n.d.). Once provisioned, identities must be tracked, maintained, and, when necessary, deprovisioned. Of particular concern in complex, distributed CI/CD environments is ensuring that an accurate, comprehensive, and up-to-date inventory of identities is maintained. The format of this inventory can vary by organizational needs, but, in addition to the identity itself, suggested fields include identity owner or responsible party, identity provider, last used, last updated, granted permissions, and permissions actually used by the identity. Such an inventory will help one readily identify identities which may be over-privileged or which may be candidates for deprovisioning. Proper identity maintenance must not be overlooked; the "forgotten" identity can be the vector an attacker users to compromise a CI/CD system.
+На начальной или «Присоединенной» фазе управления идентификациями (как определено в [ILM Playbook](https://www.idmanagement.gov/playbooks/ilm/)), следует учитывать использование централизованного IdP, а не разрешение локальных учетных записей, запрет общих учетных записей, запрет самопровизирования идентификаций и разрешение использования только тех учетных записей электронной почты, домены которых контролируются организацией, ответственной за среду CI/CD (OWASP, n.d.). После создания учетных записей необходимо отслеживать, поддерживать и, при необходимости, удалять их. Особое внимание в сложных, распределенных средах CI/CD следует уделить обеспечению точного, всестороннего и актуального учета идентификаций. Формат такого инвентаря может варьироваться в зависимости от потребностей организации, но, помимо самой идентификации, рекомендуемые поля включают владельца идентификации или ответственного лица, поставщика идентификации, последнее использование, последнее обновление, предоставленные разрешения и разрешения, фактически используемые идентификацией. Такой инвентарь поможет легко выявить идентификации, которые могут быть излишне привилегированными или могут быть кандидатами на удаление. Правильное управление идентификациями не должно быть упущено из виду; «забытая» идентификация может стать вектором, через который злоумышленник скомпрометирует систему CI/CD.
 
-## Managing Third-Party Code
+## Управление сторонним кодом
 
-Due, in part, to high-profile breaches such as SolarWinds, the concept of software supply chain security has received increasing attention in recent years. This issue is especially pressing in the context of CI/CD as such environments interact with third-party code in multiple ways. Two such areas of interaction, the dependencies used by projects running within the pipeline and the third-party integrations and plug-ins with the CI/CD system itself will be discussed below.
+Частично из-за высокопрофильных утечек, таких как SolarWinds, концепция безопасности цепочки поставок программного обеспечения получила повышенное внимание в последние годы. Эта проблема особенно актуальна в контексте CI/CD, поскольку такие среды взаимодействуют со сторонним кодом по-разному. Две такие области взаимодействия, зависимости, используемые проектами, выполняемыми в конвейере, и сторонние интеграции и плагины с самой системой CI/CD, будут обсуждены ниже.
 
-### Dependency Management
+### Управление зависимостями
 
-Using third-party packages with known vulnerabilities is a well-known problem in software engineering, and many tools have been developed to address this. In the context of CI/CD, automated use of SCA and comparable tools can actually assist in improving security in this area. However, the CI/CD environment itself is susceptible to a different, but related, risk: dependency chain abuse.
+Использование сторонних пакетов с известными уязвимостями является известной проблемой в инженерии программного обеспечения, и для ее решения было разработано множество инструментов. В контексте CI/CD автоматизированное использование инструментов SCA и аналогичных инструментов может фактически помочь повысить безопасность в этой области. Однако сама среда CI/CD подвержена другому, но связанному риску: злоупотреблению цепочками зависимостей.
 
-Dependency chain abuse involves the exploitation of flaws within a system's dependency chain and dependency resolution processes; a successful attack can result in the execution of malicious code from an attacker controlled package. The dependency chain itself refers to the set of packages, including internal, direct third-party, and transitive dependencies, that a software solution requires to function. An attacker can take advantage of this dependency chain through methods such as [dependency confusion](https://fossa.com/blog/dependency-confusion-understanding-preventing-attacks/), [typosquatting](https://blog.gitguardian.com/protecting-your-software-supply-chain-understanding-typosquatting-and-dependency-confusion-attacks/), or takeover of a valid package maintainer's account. Dependency chain abuse attacks can be quite complex and comprehensive defense is correspondingly so; however, basic mitigation are quite straightforward.
+Злоупотребление цепочками зависимостей включает использование уязвимостей в цепочках зависимостей системы и процессах разрешения зависимостей; успешная атака может привести к выполнению вредоносного кода из пакета, контролируемого злоумышленником. Сама цепочка зависимостей относится к набору пакетов, включая внутренние, прямые сторонние и транзитивные зависимости, которые необходимы для работы программного решения. Злоумышленник может воспользоваться этой цепочкой зависимостей с помощью таких методов, как [путаница зависимостей](https://fossa.com/blog/dependency-confusion-understanding-preventing-attacks/), [тайпосквоттинг](https://blog.gitguardian.com/protecting-your-software-supply-chain-understanding-typosquatting-and-dependency-confusion-attacks/) или захват учетной записи действительного поддерживающего пакета. Атаки на цепочку зависимостей могут быть довольно сложными, и защита от них также должна быть комплексной; однако базовые меры по их смягчению вполне просты.
 
-Mitigation techniques begin early on in the SDLC, well before the CI/CD pipeline begins execution. The project's package management technology (such as npm) should be configured in such a way as to ensure dependency references are immutable (CISA et al. 2022). Version pinning should be performed, the version chosen for pinning must be one that is known to be valid and secure, and the integrity of any package the system downloads should be validated by comparing its hash or checksum to a  known good hash of the pinned package. The exact procedures to achieve this will vary depending on the project's underlying technology, but, in general, both version pinning and hash verification can be performed via a platform's "lock" or similar file (i.e. [package-lock.json](https://docs.npmjs.com/cli/v7/configuring-npm/package-lock-json) or  [Pipfile.lock](https://pipenv.pypa.io/en/latest/pipfile.html)). Prefer using private repositories where possible, and configure the package manager to use only a single private feed (Microsoft, 2021). For private packages, leverage [scoped NPM packages](https://docs.npmjs.com/cli/v10/using-npm/scope),  [ID prefixes for NuGet packages](https://learn.microsoft.com/en-us/nuget/nuget-org/id-prefix-reservation), or a comparable feature to reduce the risk of dependency confusion. Finally, regardless of the platform used, ensure the file(s) responsible for controlling these settings (such as `.npmrc` in node environments), is committed to source control and accessible in the CI/CD environment.
+Техники смягчения начинают применяться на ранних этапах SDLC, задолго до начала выполнения конвейера CI/CD. Технология управления пакетами проекта (такая как npm) должна быть настроена таким образом, чтобы ссылки на зависимости были неизменяемыми (CISA и др. 2022). Следует зафиксировать версии, выбранные для фиксации, которые должны быть известны как допустимые и безопасные, а целостность любого пакета, загружаемого системой, должна проверяться путем сравнения его хэша или контрольной суммы с известным хэшем зафиксированного пакета. Точные процедуры достижения этого будут варьироваться в зависимости от используемой технологии проекта, но в целом и фиксация версии, и проверка хэша могут выполняться с помощью файла "lock" или аналогичного (например, [package-lock.json](https://docs.npmjs.com/cli/v7/configuring-npm/package-lock-json) или [Pipfile.lock](https://pipenv.pypa.io/en/latest/pipfile.html)). По возможности, используйте частные репозитории и настройте менеджер пакетов для использования только одного частного фида (Microsoft, 2021). Для частных пакетов используйте [скопированные пакеты NPM](https://docs.npmjs.com/cli/v10/using-npm/scope),  [ID-префиксы для пакетов NuGet](https://learn.microsoft.com/en-us/nuget/nuget-org/id-prefix-reservation) или аналогичные функции, чтобы уменьшить риск путаницы зависимостей. Наконец, независимо от используемой платформы, убедитесь, что файлы, ответственные за управление этими настройками (например, `.npmrc` в средах Node), закоммичены в систему контроля версий и доступны в среде CI/CD.
 
-### Plug-In and Integration Management
+### Управление плагинами и интеграциями
 
-Most CI/CD platforms are extensible through means of plug-ins or other third-party integrations. While these extensions can introduce many benefits, including potentially improving the security capabilities of the system, they also increase the attack surface. This is not to say that plug-ins should necessarily be disallowed; rather, the risk must simply be considered and reduced to an acceptable level.
+Большинство платформ CI/CD можно расширять с помощью плагинов или других сторонних интеграций. Хотя такие расширения могут предоставить множество преимуществ, включая возможное улучшение возможностей безопасности системы, они также увеличивают поверхность атаки. Это не означает, что плагины следует обязательно запрещать; скорее, риск необходимо просто учитывать и снижать до приемлемого уровня.
 
-Installation of plug-ins or integration with third-party services should be treated like the acquisition of any software. These tools are often easy to install and setup, but this does not mean their installation and usage should go ungoverned. Least privileges must be enforced to ensure only a small subset of users even have the permissions required to extend CI/CD platforms. Additionally, such extensions must be vetted before installation. Questions to consider are comparable to those that should be asked before any software acquisition:
+Установка плагинов или интеграция со сторонними сервисами должны рассматриваться как приобретение любого другого программного обеспечения. Эти инструменты часто легко устанавливаются и настраиваются, но это не означает, что их установка и использование должны оставаться неконтролируемыми. Следует применять принцип минимальных привилегий, чтобы только небольшая часть пользователей имела права, необходимые для расширения платформ CI/CD. Кроме того, такие расширения должны проходить проверку перед установкой. Вопросы, которые следует рассмотреть, аналогичны тем, которые необходимо задать перед любым приобретением программного обеспечения:
 
-- Is the vendor a recognized and respected developer or company?
-- Does the vendor have a strong or weak history in regards to application security?
-- How popular is the specific plug-in or integration endpoint?
-- Is the plugin or integration actively maintained?
-- Will the extension require configuration changes that could reduce security (such as exposing additional ports)?
-- Does the organization have the experience and resources to properly configure and maintain the offering?
+- Является ли поставщик признанным и уважаемым разработчиком или компанией?
+- Имеет ли поставщик сильную или слабую историю в отношении безопасности приложений?
+- Насколько популярен конкретный плагин или точка интеграции?
+- Поддерживается ли плагин или интеграция активно?
+- Потребует ли расширение изменений в конфигурации, которые могут снизить безопасность (например, открытие дополнительных портов)?
+- Есть ли у организации опыт и ресурсы для правильной настройки и поддержки предложения?
 
-After a plug-in or other integration has been approved, it must be incorporated into the organization's configuration management processes. The software must be kept up-to-date, especially with any security patches that become available. The extension must also be continually reviewed for value; if it is no longer needed, the extension should be removed.
+После того как плагин или другая интеграция были одобрены, их необходимо включить в процессы управления конфигурацией организации. Программное обеспечение должно поддерживаться в актуальном состоянии, особенно при наличии доступных исправлений безопасности. Расширение также должно регулярно пересматриваться на предмет его ценности; если оно больше не нужно, его следует удалить.
 
-## Integrity Assurance
+## Обеспечение целостности
 
-CI/CD exploits often require attackers to insert themselves into the normal flow of the pipeline and modify the inputs and/or outputs of one or more steps. As such, integrity verification is an important method of reducing risk in CI/CD environments.
+Эксплуатация CI/CD часто требует, чтобы злоумышленники внедрились в нормальный поток конвейера и изменили входные и/или выходные данные одного или нескольких этапов. Таким образом, проверка целостности является важным методом снижения рисков в средах CI/CD.
 
-As with many other defensive actions, implementation of integrity related controls begins early in the SDLC. As noted earlier, the SCM should require commits to be signed before the code can be merged. Also, as discussed in [Dependency Management](#dependency-management), the package management platform should be configured to use hashes or comparable to verify the integrity of a package. Code signing should also be employed; technologies such as [Sigstore](https://www.sigstore.dev/) or [Signserver](https://www.signserver.org/) may be used for this purpose. However, it is important to note that code signing and related technologies are not absolute guarantors of security; the code signing processes itself can be exploited. Please see [NIST's Security Considerations for Code Signing](https://nvlpubs.nist.gov/nistpubs/CSWP/NIST.CSWP.01262018.pdf) for additional guidance on securing the code signing processes. Finally, integration of the [in-toto.to](https://in-toto.io/) framework or similar can further assist in improving integrity within the CI/CD environment.
+Как и многие другие защитные меры, внедрение механизмов контроля целостности начинается на ранних этапах SDLC. Как упоминалось ранее, SCM должен требовать, чтобы коммиты были подписаны перед тем, как код будет слит. Кроме того, как обсуждалось в разделе [Управление зависимостями](#управление-зависимостями), платформа управления пакетами должна быть настроена на использование хэшей или аналогов для проверки целостности пакета. Также следует использовать подпись кода; для этой цели могут быть использованы такие технологии, как [Sigstore](https://www.sigstore.dev/) или [Signserver](https://www.signserver.org/). Однако важно отметить, что подпись кода и связанные с ней технологии не являются абсолютными гарантами безопасности; процессы подписания кода сами могут быть подвержены атакам. Дополнительные рекомендации по обеспечению безопасности процессов подписания кода см. в документе [NIST's Security Considerations for Code Signing](https://nvlpubs.nist.gov/nistpubs/CSWP/NIST.CSWP.01262018.pdf). Наконец, интеграция таких фреймворков, как [in-toto.to](https://in-toto.io/)  или аналогичных, может дополнительно способствовать повышению целостности в среде CI/CD.
 
-## Visibility and Monitoring
+## Видимость и мониторинг
 
-CI/CD environments can be complex and may often seem like a opaque-box to developers. However, visibility into these systems is critical for detecting potential attacks, better understand one's risk posture, and detecting and remediating vulnerabilities. Though their value is often underestimated, logging and log analysis are vital for providing visibility into CI/CD systems.
+Среды CI/CD могут быть сложными и часто казаться разработчикам непрозрачными. Однако видимость этих систем имеет решающее значение для обнаружения потенциальных атак, лучшего понимания своей позиции по рискам, а также для обнаружения и устранения уязвимостей. Хотя их ценность часто недооценивают, ведение журналов и анализ логов жизненно важны для обеспечения видимости в системах CI/CD.
 
-The first step in increasing CI/CD visibility, is ensuring that the logging configuration within the CI/CD environment is compliant with your organization's log management policy. Beyond adherence to internal policies, configure the system to log data in a readily parsable format such as JSON or syslog. Carefully consider what content needs to be logged and at what verbosity. Although proper logging should allow for end-to-end visibility of the pipeline, more logging is not inherently better. One must not only consider the storage costs associated with logs, but also take care to avoid logging any sensitive data. For example, most authentication related events likely should be logged. However, one should never log plaintext passwords, authentication tokens, API keys, or similar secrets.
+Первый шаг к увеличению видимости CI/CD — это обеспечение соответствия конфигурации ведения журналов в среде CI/CD политике управления журналами вашей организации. Помимо соблюдения внутренних политик, настройте систему на регистрацию данных в формате, который легко анализировать, например, в формате JSON или syslog. Тщательно продумайте, какой контент нужно регистрировать и с какой степенью подробности. Хотя правильное ведение журналов должно позволять обеспечить сквозную видимость конвейера, большее количество журналов не обязательно лучше. Необходимо учитывать не только затраты на хранение логов, но и избегать ведения журнала любой конфиденциальной информации. Например, большинство событий, связанных с аутентификацией, вероятно, следует регистрировать. Однако никогда не следует записывать в лог пароли в виде обычного текста, токены аутентификации, API-ключи или аналогичные секреты.
 
-Once an appropriate logging strategy has been defined and necessary configuration has been performed, one is ready to start utilizing these logs to reduce risk. Sending aggregate logs to a centralized log management system or, preferably, a SIEM is a first step for realizing the value of logs. If a SIEM is used, alert should be carefully configured, and regularly refined, in order to provide timely alerts of anomalies and potential attacks. The exact configuration will vary significantly depending on the CI/CD environment, SIEM platform, and other factors. For an overview of CI/CD observability within the context of the ELK Stack (a popular SIEM platform) refer to this [article](https://www.elastic.co/guide/en/observability/current/ci-cd-observability.html#ci-cd-developers) or reference [this article](https://dzone.com/articles/jenkins-log-monitoring-with-elk) for an alternative approach which can be readily adapted to a variety of CI/CD environments. It is important to keep in mind that SIEM alerts will never be 100% accurate in detecting CI/CD attacks. Both false positive and false negatives will occur. Such platforms should not be relied on unquestioningly, but they do provide important visibility into CI/CD environments and can act as important alert systems when thoughtfully configured.
+После того как была определена соответствующая стратегия ведения журналов и выполнена необходимая настройка, можно начать использовать эти журналы для снижения рисков. Отправка сводных логов в централизованную систему управления логами или, предпочтительно, в SIEM — первый шаг к реализации ценности журналов. Если используется SIEM, уведомления должны быть тщательно настроены и регулярно уточняться для своевременного уведомления об аномалиях и потенциальных атаках. Точная конфигурация будет значительно различаться в зависимости от среды CI/CD, платформы SIEM и других факторов. Для обзора наблюдаемости CI/CD в контексте стека ELK (популярной платформы SIEM) см. эту [статью](https://www.elastic.co/guide/en/observability/current/ci-cd-observability.html#ci-cd-developers) или ознакомьтесь с [этой статьёй](https://dzone.com/articles/jenkins-log-monitoring-with-elk) для альтернативного подхода, который можно легко адаптировать к различным средам CI/CD. Важно помнить, что предупреждения SIEM никогда не будут на 100% точными при обнаружении атак на CI/CD. Будут возникать как ложные срабатывания, так и пропущенные угрозы. Такие платформы не должны использоваться безусловно, но они предоставляют важную видимость в средах CI/CD и могут действовать как важные системы оповещения при правильной настройке.
 
-## References
+## Ссылки
 
-### General References
+### Общие ссылки
 
 - [CISA, NSA, & ODNI (2022). Securing the Software Supply Chain: Recommended Processes for Developers](https://www.cisa.gov/sites/default/files/publications/ESF_SECURING_THE_SOFTWARE_SUPPLY_CHAIN_DEVELOPERS.PDF)
 - [Microsoft (2021). 3 Ways to Mitigate Risks Using Private Package Feeds](https://azure.microsoft.com/mediahandler/files/resourcefiles/3-ways-to-mitigate-risk-using-private-package-feeds/3%20Ways%20to%20Mitigate%20Risk%20When%20Using%20Private%20Package%20Feeds%20-%20v1.0.pdf)
 - [OWASP (n.d.). OWASP Top 10 CI/CD Security Risks](https://owasp.org/www-project-top-10-ci-cd-security-risks/)
 - [Palo Alto Networks (n.d.). What is Insufficient Pipeline-Based Access Controls](https://www.paloaltonetworks.com/cyberpedia/pipeline-based-access-controls-cicd-sec5)
 
-### CI/CD Platforms
+### Платформы CI/CD
 
 - [CircleCI](https://circleci.com/)
 - [Jenkins](https://www.jenkins.io/)
@@ -151,21 +151,21 @@ Once an appropriate logging strategy has been defined and necessary configuratio
 - [TeamCity](https://www.jetbrains.com/teamcity/)
 - [TravisCI](https://www.jenkins.io/)
 
-### IaC Scanning
+### Сканирование IaC
 
 - [Checkov](https://www.sigstore.dev/)
 - [Kics](https://www.kics.io/)
 - [SonarSource](https://www.sonarsource.com/)
 - [TerraScan](https://runterrascan.io/)
 
-### Integrity Verification and Signing
+### Проверка целостности и подпись
 
 - [In-toto](https://in-toto.io/)
 - [SignServer](https://www.signserver.org/)
 - [SigStore](https://www.sigstore.dev/)
 - [SLSA](https://slsa.dev/)
 
-### Secrets Management Tools
+### Инструменты управления секретами
 
 - [AWS Secrets Manager](https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html)
 - [Azure Key Vault](https://azure.microsoft.com/en-us/products/key-vault/)
