@@ -1,185 +1,186 @@
-# Cross Site Scripting Prevention Cheat Sheet
 
-## Introduction
+# Шпаргалка по предотвращению межcайтового скриптинга (XSS)
 
-This cheat sheet helps developers prevent XSS vulnerabilities.
+## Введение
 
-Cross-Site Scripting (XSS) is a misnomer. Originally this term was derived from early versions of the attack that were primarily focused on stealing data cross-site. Since then, the term has widened to include injection of basically any content. XSS attacks are serious and can lead to account impersonation, observing user behaviour, loading external content, stealing sensitive data, and more.
+Эта шпаргалка поможет разработчикам предотвратить появление XSS-уязвимостей.
 
-**This cheatsheet contains techniques to prevent or limit the impact of XSS. Since no single technique will solve XSS, using the right combination of defensive techniques will be necessary to prevent XSS.**
+Межсайтовый скриптинг (XSS) - это неправильное название. Изначально этот термин был образован от ранних версий атак, которые в основном были направлены на кражу данных через сайт. С тех пор термин расширился и стал включать в себя внедрение практически любого контента. XSS-атаки очень серьезны и могут привести к выдаче себя за пользователя, наблюдению за его поведением, загрузке внешнего контента, краже конфиденциальных данных и т. д.
 
-## Framework Security
+**Эта шпаргалка содержит методы предотвращения или ограничения воздействия XSS. Поскольку ни одна техника не решает проблему XSS, для предотвращения XSS необходимо использовать правильную комбинацию защитных техник.**
 
-Fortunately, applications built with modern web frameworks have fewer XSS bugs, because these frameworks steer developers towards good security practices and help mitigate XSS by using templating, auto-escaping, and more. However, developers need to know that problems can occur if frameworks are used insecurely, such as:
+## Безопасность фреймворков
 
-- _escape hatches_ that frameworks use to directly manipulate the DOM
-- React’s `dangerouslySetInnerHTML` without sanitising the HTML
-- React cannot handle `javascript:` or `data:` URLs without specialized validation
-- Angular’s `bypassSecurityTrustAs*` functions
-- Lit's `unsafeHTML` function
-- Polymer's `inner-h-t-m-l` attribute and `htmlLiteral` function
-- Template injection
-- Out of date framework plugins or components
-- and more
+К счастью, в приложениях, построенных на современных веб-фреймворках, XSS-баги встречаются реже, поскольку эти фреймворки ориентируют разработчиков на хорошие методы обеспечения безопасности и помогают смягчить последствия XSS за счет использования шаблонов, автозавершения и т. д. Однако разработчики должны знать, что при небезопасном использовании фреймворков могут возникнуть такие проблемы, как:
 
-When you use a modern web framework, you need to know how your framework prevents XSS and where it has gaps. There will be times where you need to do something outside the protection provided by your framework, which means that Output Encoding and HTML Sanitization can be critical. OWASP will be producing framework specific cheatsheets for React, Vue, and Angular.
+- Люки _эскейпа_, которые фреймворки используют для прямого манипулирования DOM
+- `dangerouslySetInnerHTML` в React без санитации HTML 
+- React не может обрабатывать URL `javascript:` или `data:` без специализированной валидации
+- Функции Angular `bypassSecurityTrustAs*`
+- Функция Lit's `unsafeHTML`
+- Атрибут `inner-h-t-m-l` и функция `htmlLiteral` в полимере
+- Шаблонная инъекция
+- Устаревшие плагины или компоненты фреймворка
+- и многое другое
 
-## XSS Defense Philosophy
+Если вы используете современный веб-фреймворк, вам необходимо знать, как он защищает от XSS и где в нем есть пробелы. Бывают случаи, когда вам нужно сделать что-то за пределами защиты, предоставляемой вашим фреймворком, а это значит, что кодирование вывода и санитация HTML могут оказаться критически важными. OWASP будет выпускать специальные шпаргалки для фреймворков React, Vue и Angular.
 
-In order for an XSS attack to be successful, an attacker must be able to to insert and execute malicious content in a webpage. Thus, all variables in a web application needs to be protected. Ensuring that **all variables** go through validation and are then escaped or sanitized is known as **perfect injection resistance**. Any variable that does not go through this process is a potential weakness. Frameworks make it easy to ensure variables are correctly validated and escaped or sanitised.
+## Философия защиты от XSS
 
-However, no framework is perfect and security gaps still exist in popular frameworks like React and Angular. Output encoding and HTML sanitization help address those gaps.
+Чтобы XSS-атака была успешной, злоумышленник должен иметь возможность вставить и выполнить вредоносный контент на веб-странице. Таким образом, все переменные в веб-приложении должны быть защищены. Обеспечение того, что **все переменные** проходят проверку и затем экранируются или санитируются, известно как **совершенная устойчивость к инъекциям**. Любая переменная, которая не проходит через этот процесс, является потенциальным слабым местом. Фреймворки позволяют легко обеспечить правильную проверку переменных и их экранирование или санацию.
 
-## Output Encoding
+Однако ни один фреймворк не является идеальным, и в таких популярных фреймворках, как React и Angular, все еще существуют пробелы в безопасности. Кодирование выходных данных и дезинфекция HTML помогают устранить эти пробелы.
 
-When you need to safely display data exactly as a user types it in, output encoding is recommended. Variables should not be interpreted as code instead of text. This section covers each form of output encoding, where to use it, and when you should not use dynamic variables at all.
+## Выходная кодировка
 
-First, when you wish to display data as the user typed it in, start with your framework’s default output encoding protection. Automatic encoding and escaping functions are built into most frameworks.
+Если вам нужно безопасно отобразить данные в точности так, как их вводит пользователь, рекомендуется использовать кодировку вывода. Переменные не должны интерпретироваться как код вместо текста. В этом разделе рассматривается каждая форма кодировки вывода, где ее следует использовать и когда не следует использовать динамические переменные вообще.
 
-If you’re not using a framework or need to cover gaps in the framework then you should use an output encoding library. Each variable used in the user interface should be passed through an output encoding function. A list of output encoding libraries is included in the appendix.
+Во-первых, если вы хотите отображать данные в том виде, в котором их ввел пользователь, начните с защиты от кодировки, установленной в вашем фреймворке по умолчанию. Функции автоматического кодирования и экранирования встроены в большинство фреймворков.
 
-There are many different output encoding methods because browsers parse HTML, JS, URLs, and CSS differently. Using the wrong encoding method may introduce weaknesses or harm the functionality of your application.
+Если вы не используете фреймворк или вам нужно закрыть пробелы в фреймворке, то вам следует использовать библиотеку кодирования вывода. Каждая переменная, используемая в пользовательском интерфейсе, должна быть передана через функцию кодирования вывода. Список библиотек кодирования вывода приведен в приложении.
 
-### Output Encoding for “HTML Contexts”
+Существует множество различных методов кодирования вывода, поскольку браузеры по-разному анализируют HTML, JS, URL и CSS. Использование неправильного метода кодирования может привести к появлению слабых мест или нарушить функциональность вашего приложения.
 
-“HTML Context” refers to inserting a variable between two basic HTML tags like a `<div>` or `<b>`. For example:
+### Выходная кодировка для "HTML-контекстов"
+
+"HTML-контекст" означает вставку переменной между двумя основными HTML-тегами, такими как `<div>` или `<b>`. Например:
 
 ```HTML
 <div> $varUnsafe </div>
 ```
 
-An attacker could modify data that is rendered as `$varUnsafe`. This could lead to an attack being added to a webpage. For example:
+Злоумышленник может изменить данные, которые отображаются как `$varUnsafe`. Это может привести к добавлению атаки на веб-страницу. Например:
 
 ```HTML
-<div> <script>alert`1`</script> </div> // Example Attack
+<div> <script>alert`1`</script> </div> // Пример атаки
 ```
 
-In order to add a variable to a HTML context safely to a web template, use HTML entity encoding for that variable.
+Чтобы безопасно добавить переменную в HTML-контекст веб-шаблона, используйте для нее кодировку сущности HTML.
 
-Here are some examples of encoded values for specific characters:
+Вот несколько примеров кодированных значений для определенных символов:
 
-If you're using JavaScript for writing to HTML, look at the `.textContent` attribute. It is a **Safe Sink** and will automatically HTML Entity Encode.
+Если вы используете JavaScript для записи в HTML, обратите внимание на атрибут `.textContent`. Он является **Safe Sink** и автоматически кодирует HTML Entity Encode.
 
 ```HTML
-&    &amp;
-<    &lt;
->    &gt;
-"    &quot;
-'    &#x27;
+& &amp;
+< &lt;
+> &gt;
+" &quot;
+' &#x27;
 ```
 
-### Output Encoding for “HTML Attribute Contexts”
+### Выходная кодировка для "Контекстов атрибутов HTML"
 
-“HTML Attribute Contexts” occur when a variable is placed in an HTML attribute value. You may want to do this to change a hyperlink, hide an element, add alt-text for an image, or change inline CSS styles. You should apply HTML attribute encoding to variables being placed in most HTML attributes. A list of safe HTML attributes is provided in the **Safe Sinks** section.
+"Контексты атрибутов HTML" возникают, когда переменная помещается в значение атрибута HTML. Вы можете захотеть сделать это, чтобы изменить гиперссылку, скрыть элемент, добавить alt-текст для изображения или изменить встроенные стили CSS. К переменным, помещаемым в большинство атрибутов HTML, следует применять кодировку атрибутов HTML. Список безопасных атрибутов HTML приведен в разделе **Безопасные атрибуты**.
 
 ```HTML
-<div attr="$varUnsafe">
-<div attr=”*x” onblur=”alert(1)*”> // Example Attack
+<div attr="$varUnsafe">.
+<div attr="*x" onblur="alert(1)*"> // Пример атаки
 ```
 
-**It’s critical to use quotation marks like `"` or `'` to surround your variables.** Quoting makes it difficult to change the context a variable operates in, which helps prevent XSS. Quoting also significantly reduces the characterset that you need to encode, making your application more reliable and the encoding easier to implement.
+**Очень важно использовать кавычки, такие как `"` или `'`, чтобы окружать переменные.** Кавычки затрудняют изменение контекста, в котором работает переменная, что помогает предотвратить XSS. Кроме того, кавычки значительно сокращают набор символов, которые необходимо кодировать, что делает ваше приложение более надежным, а кодировку - более простой в реализации.
 
-If you're writing to a HTML Attribute with JavaScript, look at the `.setAttribute` and `[attribute]` methods because they will automatically HTML Attribute Encode. Those are **Safe Sinks** as long as the attribute name is hardcoded and innocuous, like `id` or `class`. Generally, attributes that accept JavaScript, such as `onClick`, are **NOT safe** to use with untrusted attribute values.
+Если вы пишете в HTML-атрибут с помощью JavaScript, обратите внимание на методы `.setAttribute` и `[attribute]`, потому что они автоматически кодируют HTML-атрибут. Это **Safe Sinks**, пока имя атрибута жестко закодировано и является безобидным, например `id` или `class`. Вообще, атрибуты, которые принимают JavaScript, такие как `onClick`, **НЕ безопасны** для использования с ненадежными значениями атрибутов.
 
-### Output Encoding for “JavaScript Contexts”
+### Выходная кодировка для "Контекстов JavaScript"
 
-“JavaScript Contexts” refers to the situation where variables are placed into inline JavaScript and then embedded in an HTML document. This situation commonly occurs in programs that heavily use custom JavaScript that is embedded in their web pages.
+Под "контекстами JavaScript" понимается ситуация, когда переменные помещаются во встроенный JavaScript, а затем встраиваются в HTML-документ. Такая ситуация обычно возникает в программах, которые активно используют пользовательский JavaScript, встраиваемый в веб-страницы.
 
-However, the only ‘safe’ location for placing variables in JavaScript is inside a “quoted data value”. All other contexts are unsafe and you should not place variable data in them.
+Однако единственное "безопасное" место для размещения переменных в JavaScript - это "значение данных в кавычках". Все остальные контексты небезопасны, и в них не следует размещать переменные данные.
 
-Examples of “Quoted Data Values”
+Примеры "Приведенных значений данных"
 
 ```HTML
-<script>alert('$varUnsafe’)</script>
-<script>x=’$varUnsafe’</script>
+<script>alert('$varUnsafe')</script>
+<script>x='$varUnsafe'</script>
 <div onmouseover="'$varUnsafe'"</div>
 ```
 
-Encode all characters using the `\xHH` format. Encoding libraries often have a `EncodeForJavaScript` or similar to support this function.
+Перекодируйте все символы, используя формат `\xHH`. Библиотеки кодирования часто содержат функцию `EncodeForJavaScript` или подобную ей для поддержки этой функции.
 
-Please look at the [OWASP Java Encoder JavaScript encoding examples](https://owasp.org/www-project-java-encoder/) for examples of proper JavaScript use that requires minimal encoding.
+См. в [OWASP Java Encoder: примеры кодирования JavaScript](https://owasp.org/www-project-java-encoder/) примеры правильного использования JavaScript, требующего минимального кодирования.
 
-For JSON, verify that the `Content-Type` header is `application/json` and not `text/html` to prevent XSS.
+Для JSON убедитесь, что заголовок `Content-Type` имеет значение `application/json`, а не `text/html`, чтобы предотвратить XSS.
 
-### Output Encoding for “CSS Contexts”
+### Выходная кодировка для "Контекстов CSS"
 
-“CSS Contexts” refer to variables placed into inline CSS, which is common when developers want their users to customize the look and feel of their webpages. Since CSS is surprisingly powerful, it has been used for many types of attacks. **Variables should only be placed in a CSS property value. Other “CSS Contexts” are unsafe and you should not place variable data in them.**
+Под "контекстами CSS" понимаются переменные, помещаемые во встроенный CSS, который часто используется разработчиками, когда они хотят, чтобы пользователи настраивали внешний вид и восприятие веб-страниц. Поскольку CSS обладает удивительными возможностями, его используют для многих типов атак. **Переменные следует помещать только в значение свойства CSS. Другие "контексты CSS" небезопасны, и вы не должны помещать в них переменные данные.**
 
 ```HTML
-<style> selector { property : $varUnsafe; } </style>
-<style> selector { property : "$varUnsafe"; } </style>
-<span style="property : $varUnsafe">Oh no</span>
+<style> selector { property : $varUnsafe; } </style>.
+<style> selector { property : "$varUnsafe"; } </style>.
+<span style="property : $varUnsafe">О нет</span>.
 ```
 
-If you're using JavaScript to change a CSS property, look into using
+Если вы используете JavaScript для изменения свойства CSS, обратите внимание на использование
 `style.property = x`.
-This is a **Safe Sink** and will automatically CSS encode data in it.
+Это **Safe Sink**, который автоматически кодирует данные в CSS.
 
-When inserting variables into CSS properties, ensure the data is properly encoded and sanitized to prevent injection attacks. Avoid placing variables directly into selectors or other CSS contexts.
+При вставке переменных в свойства CSS убедитесь, что данные должным образом закодированы и обеззаражены для предотвращения инъекционных атак. Избегайте размещения переменных непосредственно в селекторах или других контекстах CSS.
 
-### Output Encoding for “URL Contexts”
+### Выходная кодировка для "Контекстов URL"
 
-“URL Contexts” refer to variables placed into a URL. Most commonly, a developer will add a parameter or URL fragment to a URL base that is then displayed or used in some operation. Use URL Encoding for these scenarios.
+Под "контекстами URL" понимаются переменные, помещаемые в URL. Чаще всего разработчик добавляет параметр или фрагмент URL в базу URL, который затем отображается или используется в какой-либо операции. Для таких сценариев используйте кодировку URL.
 
 ```HTML
-<a href="http://www.owasp.org?test=$varUnsafe">link</a >
+<a href="http://www.owasp.org?test=$varUnsafe">ссылка</a >.
 ```
 
-Encode all characters with the `%HH` encoding format. Make sure any attributes are fully quoted, same as JS and CSS.
+Кодируйте все символы с помощью формата кодировки `%HH`. Убедитесь, что все атрибуты полностью заключены в кавычки, как в JS и CSS.
 
-#### Common Mistake
+#### Распространенная ошибка
 
-There will be situations where you use a URL in different contexts. The most common one would be adding it to an `href` or `src` attribute of an `<a>` tag. In these scenarios, you should do URL encoding, followed by HTML attribute encoding.
+Бывают ситуации, когда вы используете URL в различных контекстах. Наиболее распространенной является добавление его в атрибут `href` или `src` тега `<a>. В таких ситуациях следует использовать кодировку URL, а затем кодировку атрибутов HTML.
 
-```HTML
+``HTML
 url = "https://site.com?data=" + urlencode(parameter)
-<a href='attributeEncode(url)'>link</a>
+<a href='attributeEncode(url)'>ссылка</a>.
 ```
 
-If you're using JavaScript to construct a URL Query Value, look into using `window.encodeURIComponent(x)`. This is a **Safe Sink** and will automatically URL encode data in it.
+Если вы используете JavaScript для создания значения запроса URL, обратите внимание на использование `window.encodeURIComponent(x)`. Это **безопасный сток**, который автоматически кодирует данные в URL.
 
-### Dangerous Contexts
+### Опасные контексты
 
-Output encoding is not perfect. It will not always prevent XSS. These locations are known as **dangerous contexts**. Dangerous contexts include:
+Кодировка вывода не является идеальной. Она не всегда предотвращает XSS. Такие места известны как **опасные контексты**. К опасным контекстам относятся:
 
 ```HTML
-<script>Directly in a script</script>
-<!-- Inside an HTML comment -->
-<style>Directly in CSS</style>
+<script>Непосредственно в скрипте</script
+<!-- Внутри HTML-комментария -->
+<style>Непосредственно в CSS</style>
 <div ToDefineAnAttribute=test />
 <ToDefineATag href="/test" />
 ```
 
-Other areas to be careful with include:
+Другие области, с которыми следует быть осторожными, включают:
 
-- Callback functions
-- Where URLs are handled in code such as this CSS { background-url : “javascript:alert(xss)”; }
-- All JavaScript event handlers (`onclick()`, `onerror()`, `onmouseover()`).
-- Unsafe JS functions like `eval()`, `setInterval()`, `setTimeout()`
+- Функции обратного вызова
+- Где URL-адреса обрабатываются в коде, таком как этот CSS { background-url : "javascript:alert(xss)"; }
+- Все обработчики событий JavaScript (`onclick()`, `onerror()`, `onmouseover()`).
+- Небезопасные функции JS, такие как `eval()`, `setInterval()`, `setTimeout()`.
 
-Don't place variables into dangerous contexts as even with output encoding, it will not prevent an XSS attack fully.
+Не помещайте переменные в опасные контексты, так как даже кодировка вывода не сможет полностью предотвратить XSS-атаку.
 
-## HTML Sanitization
+## Санация HTML
 
-When users need to author HTML, developers may let users change the styling or structure of content inside a WYSIWYG editor. Output encoding in this case will prevent XSS, but it will break the intended functionality of the application. The styling will not be rendered. In these cases, HTML Sanitization should be used.
+Когда пользователям необходимо создавать HTML, разработчики могут позволить им изменять стиль или структуру контента в WYSIWYG-редакторе. Кодировка вывода в этом случае предотвратит XSS, но нарушит функциональность приложения. Стиль не будет отображаться. В таких случаях следует использовать HTML Sanitization.
 
-HTML Sanitization will strip dangerous HTML from a variable and return a safe string of HTML. OWASP recommends [DOMPurify](https://github.com/cure53/DOMPurify) for HTML Sanitization.
+Санирование HTML удаляет опасный HTML из переменной и возвращает безопасную строку HTML. OWASP рекомендует [DOMPurify](https://github.com/cure53/DOMPurify) для санации HTML.
 
 ```js
 let clean = DOMPurify.sanitize(dirty);
 ```
 
-There are some further things to consider:
+Есть еще несколько моментов, которые следует учитывать:
 
-- If you sanitize content and then modify it afterwards, you can easily void your security efforts.
-- If you sanitize content and then send it to a library for use, check that it doesn’t mutate that string somehow. Otherwise, again, your security efforts are void.
-- You must regularly patch DOMPurify or other HTML Sanitization libraries that you use. Browsers change functionality and bypasses are being discovered regularly.
+- Если вы продезинфицируете содержимое, а затем измените его, вы можете свести на нет все усилия по обеспечению безопасности.
+- Если вы дезинфицируете содержимое, а затем отправляете его в библиотеку для использования, проверьте, не изменяет ли она каким-то образом эту строку. В противном случае все ваши усилия по обеспечению безопасности окажутся напрасными.
+- Вы должны регулярно обновлять DOMPurify или другие используемые вами библиотеки для санирования HTML. Браузеры меняют функциональность, и обходы обнаруживаются регулярно.
 
-## Safe Sinks
+## Безопасные раковины
 
-Security professionals often talk in terms of sources and sinks. If you pollute a river, it'll flow downstream somewhere. It’s the same with computer security. XSS sinks are places where variables are placed into your webpage.
+Специалисты по безопасности часто говорят об источниках и поглотителях. Если вы загрязните реку, она будет течь вниз по течению. То же самое происходит и с компьютерной безопасностью. Источники XSS - это места, где на веб-странице размещаются переменные.
 
-Thankfully, many sinks where variables can be placed are safe. This is because these sinks treat the variable as text and will never execute it. Try to refactor your code to remove references to unsafe sinks like innerHTML, and instead use textContent or value.
+К счастью, многие поглотители, в которые можно поместить переменные, безопасны. Это происходит потому, что такие поглотители воспринимают переменную как текст и никогда не выполняют ее. Попробуйте рефакторить свой код, чтобы удалить ссылки на небезопасные поглотители, такие как innerHTML, и вместо них использовать textContent или value.
 
 ```js
 elem.textContent = dangerVariable;
@@ -192,159 +193,159 @@ document.createElement(dangerVariable);
 elem.innerHTML = DOMPurify.sanitize(dangerVar);
 ```
 
-**Safe HTML Attributes include:** `align`, `alink`, `alt`, `bgcolor`, `border`, `cellpadding`, `cellspacing`, `class`, `color`, `cols`, `colspan`, `coords`, `dir`, `face`, `height`, `hspace`, `ismap`, `lang`, `marginheight`, `marginwidth`, `multiple`, `nohref`, `noresize`, `noshade`, `nowrap`, `ref`, `rel`, `rev`, `rows`, `rowspan`, `scrolling`, `shape`, `span`, `summary`, `tabindex`, `title`, `usemap`, `valign`, `value`, `vlink`, `vspace`, `width`.
+**Безопасные атрибуты HTML включают:** `align`, `alink`, `alt`, `bgcolor`, `border`, `cellpadding`, `cellspacing`, `class`, `color`, `cols`, `colspan`, `coords`, `dir`, `face`, `height`, `hspace`, `ismap`, `lang`, `marginheight`, `marginwidth`, `multiple`, `nohref`, `noresize`, `noshade`, `nowrap`, `ref`, `rel`, `rev`, `rows`, `rowspan`, `scrolling`, `shape`, `span`, `summary`, `tabindex`, `title`, `usemap`, `valign`, `value`, `vlink`, `vspace`, `width`.
 
-For a comprehensive list, check out the [DOMPurify allowlist](https://github.com/cure53/DOMPurify/blob/main/src/attrs.js)
+Полный список можно найти в [DOMPurify allowlist](https://github.com/cure53/DOMPurify/blob/main/src/attrs.js).
 
-## Other Controls
+## Другие элементы управления
 
-Framework Security Protections, Output Encoding, and HTML Sanitization will provide the best protection for your application. OWASP recommends these in all circumstances.
+Защиты безопасности фреймворка, кодирование вывода и санирование HTML обеспечат наилучшую защиту вашего приложения. OWASP рекомендует использовать их при любых обстоятельствах.
 
-Consider adopting the following controls in addition to the above.
+Рассмотрите возможность принятия следующих мер контроля в дополнение к вышеперечисленным.
 
-- Cookie Attributes - These change how JavaScript and browsers can interact with cookies. Cookie attributes try to limit the impact of an XSS attack but don’t prevent the execution of malicious content or address the root cause of the vulnerability.
-- Content Security Policy - An allowlist that prevents content being loaded. It’s easy to make mistakes with the implementation so it should not be your primary defense mechanism. Use a CSP as an additional layer of defense and have a look at the [cheatsheet here](https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html).
-- Web Application Firewalls - These look for known attack strings and block them. WAF’s are unreliable and new bypass techniques are being discovered regularly. WAFs also don’t address the root cause of an XSS vulnerability. In addition, WAFs also miss a class of XSS vulnerabilities that operate exclusively client-side. WAFs are not recommended for preventing XSS, especially DOM-Based XSS.
+- Атрибуты cookie - они изменяют способ взаимодействия JavaScript и браузеров с cookie. Атрибуты cookie пытаются ограничить воздействие XSS-атаки, но не предотвращают выполнение вредоносного содержимого и не устраняют основную причину уязвимости.
+- Политика безопасности содержимого - список разрешений, который предотвращает загрузку содержимого. При ее реализации легко допустить ошибки, поэтому она не должна быть вашим основным механизмом защиты. Используйте CSP в качестве дополнительного уровня защиты и ознакомьтесь с [cheatsheet here](https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html).
+- Брандмауэры веб-приложений - они ищут известные строки атак и блокируют их. WAF ненадежны, и регулярно обнаруживаются новые методы их обхода. WAF также не устраняют первопричину XSS-уязвимости. Кроме того, WAF пропускают класс XSS-уязвимостей, которые работают исключительно на стороне клиента. WAF не рекомендуются для предотвращения XSS, особенно DOM-Based XSS.
 
-### XSS Prevention Rules Summary
+### Краткий обзор правил предотвращения XSS
 
-These snippets of HTML demonstrate how to render untrusted data safely in a variety of different contexts.
+Эти фрагменты HTML демонстрируют, как безопасно отображать недоверенные данные в различных контекстах.
 
-Data Type: String
-Context: HTML Body
-Code: `<span>UNTRUSTED DATA </span>`
-Sample Defense: HTML Entity Encoding (rule \#1)
+- Тип данных: Строка
+- Контекст: Тело HTML
+- Код: `<span>Непроверенные данные </span>`.
+- Образец защиты: кодирование сущностей HTML (правило \#1)
 
-Data Type: Strong
-Context: Safe HTML Attributes
-Code: `<input type="text" name="fname" value="UNTRUSTED DATA ">`
-Sample Defense: Aggressive HTML Entity Encoding (rule \#2), Only place untrusted data into a list of safe attributes (listed below), Strictly validate unsafe attributes such as background, ID and name.
+- Тип данных: Сильный
+- Контекст: Безопасные атрибуты HTML
+- Код: `<input type="text" name="fname" value="UNTRUSTED DATA">`.
+- Образцы защиты: Агрессивное кодирование HTML-сущностей (правило \#2), помещайте недоверенные данные только в список безопасных атрибутов (перечисленных ниже), строго проверяйте небезопасные атрибуты, такие как фон, ID и имя.
 
-Data Type: String
-Context: GET Parameter
-Code: `<a href="/site/search?value=UNTRUSTED DATA ">clickme</a>`
-Sample Defense: URL Encoding (rule \#5).
+Тип данных: Строка
+Контекст: GET Параметр
+Код: `<a href="/site/search?value=UNTRUSTED DATA">clickme</a>`.
+Образец защиты: Кодировка URL (правило \#5).
 
-Data Type: String
-Context: Untrusted URL in a SRC or HREF attribute
-Code: `<a href="UNTRUSTED URL ">clickme</a> <iframe src="UNTRUSTED URL " />`
-Sample Defense: Canonicalize input, URL Validation, Safe URL verification, Allow-list http and HTTPS URLs only (Avoid the JavaScript Protocol to Open a new Window), Attribute encoder.
+Тип данных: Строка
+Контекст: Недоверенный URL-адрес в атрибуте SRC или HREF
+Код: `<a href="UNTRUSTED URL">clickme</a> <iframe src="UNTRUSTED URL" />`.
+Образец защиты: Каноникализация ввода, проверка URL, безопасная проверка URL, список разрешенных URL только http и HTTPS (избегайте протокола JavaScript для открытия нового окна), кодировщик атрибутов.
 
-Data Type: String
-Context: CSS Value
-Code: `HTML <div style="width: UNTRUSTED DATA ;">Selection</div>`
-Sample Defense: Strict structural validation (rule \#4), CSS hex encoding, Good design of CSS features.
+Тип данных: Строка
+Контекст: Значение CSS
+Код: `HTML <div style="width: UNTRUSTED DATA ;">Выбор</div>`.
+Образец защиты: Строгая структурная валидация (правило \#4), шестнадцатеричная кодировка CSS, хороший дизайн CSS-функций.
 
-Data Type: String
-Context: JavaScript Variable
-Code: `<script>var currentValue='UNTRUSTED DATA ';</script> <script>someFunction('UNTRUSTED DATA ');</script>`
-Sample Defense: Ensure JavaScript variables are quoted, JavaScript hex encoding, JavaScript Unicode encoding, avoid backslash encoding (`\"` or `\'` or `\\`).
+Тип данных: Строка
+Контекст: Переменная JavaScript
+Код: `<script>var currentValue='UNTRUSTED DATA ';</script> <script>someFunction('UNTRUSTED DATA ');</script>`.
+Пример защиты: Убедитесь, что переменные JavaScript заключены в кавычки, кодировка JavaScript шестнадцатеричная, кодировка JavaScript Unicode, избегайте кодировки обратной косой черты (`\"` или `\'` или `\\\`).
 
-Data Type: HTML
-Context: HTML Body
-Code: `<div>UNTRUSTED HTML</div>`
-Sample Defense: HTML validation (JSoup, AntiSamy, HTML Sanitizer...).
+Тип данных: HTML
+Контекст: Тело HTML
+Код: `<div>Совершенный HTML</div>`
+Образец защиты: проверка HTML (JSoup, AntiSamy, HTML Sanitizer...).
 
-Data Type: String
-Context: DOM XSS
-Code: `<script>document.write("UNTRUSTED INPUT: " + document.location.hash );<script/>`
-Sample Defense: [DOM based XSS Prevention Cheat Sheet](DOM_based_XSS_Prevention_Cheat_Sheet.md) |
+Тип данных: Строка
+Контекст: DOM XSS
+Код: `<script>document.write("UNTRUSTED INPUT: " + document.location.hash );<script/>`
+Образец защиты: [DOM-based XSS Prevention Cheat Sheet](DOM_based_XSS_Prevention_Cheat_Sheet.md)|
 
-### Output Encoding Rules Summary
+### Сводка правил кодирования выходных данных
 
-The purpose of output encoding (as it relates to Cross Site Scripting) is to convert untrusted input into a safe form where the input is displayed as **data** to the user without executing as **code** in the browser. The following charts provides a list of critical output encoding methods needed to stop Cross Site Scripting.
+Цель кодирования вывода (применительно к Cross Site Scripting) - преобразовать недоверенный ввод в безопасную форму, в которой он отображается как **данные** для пользователя, не исполняясь в браузере как **код**. На следующих диаграммах приведен список критических методов кодирования вывода, необходимых для предотвращения Cross Site Scripting.
 
-Encoding Type: HTML Entity
-Encoding Mechanism: Convert `&` to `&amp;`, Convert `<` to `&lt;`, Convert `>` to `&gt;`, Convert `"` to `&quot;`, Convert `'` to `&#x27`
+Тип кодировки: Сущность HTML
+Механизм кодирования: Преобразование `&` в `&amp;`, преобразование `<` в `&lt;`, преобразование `>` в `&gt;`, преобразование ``` в `&quot;`, преобразование ``` в `&#x27``.
 
-Encoding Type: HTML Attribute Encoding
-Encoding Mechanism: Encode all characters with the HTML Entity `&#xHH;` format, including spaces, where **HH** represents the hexadecimal value of the character in Unicode. For example, `A` becomes `&#x41`. All alphanumeric characters (letters A to Z, a to z, and digits 0 to 9) remain unencoded.
+Тип кодировки: Кодировка атрибутов HTML
+Механизм кодирования: Кодируйте все символы в формате HTML Entity `&#xHH;`, включая пробелы, где **HH** представляет шестнадцатеричное значение символа в Unicode. Например, `A` становится `&#x41`. Все буквенно-цифровые символы (буквы от A до Z, от a до z и цифры от 0 до 9) остаются некодированными.
 
-Encoding Type: URL Encoding
-Encoding Mechanism: Use standard percent encoding, as specified in the [W3C specification](http://www.w3.org/TR/html401/interact/forms.html#h-17.13.4.1), to encode parameter values. Be cautious and only encode parameter values, not the entire URL or path fragments of a URL.
+Тип кодирования: Кодировка URL
+Механизм кодирования: Для кодирования значений параметров используйте стандартное процентное кодирование, как указано в [спецификации W3C](http://www.w3.org/TR/html401/interact/forms.html#h-17.13.4.1). Будьте осторожны и кодируйте только значения параметров, а не весь URL или фрагменты пути к URL.
 
-Encoding Type: JavaScript Encoding
-Encoding Mechanism: Encode all characters using the Unicode `\uXXXX` encoding format, where **XXXX** represents the hexadecimal Unicode code point. For example, `A` becomes `\u0041`. All alphanumeric characters (letters A to Z, a to z, and digits 0 to 9) remain unencoded.
+Тип кодировки: Кодировка JavaScript
+Механизм кодирования: Кодируйте все символы, используя формат кодировки Unicode `\uXXXX`, где **XXXX** представляет шестнадцатеричную кодовую точку Unicode. Например, `A` становится `\u0041`. Все буквенно-цифровые символы (буквы от A до Z, от a до z и цифры от 0 до 9) остаются некодированными.
 
-Encoding Type: CSS Hex Encoding
-Encoding Mechanism: CSS encoding supports both `\XX` and `\XXXXXX` formats. To ensure proper encoding, consider these options: (a) Add a space after the CSS encode (which will be ignored by the CSS parser), or (b) use the full six-character CSS encoding format by zero-padding the value. For example, `A` becomes `\41` (short format) or `\000041` (full format). Alphanumeric characters (letters A to Z, a to z, and digits 0 to 9) remain unencoded.
+Тип кодировки: Шестнадцатеричная кодировка CSS
+Механизм кодирования: Кодировка CSS поддерживает форматы `\XX` и `\XXXX`. Чтобы обеспечить правильное кодирование, рассмотрите следующие варианты: (a) добавьте пробел после кодировки CSS (он будет проигнорирован парсером CSS), или (b) используйте полный шестисимвольный формат кодировки CSS, добавив нулевую точку в значение. Например, `A` становится `\41` (короткий формат) или `\000041` (полный формат). Буквенно-цифровые символы (буквы от A до Z, от a до z и цифры от 0 до 9) остаются незакодированными.
 
-## Common Anti-patterns: Ineffective Approaches to Avoid
+## Распространенные антипаттерны: Неэффективные подходы, которых следует избегать
 
-Defending against XSS is hard. For that reason, some have sought shortcuts to preventing XSS.
+Защититься от XSS очень сложно. По этой причине некоторые ищут короткие пути для предотвращения XSS.
 
-We're going to examine two common [anti-patterns](https://en.wikipedia.org/wiki/Anti-pattern) that frequently show up in ancient posts, but are still commonly cited as solutions in modern posts about XSS defense on programmer forums such as Stack Overflow and other developer hangouts.
+Мы рассмотрим два распространенных [антипаттерна](https://en.wikipedia.org/wiki/Anti-pattern), которые часто встречаются в древних сообщениях, но по-прежнему часто упоминаются в качестве решений в современных сообщениях о защите от XSS на форумах программистов, таких как Stack Overflow и других тусовках разработчиков.
 
-### Sole Reliance on Content-Security-Policy (CSP) Headers
+### Единственная зависимость от заголовков Content-Security-Policy (CSP)
 
-First, let us be clear, we are a strong proponent of CSP when it is used properly. In the context of XSS defense, CSP works best when it it is:
+Во-первых, давайте проясним, что мы являемся убежденными сторонниками CSP, когда он используется правильно. В контексте защиты от XSS CSP работает лучше всего:
 
-- Used as a defense-in-depth technique.
-- Customized for each individual application rather than being deployed as a one-size-fits-all enterprise solution.
+- Используется как техника "защита в глубину".
+- Настраивается под каждое отдельное приложение, а не развертывается как универсальное корпоративное решение.
 
-What we are against is a blanket CSP policy for the entire enterprise. Problems with that approach are:
+Мы против того, чтобы политика CSP была единой для всего предприятия. Проблемы с таким подходом следующие:
 
-#### Problem 1 - Assumption Browser Versions Support CSP Equally
+#### Проблема 1 - предположение, что версии браузеров одинаково поддерживают CSP
 
-There usually is an implicit assumption that all the customer browsers support all the CSP constructs that your blanket CSP policy is using. Furthermore, this assumption often is done without testing the explicitly the `User-Agent` request header to see if it indeed is a supported browser type and rejecting the use of the site if it is not. Why? Because most businesses don't want to turn away customers if they are using an outdated browser that doesn't support some CSP Level 2 or Level 3 construct that they are relying on for XSS prevention.  (Statistically, almost all browsers support CSP Level 1 directives, so unless you are worried about Grandpa pulling out his old Windows 98 laptop and using some ancient version of Internet Explorer to access your site, CSP Level 1 support can probably be assumed.)
+Обычно существует неявное предположение, что все браузеры клиентов поддерживают все конструкции CSP, которые использует ваша общая политика CSP. Более того, это предположение часто делается без явного тестирования заголовка запроса `User-Agent` на предмет того, действительно ли это поддерживаемый тип браузера, и отказа в использовании сайта, если это не так. Почему? Потому что большинство компаний не хотят отказывать клиентам, если они используют устаревший браузер, который не поддерживает некоторые конструкции CSP уровня 2 или 3, на которые они полагаются для предотвращения XSS.  (По статистике, почти все браузеры поддерживают директивы CSP уровня 1, поэтому, если вы не беспокоитесь о том, что дедушка достанет свой старый ноутбук с Windows 98 и будет использовать какую-нибудь древнюю версию Internet Explorer для доступа к вашему сайту, поддержку CSP уровня 1, скорее всего, можно не предполагать).
 
-#### Problem 2 - Issues Supporting Legacy Applications
+#### Проблема 2 - проблемы с поддержкой устаревших приложений
 
-Mandatory universal enterprise-wide CSP response headers are inevitably going to break some web applications, especially legacy ones. This causes the business to push-back against AppSec guidelines and inevitably results in AppSec issuing waivers and/or security exceptions until the application code can be patched up. But these security exceptions allow cracks in your XSS armor, and even if the cracks are temporary they still can impact your business, at least on a reputational basis.
+Обязательные универсальные для всего предприятия заголовки ответов CSP неизбежно приведут к поломке некоторых веб-приложений, особенно устаревших. Это приводит к тому, что бизнес начинает сопротивляться рекомендациям AppSec и неизбежно приводит к тому, что AppSec выдает исключения и/или исключения по безопасности до тех пор, пока код приложения не будет исправлен. Но эти исключения из правил безопасности дают трещины в броне XSS, и даже если эти трещины временные, они все равно могут повлиять на ваш бизнес, по крайней мере, на репутацию.
 
-### Reliance on HTTP Interceptors
+### Опора на HTTP-перехватчики
 
-The other common anti-pattern that we have observed is the attempt to deal with validation and/or output encoding in some sort of interceptor such as a Spring Interceptor that generally implements `org.springframework.web.servlet.HandlerInterceptor` or as a JavaEE servlet filter that implements `javax.servlet.Filter`. While this can be successful for very specific applications (for instance, if you validate that all the input requests that are ever rendered are only alphanumeric data), it violates the major tenet of XSS defense where perform output encoding as close to where the data is rendered is possible. Generally, the HTTP request is examined for query and POST parameters but other things HTTP request headers that might be rendered such as cookie data, are not examined. The common approach that we've seen is someone will call either `ESAPI.validator().getValidSafeHTML()` or `ESAPI.encoder.canonicalize()` and depending on the results will redirect to an error page or call something like `ESAPI.encoder().encodeForHTML()`. Aside from the fact that this approach often misses tainted input such as request headers or "extra path information" in a URI, the approach completely ignores the fact that the output encoding is completely non-contextual. For example, how does a servlet filter know that an input query parameter is going to be rendered in an HTML context (i.e., between HTML tags) rather than in a JavaScript context such as within a `<script>` tag or used with a JavaScript event handler attribute? It doesn't. And because JavaScript and HTML encoding are not interchangeable, you leave yourself still open to XSS attacks.
+Другой распространенный антипаттерн, который мы наблюдали, - это попытка справиться с валидацией и/или кодировкой вывода в каком-нибудь перехватчике, например, в Spring Interceptor, который обычно реализует `org.springframework.web.servlet.HandlerInterceptor`, или в фильтре сервлетов JavaEE, который реализует `javax.servlet.Filter`. Хотя это может быть успешным для очень специфических приложений (например, если вы проверяете, что все запросы ввода, которые когда-либо будут отображаться, содержат только буквенно-цифровые данные), это нарушает основной принцип защиты от XSS, который заключается в том, чтобы выполнять кодировку вывода как можно ближе к тому месту, где данные будут отображаться. Как правило, HTTP-запрос проверяется на наличие параметров запроса и POST, но другие заголовки HTTP-запроса, которые могут быть отображены, например данные cookie, не рассматриваются. Обычно мы видим, что кто-то вызывает либо `ESAPI.validator().getValidSafeHTML()`, либо `ESAPI.encoder.canonicalize()` и в зависимости от результатов перенаправляет на страницу ошибки или вызывает что-то вроде `ESAPI.encoder().encodeForHTML()`. Помимо того, что такой подход часто пропускает испорченные входные данные, такие как заголовки запроса или "лишнюю информацию о пути" в URI, он полностью игнорирует тот факт, что выходная кодировка совершенно неконтекстна. Например, откуда фильтр сервлетов знает, что входной параметр запроса будет выведен в контексте HTML (т. е. между тегами HTML), а не в контексте JavaScript, например, внутри тега `<script>` или с помощью атрибута обработчика событий JavaScript? Нет. А поскольку кодировки JavaScript и HTML не являются взаимозаменяемыми, вы остаетесь открытыми для XSS-атак.
 
-Unless your filter or interceptor has full knowledge of your application and specifically an awareness of how your application uses each parameter for a given request, it can't succeed for all the possible edge cases. And we would contend that it never will be able to using this approach because providing that additional required context is way too complex of a design and accidentally introducing some other vulnerability (possibly one whose impact is far worse than XSS) is almost inevitable if you attempt it.
+Если ваш фильтр или перехватчик не имеет полного представления о вашем приложении и, в частности, не знает, как ваше приложение использует каждый параметр для данного запроса, он не сможет добиться успеха во всех возможных крайних случаях. И мы утверждаем, что при таком подходе он никогда не сможет этого сделать, поскольку обеспечение дополнительного необходимого контекста - слишком сложная задача, и случайное внедрение какой-либо другой уязвимости (возможно, гораздо более серьезной, чем XSS) практически неизбежно, если вы попытаетесь это сделать.
 
-This naive approach usually has at least one of these four problems.
+При таком наивном подходе обычно возникает хотя бы одна из этих четырех проблем.
 
-#### Problem 1 - Encoding for specific context not satisfactory for all URI paths
+#### Проблема 1 - Кодировка для конкретного контекста не является удовлетворительной для всех путей URI
 
-One problem is the improper encoding that can still allow exploitable XSS in some URI paths of your application. An example might be a 'lastname' form parameter from a POST that normally is displayed between HTML tags so that HTML encoding is sufficient, but there may be an edge case or two where lastname is actually rendered as part of a JavaScript block where the HTML encoding is not sufficient and thus it is vulnerable to XSS attacks.
+Одна из проблем заключается в неправильной кодировке, которая все еще может позволить использовать XSS в некоторых путях URI вашего приложения. Примером может быть параметр формы 'lastname' из POST, который обычно отображается между HTML-тегами, так что кодировка HTML достаточна, но может быть крайний случай или два, когда lastname фактически отображается как часть блока JavaScript, где кодировка HTML недостаточна, и, таким образом, он уязвим для XSS-атак.
 
-#### Problem 2 - Interceptor approach can lead to broken rendering caused by improper or double encoding
+#### Проблема 2 - подход с использованием перехватчиков может привести к нарушению рендеринга из-за неправильного или двойного кодирования.
 
-A second problem with this approach can be the application can result in incorrect or double encoding. E.g., suppose in the previous example, a developer has done proper output encoding for the JavaScript rendering of lastname. But if it is already been HTML output encoded too, when it is rendered, a legitimate last name like "O'Hara" might come out rendered like "O\&#39;Hara".
+Вторая проблема, связанная с этим подходом, может заключаться в том, что применение может привести к неправильной или двойной кодировке. Например, предположим, что в предыдущем примере разработчик сделал правильную кодировку вывода для JavaScript-рендеринга lastname. Но если она уже была закодирована и в HTML, то при выводе на экран легитимная фамилия, например "O'Hara", может выглядеть как "O\&#39;Hara".
 
-While this second case is not strictly a security problem, if it happens often enough, it can result in business push-back against the use of the filter and thus the business may decide on disabling the filter or a way to specify exceptions for certain pages or parameters being filtered, which in turn will weaken any XSS defense that it was providing.
+Хотя этот второй случай не является проблемой безопасности, если он происходит достаточно часто, это может привести к тому, что бизнес будет против использования фильтра, и, таким образом, бизнес может принять решение об отключении фильтра или способе указать исключения для определенных страниц или параметров, подлежащих фильтрации, что, в свою очередь, ослабит любую защиту от XSS, которую он обеспечивал.
 
-#### Problem 3 - Interceptors not effective against DOM-based XSS
+#### Проблема 3 - Перехватчики неэффективны против XSS на основе DOM.
 
-The third problem with this is that it is not effective against DOM-based XSS. To do that, one would have to have an interceptor or filter scan all the JavaScript content going as part of an HTTP response, try to figure out the tainted output and see if it it is susceptible to DOM-based XSS. That simply is not practical.
+Третья проблема заключается в том, что этот способ не эффективен против XSS на основе DOM. Для этого нужно, чтобы перехватчик или фильтр сканировал все содержимое JavaScript, идущее в составе HTTP-ответа, пытался найти испорченный вывод и проверить, не является ли он восприимчивым к DOM-based XSS. Это просто нецелесообразно.
 
-#### Problem 4 - Interceptors not effective where data from responses originates outside your application
+#### Проблема 4 - Перехватчики неэффективны, если данные из ответов поступают за пределы вашего приложения.
 
-The last problem with interceptors is that they generally are oblivious to data in your application's responses that originate from other internal sources such as an internal REST-based web service or even an internal database. The problem is that unless your application is strictly validating that data _at the point that it is retrieved_ (which generally is the only point your application has enough context to do a strict data validation using an allow-list approach), that data should always be considered tainted. But if you are attempting to do output encoding or strict data validation all of tainted data on the HTTP response side of an interceptor (such as a Java servlet filter), at that point, your application's interceptor will have no idea of there is tainted data present from those REST web services or other databases that you used. The approach that generally is used on response-side interceptors attempting to provide XSS defense has been to only consider the matching "input parameters" as tainted and do output encoding or HTML sanitization on them and everything else is considered safe. But sometimes it's not? While it frequently is assumed that all internal web services and all internal databases can be "trusted" and used as it, this is a very bad assumption to make unless you have included that in some deep threat modeling for your application.
+Последняя проблема с перехватчиками заключается в том, что они обычно не обращают внимания на данные в ответах вашего приложения, которые поступают из других внутренних источников, таких как внутренний веб-сервис на базе REST или даже внутренняя база данных. Проблема заключается в том, что если ваше приложение не проверяет эти данные _в момент их получения_ (а это, как правило, единственный момент, когда у вашего приложения достаточно контекста для строгой проверки данных с помощью подхода, основанного на разрешающих списках), эти данные всегда должны считаться испорченными. Но если вы пытаетесь выполнить кодирование вывода или строгую проверку данных на стороне HTTP-ответа перехватчика (например, фильтра сервлета Java), то в этот момент перехватчик вашего приложения не будет иметь представления о наличии испорченных данных, полученных от используемых вами веб-служб REST или других баз данных. Подход, который обычно используется в перехватчиках на стороне ответа, пытающихся обеспечить защиту от XSS, заключается в том, что только совпадающие "входные параметры" считаются испорченными и для них выполняется кодирование вывода или санация HTML, а все остальное считается безопасным. Но иногда это не так? Хотя часто предполагается, что все внутренние веб-службы и все внутренние базы данных могут быть "доверенными" и использоваться как таковые, это очень плохое предположение, если только вы не включили его в глубокое моделирование угроз для вашего приложения.
 
-For example, suppose you are working on an application to show a customer their detailed monthly bill. Let's assume that your application is either querying a foreign (as in not part of your specific application) internal database or REST web service that your application uses to obtain the user's full name, address, etc. But that data originates from another application which you are assuming is "trusted" but actually has an unreported persistent XSS vulnerability on the various customer address-related fields. Furthermore, let's assume that you company's customer support staff can examine a customer's detailed bill to assist them when customers have questions about their bills. So nefarious customer decides to plant an XSS bomb in the address field and then calls customer service for assistance with the bill. Should a scenario like that ever play out, an interceptor attempting to prevent XSS is going to miss that completely and the result is going to be something much worse than just popping an alert box to display "1" or "XSS" or "pwn'd".
+Например, предположим, что вы работаете над приложением, которое должно показывать клиенту его подробный ежемесячный счет. Предположим, что ваше приложение запрашивает чужую (то есть не принадлежащую вашему конкретному приложению) внутреннюю базу данных или веб-сервис REST, который используется вашим приложением для получения полного имени пользователя, его адреса и т. д. Но эти данные поступают из другого приложения, которое, как вы полагаете, является "надежным", но на самом деле имеет незарегистрированную постоянную XSS-уязвимость в различных полях, связанных с адресами клиентов. Более того, предположим, что сотрудники службы поддержки вашей компании могут изучить подробный счет клиента, чтобы помочь им, когда у клиентов возникают вопросы по поводу их счетов. И вот недобросовестный клиент решает заложить XSS-бомбу в поле адреса, а затем звонит в службу поддержки, чтобы получить помощь со счетом. Если подобный сценарий когда-либо будет реализован, перехватчик, пытающийся предотвратить XSS, полностью пропустит это, и результатом будет нечто гораздо худшее, чем простое появление окна оповещения с сообщением "1", "XSS" или "pwn'd".
 
-### Summary
+### Резюме
 
-One final note: If deploying interceptors / filters as an XSS defense was a useful approach against XSS attacks, don't you think that it would be incorporated into all commercial Web Application Firewalls (WAFs) and be an approach that OWASP recommends in this cheat sheet?
+И последнее замечание: если бы развертывание перехватчиков / фильтров в качестве защиты от XSS-атак было полезным подходом, разве вы не думаете, что он был бы включен во все коммерческие брандмауэры веб-приложений (WAF) и стал бы подходом, который OWASP рекомендует в этой шпаргалке?
 
-## Related Articles
+## Похожие статьи
 
-**XSS Attack Cheat Sheet:**
+Шпаргалка по атакам **XSS-атаки:**.
 
-The following article describes how attackers can exploit different kinds of XSS vulnerabilities (and this article was created to help you avoid them):
+В следующей статье описывается, как злоумышленники могут использовать различные виды XSS-уязвимостей (и эта статья была создана, чтобы помочь вам избежать их):
 
 - OWASP: [XSS Filter Evasion Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/XSS_Filter_Evasion_Cheat_Sheet.html).
 
-**Description of XSS Vulnerabilities:**
+**Описание XSS-уязвимостей:**.
 
-- OWASP article on [XSS](https://owasp.org/www-community/attacks/xss/) Vulnerabilities.
+- Статья OWASP об уязвимостях [XSS](https://owasp.org/www-community/attacks/xss/).
 
-**Discussion about the Types of XSS Vulnerabilities:**
+**Обсуждение типов XSS-уязвимостей:**.
 
 - [Types of Cross-Site Scripting](https://owasp.org/www-community/Types_of_Cross-Site_Scripting).
 
-**How to Review Code for Cross-Site Scripting Vulnerabilities:**
+**Как проверить код на наличие уязвимостей межсайтового скриптинга:**.
 
-- [OWASP Code Review Guide](https://owasp.org/www-project-code-review-guide/) article on [Reviewing Code for Cross-site scripting](https://wiki.owasp.org/index.php/Reviewing_Code_for_Cross-site_scripting) Vulnerabilities.
+- [OWASP Code Review Guide](https://owasp.org/www-project-code-review-guide/) Статья о [Reviewing Code for Cross-site scripting](https://wiki.owasp.org/index.php/Reviewing_Code_for_Cross-site_scripting) Уязвимости.
 
-**How to Test for Cross-Site Scripting Vulnerabilities:**
+**Как проверить наличие уязвимостей межсайтового скриптинга:**.
 
-- [OWASP Testing Guide](https://owasp.org/www-project-web-security-testing-guide/) article on testing for Cross-Site Scripting vulnerabilities.
-- [XSS Experimental Minimal Encoding Rules](https://wiki.owasp.org/index.php/XSS_Experimental_Minimal_Encoding_Rules)#  <#Title#>
+- [OWASP Testing Guide](https://owasp.org/www-project-web-security-testing-guide/) статья о тестировании уязвимостей Cross-Site Scripting.
+- [XSS Экспериментальные правила минимальной кодировки](https://wiki.owasp.org/index.php/XSS_Experimental_Minimal_Encoding_Rules)# <#Title#>.

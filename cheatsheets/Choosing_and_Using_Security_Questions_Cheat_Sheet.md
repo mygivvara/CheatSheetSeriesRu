@@ -1,148 +1,147 @@
-# Choosing and Using Security Questions Cheat Sheet
+# Шпаргалка по выбору и использованию контрольных вопросов
 
-## Introduction
+## Введение
 
-**WARNING: Security questions are no longer recognized as an acceptable authentication factor per [NIST SP 800-63](https://pages.nist.gov/800-63-3/sp800-63b.html). Account recovery is just an alternate way to authenticate so it should be no weaker than regular authentication. See [SP 800-63B sec 5.1.1.2 paragraph 4](https://pages.nist.gov/800-63-3/sp800-63b.html#sec5): *Verifiers SHALL NOT prompt subscribers to use specific types of information (e.g., “What was the name of your first pet?”) when choosing memorized secrets*.**
+**ВНИМАНИЕ: контрольные вопросы больше не считаются допустимым фактором аутентификации в соответствии с [NIST SP 800-63](https://pages.nist.gov/800-63-3/sp800-63b.html). Восстановление учетной записи — это просто альтернативный способ аутентификации, поэтому он не должен быть слабее обычной аутентификации. См. [SP 800-63B секц. 5.1.1.2 параграф 4](https://pages.nist.gov/800-63-3/sp800-63b.html#sec5): *Подтверждающие службы НЕ ДОЛЖНЫ предлагать подписчикам использовать определенные типы информации (например, «Как зовут вашего первого питомца?») при выборе запоминаемых секретов*.**
 
-If you are curious, please have a look at this [study](https://www.microsoft.com/en-us/research/publication/its-no-secret-measuring-the-security-and-reliability-of-authentication-via-secret-questions/) by Microsoft Research in 2009 and this [study](https://research.google/pubs/pub43783/) performed at Google in 2015. The accompanying [Security blog](https://security.googleblog.com/2015/05/new-research-some-tough-questions-for.html) update includes an infographic on the issues identified with security questions.
+Если вам интересно, ознакомьтесь с этим [исследованием](https://www.microsoft.com/en-us/research/publication/its-no-secret-measuring-the-security-and-reliability-of-authentication-via-secret-questions/) , проведенным Microsoft Research в 2009 году, и этим [исследованием](https://research.google/pubs/pub43783/), выполненным в Google в 2015 году. Сопутствующее обновление в [блоге безопасности](https://security.googleblog.com/2015/05/new-research-some-tough-questions-for.html) включает инфографику по вопросам, связанным с контрольными вопросами.
 
-**Please Note:** While there are no acceptable uses of security questions in secure software, this cheat sheet provides guidance on how to choose strong security questions for legacy purposes.
+**Обратите внимание:** Хотя контрольные вопросы больше не рекомендуются для использования в безопасных программах, эта шпаргалка предоставляет рекомендации по выбору надежных контрольных вопросов для использования в старых системах.
 
-## Choosing Security Questions
+## Выбор контрольных вопросов
 
-### Desired Characteristics
+### Желаемые характеристики
 
-Any security questions presented to users to reset forgotten passwords must meet the following characteristics:
+Любые контрольные вопросы, представленные пользователям для сброса забытых паролей, должны соответствовать следующим характеристикам:
 
-| Characteristic | Explanation |
+| Характеристика | Описание |
 |----------------|-------------|
-| Memorable | The user must be able to recall the answer to the question, potentially years after creating their account. |
-| Consistent | The answer to the question must not change over time. |
-| Applicable | The user must be able to answer the question.
-| Confidential | The answer to the question must be hard for an attacker to obtain. |
-| Specific | The answer should be clear to the user. |
+| Легко запоминаемый | Пользователь должен иметь возможность вспомнить ответ на вопрос, возможно, через годы после создания учетной записи. |
+| Постоянный | Ответ на вопрос не должен меняться со временем. |
+| Применимый | Пользователь должен быть в состоянии ответить на вопрос.
+| Конфиденциальный | Ответ на вопрос должен быть сложным для получения злоумышленником. |
+| Точный | Ответ должен быть понятен пользователю. |
 
-### Types of Security Questions
+### Типы контрольных вопросов
 
-Security questions fall into two main types. With *user defined* security questions, the user must choose a question from a list, and provide an answer to the question. Common examples are "What is your favourite colour?" or "What was your first car?"
+Контрольные вопросы делятся на два основных типа. С *пользовательскими* контрольными вопросами пользователь должен выбрать вопрос из списка и дать ответ на него. Общие примеры включают "Какой ваш любимый цвет?" или "Какой у вас был первый автомобиль?".
 
-These are easy for applications to implement, as the additional information required is provided by the user when they first create their account. However, users will often choose weak or easily discovered answers to these questions.
+Такие вопросы легко реализовать в приложениях, так как дополнительная информация предоставляется пользователем при первом создании учетной записи. Однако пользователи часто выбирают слабые или легко угадываемые ответы на эти вопросы.
 
-*System defined* security questions are based on information that is already known about the user. This approach avoids having to ask the user to provide specific security questions and answers, and also prevents them from being able to choose weak details. However it relies on sufficient information already being stored about the user, and on this information being hard for an attacker to obtain.
+*Системные* контрольные вопросы основаны на информации, уже известной о пользователе. Такой подход позволяет избежать необходимости запрашивать у пользователя конкретные контрольные вопросы и ответы, а также предотвращает возможность выбора слабых данных. Однако он зависит от того, что уже хранится достаточное количество информации о пользователе и что эта информация сложна для получения злоумышленником.
 
-### User Defined Security Questions
+### Пользовательские контрольные вопросы
 
-#### Bad Questions
+#### Плохие вопросы
 
-Any questions that do not have all of the characteristics discussed above should be avoided. The table below gives some examples of bad security questions:
+Следует избегать любых вопросов, которые не обладают всеми обсуждаемыми выше характеристиками. В таблице ниже приведены некоторые примеры плохих контрольных вопросов:
 
-| Question | Problem |
+| Вопрос | Проблема |
 |----------|---------|
-| When is your date of birth? | Easy for an attacker to discover. |
-| What is your memorable date? | Most users will just enter their birthday. |
-| What is your favourite movie? | Likely to change over time. |
-| What is your favourite cricket team? | Not applicable to most users. |
-| What is the make and model of your first car? | Fairly small range of likely answers. |
-| What is your nickname? | This could be guessed by glancing through social media posts. |
+| Когда ваш день рождения? | Легко узнать злоумышленнику. | 
+| Какая ваша запоминающаяся дата? | Большинство пользователей просто введут свой день рождения. |
+| Какой ваш любимый фильм? | Вероятно, меняется со временем. |
+| Какой ваш любимый крикетный клуб? | Не подходит для большинства пользователей. |
+| Какой маркой и моделью был ваш первый автомобиль? | Довольно небольшой диапазон возможных ответов. |
+| Как вас называют друзья? | Можно догадаться, просто просматривая сообщения в социальных сетях. |
 
-Additionally, the context of the application must be considered when deciding whether questions are good or bad. For example, a question such as "What was your maths teacher's surname in your 8th year of school?" would be very easy to guess if it was using in a virtual learning environment for your school (as other students probably know this information), but would be much stronger for an online gaming website.
+Кроме того, следует учитывать контекст приложения при решении, хорошие или плохие вопросы. Например, вопрос типа "Какая была фамилия вашего учителя математики в 8 классе?" было бы легко угадать, если бы он использовался в виртуальной учебной среде вашей школы (так как другие ученики, вероятно, знают эту информацию), но был бы намного сильнее для веб-сайта онлайн-игр.
 
-#### Good Questions
+#### Хорошие вопросы
 
-Many good security questions are not applicable to all users, so the best approach is to give the user a list of security questions that they can choose from. This allows you to have more specific questions (with more secure answers), while still providing every user with questions that they can answer.
+Многие хорошие контрольные вопросы не подходят всем пользователям, поэтому лучший подход — предложить пользователю выбрать из списка контрольных вопросов. Это позволяет использовать более конкретные вопросы (с более безопасными ответами), при этом предоставляя каждому пользователю вопросы, на которые они могут ответить.
 
-The following list provides some examples of good questions:
+Ниже приведены примеры хороших вопросов:
 
-- What is the name of a college you applied to but didn’t attend?
-- What was the name of the first school you remember attending?
-- Where was the destination of your most memorable school field trip?
-- What was your maths teacher's surname in your 8th year of school?
-- What was the name of your first stuffed toy?
-- What was your driving instructor's first name?
+- Какое учебное заведение вы подавали заявку, но не посещали?
+- Какое название первой школы, в которую вы ходили?
+- Каково было направление вашей самой запоминающейся школьной поездки?
+- Какова была фамилия вашего учителя математики в 8 классе?
+- Какое имя было у вашей первой мягкой игрушки?
+- Какое имя было у вашего инструктора по вождению?
 
-Much like passwords, there is a risk that users will re-use recovery questions between different sites, which could expose the users if the other site is compromised. As such, there are benefits to having unique security questions that are unlikely to be shared between sites. An easy way to achieve this is to create more targeted questions based on the type of application. For example, on a share dealing platform, financial related questions such as "What is the first company you owned shares in?" could be used.
+Как и в случае с паролями, существует риск того, что пользователи будут использовать одни и те же вопросы для восстановления между различными сайтами, что может подвергнуть пользователей риску, если другой сайт будет скомпрометирован. Таким образом, есть преимущества в использовании уникальных контрольных вопросов, которые вряд ли будут использоваться между сайтами. Легкий способ добиться этого — создать более целенаправленные вопросы в зависимости от типа приложения. Например, на платформе торговли акциями могут использоваться финансовые вопросы, такие как "В какой компании вы впервые купили акции?"
 
-#### Allowing Users to Write Their Own Questions
+#### Разрешение пользователям создавать свои собственные вопросы
 
-Allowing users to write their own security questions can result in them choosing very strong and unique questions that would be very hard for an attacker to guess. However, there is also a significant risk that users will choose weak questions. In some cases, users might even set a recovery question to a reminder of what their password is - allowing anyone guessing their email address to compromise their account.
+Разрешение пользователям создавать свои собственные контрольные вопросы может привести к тому, что они выберут очень сильные и уникальные вопросы, которые будет трудно угадать злоумышленнику. Однако существует также значительный риск, что пользователи выберут слабые вопросы. В некоторых случаях пользователи могут даже установить контрольный вопрос в качестве напоминания о своем пароле, что позволит любому, угадавшему их адрес электронной почты, взломать их учетную запись.
 
-As such, it is generally best not to allow users to write their own questions.
+Таким образом, обычно лучше не позволять пользователям создавать свои собственные вопросы.
 
-#### Restricting Answers
+#### Ограничение ответов
 
-Enforcing a minimum length for answers can prevent users from entering strings such as "a" or "123" for their answers. However, depending on the questions asked, it could also prevent users from being able to correctly answer the question. For example, asking for a first name or surname could result in a two letter answer such as "Li", and a colour-based question could be four letters such as "blue".
+Принудительное соблюдение минимальной длины ответов может предотвратить ввод пользователями строк, таких как "a" или "123" в качестве ответов. Однако, в зависимости от заданных вопросов, это также может помешать пользователям правильно ответить на вопрос. Например, вопрос о первом имени или фамилии может привести к двухбуквенному ответу, такому как "Ли", а вопрос на основе цвета — к пятибуквенному, например, "синий".
 
-Answers should also be checked against a denylist, including:
+Ответы также следует проверять по запретному списку, который включает:
 
-- The username or email address.
-- The user's current password.
-- Common strings such as "123" or "password".
+- Имя пользователя или адрес электронной почты.
+- Текущий пароль пользователя.
+- Частые строки, такие как "123" или "пароль".
 
-#### Renewing Security Questions
+#### Обновление контрольных вопросов
 
-If the security questions are not used as part of the main authentication process, then consider periodically (such as when they are changing their passwords after expiration) prompting the user to review their security questions and verify that they still know the answers. This should give them a chance to update any answers that may have changed (although ideally this shouldn't happen with good questions), and increases the likelihood that they will remember them if they ever need to recover their account.
+Если контрольные вопросы не используются в качестве основной аутентификации, то следует периодически (например, при изменении паролей после их истечения) предлагать пользователю просмотреть свои контрольные вопросы и убедиться, что они по-прежнему помнят ответы. Это должно дать им возможность обновить любые ответы, которые могли измениться (хотя в идеале этого не должно происходить с хорошими вопросами), и увеличить вероятность того, что они вспомнят их, если когда-нибудь потребуется восстановить учетную запись.
 
-### System Defined Security Questions
+### Системные контрольные вопросы
 
-System defined security questions are based on information that is already known about the user. The users' personal details are often used, including the full name, address and date of birth. However these can easily be obtained by an attacker from social media, and as such provide a very weak level of authentication.
+Системные контрольные вопросы основаны на информации, которая уже известна о пользователе. Часто используются личные данные пользователей, включая полное имя, адрес и дату рождения. Однако злоумышленник может легко получить их через социальные сети, и поэтому они предоставляют очень слабый уровень аутентификации.
 
-The questions that can be used will vary hugely depending on the application, and how much information is already held about the user. When deciding which bits of information may be usable for security questions, the following areas should be considered:
+Вопросы, которые можно использовать, будут сильно различаться в зависимости от приложения и от того, сколько информации уже хранится о пользователе. При принятии решения о том, какие данные можно использовать для контрольных вопросов, следует учитывать следующие факторы:
 
-- Will the user be able to remember the answer to the question?
-- Could an attacker easily obtain this information from social media or other sources?
-- Is the answer likely to be the same for a large number of users, or easily guessable?
+- Сможет ли пользователь вспомнить ответ на вопрос?
+- Может ли злоумышленник легко получить эту информацию из социальных сетей или других источников?
+- Одинаков ли ответ для большого числа пользователей или его легко угадать?
 
-## Using Security Questions
+## Использование контрольных вопросов
 
-### When to Use Security Questions
+### Когда использовать контрольные вопросы
+Приложения обычно должны использовать пароль вместе со вторым фактором аутентификации (например, одноразовым паролем, OTP) для аутентификации пользователей. Комбинация пароля и контрольных вопросов **не является многофакторной аутентификацией (MFA)**, так как оба фактора относятся к одному и тому же типу (т.е. "что-то, что вы знаете").
 
-Applications should generally use a password along with a second authentication factor (such as an OTP code) to authenticate users. The combination of a password and security questions **does not constitute MFA**, as both factors as the same (i.e. something you know)..
+**Контрольные вопросы не должны использоваться в качестве единственного механизма для аутентификации пользователя**. Однако они могут обеспечить полезный дополнительный уровень безопасности, когда другие более сильные факторы недоступны. Общие случаи их использования включают:
 
-**Security questions should never be relied upon as the sole mechanism to authenticate a user**. However, they can provide a useful additional layer of security when other stronger factors are not available. Common cases where they would be used include:
+- Вход в систему.
+- Сброс забытого пароля.
+- Сброс потерянного MFA-токена.
 
-- Logging in.
-- Resetting a forgotten password.
-- Resetting a lost MFA token.
+#### Поток аутентификации
 
-#### Authentication Flow
+Контрольные вопросы могут использоваться как часть основного процесса аутентификации для дополнения паролей в случаях, когда MFA недоступен. Типичный поток аутентификации может выглядеть следующим образом:
 
-Security questions may be used as part of the main authentication flow to supplement passwords where MFA is not available. A typical authentication flow would be:
+- Пользователь вводит свое имя пользователя и пароль.
+- Если имя пользователя и пароль правильные, пользователю предлагаются контрольные вопросы.
+- Если ответы верны, пользователь входит в систему.
 
-- The user enters their username and password.
-- If the username and password are correct, the user is presented with the security question(s).
-- If the answers are correct, the user is logged in.
+Если ответы на контрольные вопросы неверны, это должно считаться неудачной попыткой входа, и счетчик блокировки учетной записи для пользователя должен быть увеличен.
 
-If the answers to the security questions are incorrect, then this should be counted as a failed login attempt, and the account lockout counter should be incremented for the user.
+#### Поток восстановления забытого пароля или утерянного MFA-токена
 
-#### Forgotten Password or Lost MFA Token Flow
+Функционал восстановления пароля часто предоставляет механизм для атаки путем перечисления учетных записей пользователей, если он реализован неправильно. Следующий поток предотвращает эту проблему, отображая контрольные вопросы только после того, как пользователь докажет владение электронной почтой:
 
-Forgotten password functionality often provides a mechanism for attackers to enumerate user accounts if it is not correctly implemented. The following flow avoids this issue by only displaying the security questions once the user has proved ownership of the email address:
+- Пользователь вводит адрес электронной почты (и решает CAPTCHA).
+- Приложение отображает общее сообщение, например: "Если адрес электронной почты был правильным, на него будет отправлено письмо".
+- Пользователю отправляется письмо с случайно сгенерированной одноразовой ссылкой.
+- Пользователь нажимает на ссылку.
+- Пользователю предлагаются контрольные вопросы.
+- Если ответ верен, пользователь может ввести новый пароль.
 
-- The user enters email address (and solves a CAPTCHA).
-- The application displays a generic message such as "If the email address was correct, an email will be sent to it".
-- An email with a randomly generated, single-use link is sent to the user.
-- The user clicks the link.
-- The user is presented with the security question(s).
-- If the answer is correct, the user can enter a new password.
+### Как использовать контрольные вопросы
 
-### How to Use Security Questions
+#### Хранение ответов
 
-#### Storing Answers
+Ответы на контрольные вопросы могут содержать личную информацию о пользователе и могут также использоваться пользователем в других приложениях. Поэтому их следует обрабатывать так же, как и пароли, и хранить с использованием безопасного алгоритма хеширования, такого как Bcrypt. Дополнительные рекомендации можно найти в [шпаргалке по хранению паролей](Password_Storage_Cheat_Sheet.md) contains further guidance on this.
 
-The answers to security questions may contain personal information about the user, and may also be re-used by the user between different applications. As such, they should be treated in the same way as passwords, and stored using a secure hashing algorithm such as Bcrypt. The [password storage cheat sheet](Password_Storage_Cheat_Sheet.md) contains further guidance on this.
+#### Сравнение ответов
 
-#### Comparing Answers
+Сравнение ответов, предоставленных пользователем, с сохраненными ответами в регистронезависимом режиме облегчает задачу пользователю. Самый простой способ сделать это — привести ответ к нижнему регистру перед его хешированием и хранением, а затем также преобразовать ответ пользователя в нижний регистр перед сравнением.
 
-Comparing the answers provided by the user with the stored answer in a case insensitive manner makes it much easier for the user. The simplest way to do this is to convert the answer to lowercase before hashing the answer to store it, and then lowercase the user-provided answer before comparing them.
+Также полезно дать пользователю представление о формате, который он должен использовать при вводе ответов. Это можно сделать с помощью валидации ввода или просто рекомендуя пользователю вводить свои данные в определенном формате. Например, при запросе даты указание формата "ДД/ММ/ГГГГ" поможет пользователю не гадать, в каком формате он ввел данные при регистрации.
 
-It is also beneficial to give the user some indication of the format that they should use to enter answers. This could be done through input validation, or simply by recommending that the user enters their details in a specific format. For example, when asking for a date, indicating that the format should be "DD/MM/YYYY" will mean that the user doesn't have to try and guess what format they entered when registering.
+#### Обновление ответов
 
-#### Updating Answers
+Когда пользователь обновляет ответы на свои контрольные вопросы, это следует рассматривать как чувствительную операцию в приложении. Поэтому пользователю следует потребовать повторной аутентификации путем ввода пароля (или, в идеале, с использованием MFA), чтобы предотвратить возможность обновления вопросов злоумышленником при временном доступе к учетной записи пользователя.
 
-When the user updates the answers to their security questions, this should be treated as a sensitive operation within the application. As such, the user should be required to re-authenticate themselves by entering their password (or ideally using MFA), in order to prevent an attacker updating the questions if they gain temporary access to the user's account.
+#### Несколько контрольных вопросов
 
-#### Multiple Security Questions
+Когда используются контрольные вопросы, пользователю может быть задан один вопрос или несколько вопросов одновременно. Это обеспечивает более высокий уровень уверенности, особенно если вопросы разнообразны, так как злоумышленнику потребуется получить больше информации о целевом пользователе. Смешение вопросов, определяемых пользователем, и системных вопросов может быть очень эффективным.
 
-When security questions are used, the user can either be asked a single question, or can be asked multiple questions at the same time. This provides a greater level of assurance, especially if the questions are diverse, as an attacker would need to obtain more information about the target user. A mixture of user-defined and system-defined questions can be very effective for this.
-
-If the user is asked a single question out of a bank of possible questions, then this question **should not** be changed until the user has answered it correctly. If the attacker is allowed to try answering all of the different security questions, this greatly increases the chance that they will be able to guess or obtain the answer to one of them.
+Если пользователю задается один вопрос из возможных, то этот вопрос **не должен** изменяться до тех пор, пока пользователь не ответит на него правильно. Если злоумышленнику будет позволено попытаться ответить на все различные контрольные вопросы, это значительно увеличит вероятность того, что он сможет угадать или получить ответ на один из них.
