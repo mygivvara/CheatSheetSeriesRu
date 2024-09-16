@@ -43,7 +43,7 @@
 
 Здесь стоит упомянуть отношение браузеров на базе Chromium, в которых файлы cookie без того же атрибута сайта, установленного по умолчанию, рассматриваются как Lax.
 
-SameSite атрибут куки это мощный механизм **углубленной защиты** от **некоторых**  классов утечек XS и [CSRF атак](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html), что может значительно сократить площадь атаки, но не может полностью ее сократить (см., например, [window-based XS Leak](https://soheilkhodayari.github.io/same-site-wiki/docs/attacks/xs-leaks.html) атаки, такие как [frame counting](https://xsleaks.dev/docs/attacks/frame-counting/) и [navigation](https://xsleaks.dev/docs/attacks/navigations/)).
+SameSite это мощный механизм **углубленной защиты** от **некоторых**  классов утечек XS и [CSRF атак](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html), что может значительно сократить площадь атаки, но не может полностью ее сократить (см., например, [window-based XS Leak](https://soheilkhodayari.github.io/same-site-wiki/docs/attacks/xs-leaks.html) атаки, такие как [frame counting](https://xsleaks.dev/docs/attacks/frame-counting/) и [navigation](https://xsleaks.dev/docs/attacks/navigations/)).
 
 ### Откуда мы знаем, что два сайта - это один и тот же сайт?
 
