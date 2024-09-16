@@ -1,32 +1,32 @@
-# DOM based XSS Prevention Cheat Sheet
+# Шпаргалка по предотвращению XSS на основе DOM
 
-## Introduction
+## Введение
 
-When looking at XSS (Cross-Site Scripting), there are three generally recognized forms of [XSS](https://owasp.org/www-community/attacks/xss/):
+При рассмотрении XSS (Cross-Site Scripting, межсайтовый скриптинг) существуют три общепринятых формы [XSS](https://owasp.org/www-community/attacks/xss/):
 
-- [Reflected or Stored](https://owasp.org/www-community/attacks/xss/#stored-and-reflected-xss-attacks)
-- [DOM Based XSS](https://owasp.org/www-community/attacks/DOM_Based_XSS).
+- [Отражённые или Хранимые XSS](https://owasp.org/www-community/attacks/xss/#stored-and-reflected-xss-attacks)
+- [XSS на основе DOM](https://owasp.org/www-community/attacks/DOM_Based_XSS).
 
-The [XSS Prevention Cheatsheet](Cross_Site_Scripting_Prevention_Cheat_Sheet.md) does an excellent job of addressing Reflected and Stored XSS. This cheatsheet addresses DOM (Document Object Model) based XSS and is an extension (and assumes comprehension) of the [XSS Prevention Cheatsheet](Cross_Site_Scripting_Prevention_Cheat_Sheet.md).
+[Шпаргалка по предотвращению XSS](Cross_Site_Scripting_Prevention_Cheat_Sheet.md) отлично справляется с отражёнными и хранимыми XSS. Эта шпаргалка охватывает XSS на основе DOM (Document Object Model) и является расширением (и предполагает понимание) [Шпаргалки по предотвращению XSS](Cross_Site_Scripting_Prevention_Cheat_Sheet.md).
 
-In order to understand DOM based XSS, one needs to see the fundamental difference between Reflected and Stored XSS when compared to DOM based XSS. The primary difference is where the attack is injected into the application.
+Для понимания XSS на основе DOM необходимо увидеть фундаментальное различие между отражёнными и хранимыми XSS по сравнению с XSS на основе DOM. Основное различие заключается в том, где атака внедряется в приложение.
 
-Reflected and Stored XSS are server side injection issues while DOM based XSS is a client (browser) side injection issue.
+Отражённые и хранимые XSS являются проблемами инъекции на стороне сервера, тогда как XSS на основе DOM представляет собой проблему инъекции на стороне клиента (браузера).
 
-All of this code originates on the server, which means it is the application owner's responsibility to make it safe from XSS, regardless of the type of XSS flaw it is. Also, XSS attacks always **execute** in the browser.
+Весь этот код исходит с сервера, что означает, что ответственность за его безопасность от XSS лежит на владельце приложения, независимо от типа уязвимости XSS. Кроме того, атаки XSS всегда **выполняются** в браузере.
 
-The difference between Reflected/Stored XSS is where the attack is added or injected into the application. With Reflected/Stored the attack is injected into the application during server-side processing of requests where untrusted input is dynamically added to HTML. For DOM XSS, the attack is injected into the application during runtime in the client directly.
+Разница между отражёнными/хранимыми XSS заключается в том, где атака добавляется или внедряется в приложение. В случае отражённых/хранимых XSS атака внедряется в приложение во время обработки запросов на стороне сервера, где недоверенные входные данные динамически добавляются в HTML. Для XSS на основе DOM атака внедряется в приложение во время выполнения на стороне клиента напрямую.
 
-When a browser is rendering HTML and any other associated content like CSS or JavaScript, it identifies various rendering contexts for the different kinds of input and follows different rules for each context. A rendering context is associated with the parsing of HTML tags and their attributes.
+Когда браузер рендерит HTML и другой сопутствующий контент, такой как CSS или JavaScript, он идентифицирует различные контексты рендеринга для различных типов входных данных и следует различным правилам для каждого контекста. Контекст рендеринга связан с разбором HTML-тегов и их атрибутов.
 
-- The HTML parser of the rendering context dictates how data is presented and laid out on the page and can be further broken down into the standard contexts of HTML, HTML attribute, URL, and CSS.
-- The JavaScript or VBScript parser of an execution context is associated with the parsing and execution of script code. Each parser has distinct and separate semantics in the way they can possibly execute script code which make creating consistent rules for mitigating vulnerabilities in various contexts difficult. The complication is compounded by the differing meanings and treatment of encoded values within each subcontext (HTML, HTML attribute, URL, and CSS) within the execution context.
+- HTML-парсер контекста рендеринга диктует, как данные представлены и расположены на странице, и может быть дополнительно разбит на стандартные контексты HTML, HTML-атрибутов, URL и CSS.
+- Парсер JavaScript или VBScript контекста выполнения связан с разбором и выполнением скриптового кода. Каждый парсер имеет отдельные и специфичные семантики в том, как он может выполнять скриптовый код, что усложняет создание последовательных правил для смягчения уязвимостей в различных контекстах. Усложнение также связано с различиями в значении и обработке закодированных значений внутри каждого подсектора (HTML, HTML-атрибут, URL и CSS) в контексте выполнения.
 
-For the purposes of this article, we refer to the HTML, HTML attribute, URL, and CSS contexts as subcontexts because each of these contexts can be reached and set within a JavaScript execution context.
+Для целей этой статьи мы будем ссылаться на контексты HTML, HTML-атрибутов, URL и CSS как на подсекторы, поскольку каждый из этих контекстов может быть достигнут и установлен внутри контекста выполнения JavaScript.
 
-In JavaScript code, the main context is JavaScript but with the right tags and context closing characters, an attacker can try to attack the other 4 contexts using equivalent JavaScript DOM methods.
+В коде JavaScript основной контекст — это JavaScript, но с помощью соответствующих тегов и символов закрытия контекста атакующий может попытаться атаковать другие 4 контекста, используя эквивалентные методы JavaScript DOM.
 
-The following is an example vulnerability which occurs in the JavaScript context and HTML subcontext:
+Пример уязвимости, которая возникает в контексте JavaScript и подсекторе HTML:
 
 ```html
  <script>
@@ -37,34 +37,34 @@ The following is an example vulnerability which occurs in the JavaScript context
  </script>
 ```
 
-Let's look at the individual subcontexts of the execution context in turn.
+Давайте рассмотрим отдельные подсекторы контекста выполнения по очереди.
 
-## RULE \#1 - HTML Escape then JavaScript Escape Before Inserting Untrusted Data into HTML Subcontext within the Execution Context
+## ПРАВИЛО \#1 - HTML-кодирование и затем JavaScript-кодирование перед вставкой недоверенных данных в подсектор HTML в контексте выполнения
 
-There are several methods and attributes which can be used to directly render HTML content within JavaScript. These methods constitute the HTML Subcontext within the Execution Context. If these methods are provided with untrusted input, then an XSS vulnerability could result. For example:
+Существует несколько методов и атрибутов, которые могут быть использованы для прямого рендеринга HTML-контента внутри JavaScript. Эти методы составляют подсектор HTML внутри контекста выполнения. Если этим методам предоставляются недоверенные входные данные, это может привести к уязвимости XSS. Например:
 
-### Example Dangerous HTML Methods
+### Примеры опасных HTML-методов
 
-#### Attributes
-
-```javascript
- element.innerHTML = "<HTML> Tags and markup";
- element.outerHTML = "<HTML> Tags and markup";
-```
-
-#### Methods
+#### Атрибуты
 
 ```javascript
- document.write("<HTML> Tags and markup");
- document.writeln("<HTML> Tags and markup");
+ element.innerHTML = "<HTML> Теги и разметка";
+ element.outerHTML = "<HTML> Теги и разметка";
 ```
 
-### Guideline
+#### Методы
 
-To make dynamic updates to HTML in the DOM safe, we recommend:
+```javascript
+ document.write("<HTML> Теги и разметка");
+ document.writeln("<HTML> Теги и разметка");
+```
 
- 1. HTML encoding, and then
- 2. JavaScript encoding all untrusted input, as shown in these examples:
+### Рекомендация
+
+Чтобы сделать динамическое обновление HTML в DOM безопасным, рекомендуется:
+
+ 1. HTML-кодирование, и затем
+ 2. JavaScript-кодирование всех недоверенных входных данных, как показано в этих примерах:
 
 ```javascript
  var ESAPI = require('node-esapi');
@@ -78,30 +78,30 @@ To make dynamic updates to HTML in the DOM safe, we recommend:
  document.writeln("<%=ESAPI.encoder().encodeForJavascript(ESAPI.encoder().encodeForHTML(untrustedData))%>");
 ```
 
-## RULE \#2 - JavaScript Escape Before Inserting Untrusted Data into HTML Attribute Subcontext within the Execution Context
+## ПРАВИЛО \#2 - JavaScript-кодирование перед вставкой недоверенных данных в подсектор HTML-атрибута в контексте выполнения
 
-The HTML attribute *subcontext* within the *execution* context is divergent from the standard encoding rules. This is because the rule to HTML attribute encode in an HTML attribute rendering context is necessary in order to mitigate attacks which try to exit out of an HTML attributes or try to add additional attributes which could lead to XSS.
+HTML-атрибут *подсектор* внутри *контекста выполнения* отличается от стандартных правил кодирования. Это связано с тем, что правило HTML-атрибутного кодирования в рендеринг-контексте атрибута HTML необходимо для смягчения атак, которые пытаются выйти из HTML-атрибутов или добавить дополнительные атрибуты, что может привести к XSS.
 
-When you are in a DOM execution context you only need to JavaScript encode HTML attributes which do not execute code (attributes other than event handler, CSS, and URL attributes).
+Когда вы находитесь в контексте выполнения DOM, вам нужно только JavaScript-кодировать HTML-атрибуты, которые не выполняют код (атрибуты, кроме обработчиков событий, CSS и URL-атрибутов).
 
-For example, the general rule is to HTML Attribute encode untrusted data (data from the database, HTTP request, user, back-end system, etc.) placed in an HTML Attribute. This is the appropriate step to take when outputting data in a rendering context, however using HTML Attribute encoding in an execution context will break the application display of data.
+Например, общее правило заключается в HTML-атрибутном кодировании недоверенных данных (данные из базы данных, HTTP-запрос, пользователь, бэкэнд-система и т. д.), помещённых в HTML-атрибут. Это подходящий шаг при выводе данных в рендеринг-контексте, однако использование HTML-атрибутного кодирования в контексте выполнения нарушит отображение данных в приложении.
 
-### SAFE but BROKEN example
+### БЕЗОПАСНЫЙ, но НЕКОРРЕКТНЫЙ пример
 
 ```javascript
  var ESAPI = require('node-esapi');
  var x = document.createElement("input");
  x.setAttribute("name", "company_name");
- // In the following line of code, companyName represents untrusted user input
- // The ESAPI.encoder().encodeForHTMLAttribute() is unnecessary and causes double-encoding
+ // В следующей строке кода companyName представляет собой недоверенный ввод пользователя
+ // ESAPI.encoder().encodeForHTMLAttribute() не требуется и вызывает двойное кодирование
  x.setAttribute("value", '<%=ESAPI.encoder().encodeForJavascript(ESAPI.encoder().encodeForHTMLAttribute(companyName))%>');
  var form1 = document.forms[0];
  form1.appendChild(x);
 ```
 
-The problem is that if companyName had the value "Johnson & Johnson". What would be displayed in the input text field would be "Johnson &#x26;amp; Johnson". The appropriate encoding to use in the above case would be only JavaScript encoding to disallow an attacker from closing out the single quotes and in-lining code, or escaping to HTML and opening a new script tag.
+Проблема заключается в том, что если переменная `companyName` имеет значение "Johnson & Johnson", то в текстовом поле будет отображаться "Johnson &#x26;amp; Johnson". В данном случае следует использовать JavaScript-кодирование для предотвращения попыток злоумышленника завершить одинарные кавычки и вставить код, или избежать HTML-кодирования и открытия нового тега `<script>`.
 
-### SAFE and FUNCTIONALLY CORRECT example
+### БЕЗОПАСНЫЙ и ФУНКЦИОНАЛЬНО КОРРЕКТНЫЙ пример
 
 ```javascript
  var ESAPI = require('node-esapi');
@@ -112,69 +112,69 @@ The problem is that if companyName had the value "Johnson & Johnson". What would
  form1.appendChild(x);
 ```
 
-It is important to note that when setting an HTML attribute which does not execute code, the value is set directly within the object attribute of the HTML element so there is no concerns with injecting up.
+Важно отметить, что при установке HTML-атрибута, который не выполняет код, значение устанавливается напрямую в объектном атрибуте HTML-элемента, поэтому не возникает опасности инъекций.
 
-## RULE \#3 - Be Careful when Inserting Untrusted Data into the Event Handler and JavaScript code Subcontexts within an Execution Context
+## ПРАВИЛО №3 - Будьте осторожны при вставке недоверенных данных в обработчики событий и код JavaScript в контексте выполнения
 
-Putting dynamic data within JavaScript code is especially dangerous because JavaScript encoding has different semantics for JavaScript encoded data when compared to other encodings. In many cases, JavaScript encoding does not stop attacks within an execution context. For example, a JavaScript encoded string will execute even though it is JavaScript encoded.
+Вставка динамических данных в код JavaScript особенно опасна, так как JavaScript-кодирование имеет разные семантики для закодированных данных по сравнению с другими видами кодирования. В многих случаях JavaScript-кодирование не предотвращает атаки в контексте выполнения. Например, JavaScript-кодированная строка выполнится, даже если она закодирована.
 
-Therefore, the primary recommendation is to **avoid including untrusted data in this context**. If you must, the following examples describe some approaches that do and do not work.
+Поэтому основная рекомендация — **избегать включения недоверенных данных в этот контекст**. Если это необходимо, ниже приведены примеры, которые работают и не работают.
 
 ```javascript
 var x = document.createElement("a");
 x.href="#";
-// In the line of code below, the encoded data on the right (the second argument to setAttribute)
-// is an example of untrusted data that was properly JavaScript encoded but still executes.
+// В коде ниже закодированные данные (второй аргумент setAttribute) являются примером
+// недоверенных данных, которые были правильно закодированы в JavaScript, но все равно выполняются.
 x.setAttribute("onclick", "\u0061\u006c\u0065\u0072\u0074\u0028\u0032\u0032\u0029");
-var y = document.createTextNode("Click To Test");
+var y = document.createTextNode("Нажмите для теста");
 x.appendChild(y);
 document.body.appendChild(x);
 ```
 
-The `setAttribute(name_string,value_string)` method is dangerous because it implicitly coerces the *value_string* into the DOM attribute datatype of *name_string*.
+Метод `setAttribute(name_string,value_string)` опасен, потому что он неявно приводит *value_string* к типу DOM-атрибута *name_string*.
 
-In the case above, the attribute name is an JavaScript event handler, so the attribute value is implicitly converted to JavaScript code and evaluated. In the case above, JavaScript encoding does not mitigate against DOM based XSS.
+В приведенном примере атрибутом является обработчик событий JavaScript, поэтому значение атрибута неявно преобразуется в JavaScript-код и выполняется. JavaScript-кодирование не предотвращает DOM-атаку XSS в этом случае.
 
-Other JavaScript methods which take code as a string types will have a similar problem as outline above (`setTimeout`, `setInterval`, new Function, etc.). This is in stark contrast to JavaScript encoding in the event handler attribute of a HTML tag (HTML parser) where JavaScript encoding mitigates against XSS.
+Другие методы JavaScript, которые принимают код в виде строковых типов, будут иметь аналогичную проблему, как описано выше (например, `setTimeout`, `setInterval`, `new Function` и т.д.). Это резко контрастирует с JavaScript-кодированием в атрибуте обработчика событий тега HTML (HTML-парсер), где JavaScript-кодирование предотвращает XSS.
 
 ```html
-<!-- Does NOT work  -->
-<a id="bb" href="#" onclick="\u0061\u006c\u0065\u0072\u0074\u0028\u0031\u0029"> Test Me</a>
+<!-- НЕ работает -->
+<a id="bb" href="#" onclick="\u0061\u006c\u0065\u0072\u0074\u0028\u0031\u0029"> Тестируйте меня</a>
 ```
 
-An alternative to using `Element.setAttribute(...)` to set DOM attributes is to set the attribute directly. Directly setting event handler attributes will allow JavaScript encoding to mitigate against DOM based XSS. Please note, it is always dangerous design to put untrusted data directly into a command execution context.
+Альтернативой использования `Element.setAttribute(...)` для установки атрибутов DOM является непосредственная установка атрибута. Прямая установка атрибутов обработчика событий позволяет JavaScript-кодированию предотвратить DOM-атаку XSS. Обратите внимание, что это всегда опасный дизайн — вставлять недоверенные данные напрямую в контекст выполнения команды.
 
-``` html
-<a id="bb" href="#"> Test Me</a>
+```html
+<a id="bb" href="#"> Тестируйте меня</a>
 ```
 
-``` javascript
-//The following does NOT work because the event handler is being set to a string.
-//"alert(7)" is JavaScript encoded.
+```javascript
+// Следующее НЕ работает, так как обработчик событий устанавливается в строку.
+// "alert(7)" закодирован в JavaScript.
 document.getElementById("bb").onclick = "\u0061\u006c\u0065\u0072\u0074\u0028\u0037\u0029";
 
-//The following does NOT work because the event handler is being set to a string.
+// Следующее НЕ работает, так как обработчик событий устанавливается в строку.
 document.getElementById("bb").onmouseover = "testIt";
 
-//The following does NOT work because of the encoded "(" and ")".
-//"alert(77)" is JavaScript encoded.
+// Следующее НЕ работает из-за закодированных "(" и ")".
+// "alert(77)" закодирован в JavaScript.
 document.getElementById("bb").onmouseover = \u0061\u006c\u0065\u0072\u0074\u0028\u0037\u0037\u0029;
 
-//The following does NOT work because of the encoded ";".
-//"testIt;testIt" is JavaScript encoded.
+// Следующее НЕ работает из-за закодированной ";"
+// "testIt;testIt" закодирован в JavaScript.
 document.getElementById("bb").onmouseover = \u0074\u0065\u0073\u0074\u0049\u0074\u003b\u0074\u0065\u0073
                                             \u0074\u0049\u0074;
 
-//The following DOES WORK because the encoded value is a valid variable name or function reference.
-//"testIt" is JavaScript encoded
+// Следующее РАБОТАЕТ, так как закодированное значение является допустимым именем переменной или ссылкой на функцию.
+// "testIt" закодирован в JavaScript.
 document.getElementById("bb").onmouseover = \u0074\u0065\u0073\u0074\u0049\u0074;
 
 function testIt() {
-   alert("I was called.");
+   alert("Я был вызван.");
 }
 ```
 
-There are other places in JavaScript where JavaScript encoding is accepted as valid executable code.
+Есть и другие места в JavaScript, где JavaScript-кодирование принимается как допустимый исполняемый код.
 
 ```javascript
  for(var \u0062=0; \u0062 < 10; \u0062++){
@@ -188,7 +188,7 @@ There are other places in JavaScript where JavaScript encoding is accepted as va
  .\u0077\u0072\u0069\u0074\u0065(111111111);
 ```
 
-or
+или
 
 ```javascript
  var s = "\u0065\u0076\u0061\u006c";
@@ -196,46 +196,46 @@ or
  window[s](t);
 ```
 
-Because JavaScript is based on an international standard (ECMAScript), JavaScript encoding enables the support of international characters in programming constructs and variables in addition to alternate string representations (string escapes).
+Так как JavaScript основан на международном стандарте (ECMAScript), JavaScript-кодирование позволяет поддерживать международные символы в конструкциях программирования и переменных, а также альтернативные строковые представления (экранированные строки).
 
-However the opposite is the case with HTML encoding. HTML tag elements are well defined and do not support alternate representations of the same tag. So HTML encoding cannot be used to allow the developer to have alternate representations of the `<a>` tag for example.
+Однако обратное верно для HTML-кодирования. HTML-теги четко определены и не поддерживают альтернативные представления одного и того же тега. Поэтому HTML-кодирование не может использоваться для создания альтернативных представлений тега `<a>`, например.
 
-### HTML Encoding's Disarming Nature
+### Разоружающая природа HTML-кодирования
 
-In general, HTML encoding serves to castrate HTML tags which are placed in HTML and HTML attribute contexts. Working example (no HTML encoding):
+В общем случае HTML-кодирование служит для нейтрализации HTML-тегов, помещенных в контексты HTML и атрибутов HTML. Пример работающего кода (без HTML-кодирования):
 
 ```html
 <a href="..." >
 ```
 
-Normally encoded example (Does Not Work – DNW):
+Пример с обычным кодированием (НЕ РАБОТАЕТ):
 
 ```html
 &#x3c;a href=... &#x3e;
 ```
 
-HTML encoded example to highlight a fundamental difference with JavaScript encoded values (DNW):
+Пример с HTML-кодированием, подчеркивающий фундаментальное отличие от JavaScript-кодирования (НЕ РАБОТАЕТ):
 
 ```html
 <&#x61; href=...>
 ```
 
-If HTML encoding followed the same semantics as JavaScript encoding, the line above could have possibly worked to render a link. This difference makes JavaScript encoding a less viable weapon in our fight against XSS.
+Если бы HTML-кодирование следовало тем же принципам, что и JavaScript-кодирование, строка выше могла бы отобразить ссылку. Это различие делает JavaScript-кодирование менее эффективным средством борьбы с XSS.
 
-## RULE \#4 - JavaScript Escape Before Inserting Untrusted Data into the CSS Attribute Subcontext within the Execution Context
+## ПРАВИЛО №4 - JavaScript-кодирование перед вставкой недоверенных данных в CSS-атрибут в контексте выполнения
 
-Normally executing JavaScript from a CSS context required either passing `javascript:attackCode()` to the CSS `url()` method or invoking the CSS `expression()` method passing JavaScript code to be directly executed.
+Обычно выполнение JavaScript из CSS-контекста требует либо передачи `javascript:attackCode()` методу CSS `url()`, либо вызова метода CSS `expression()`, передавая JavaScript-код для непосредственного выполнения.
 
-From my experience, calling the `expression()` function from an execution context (JavaScript) has been disabled. In order to mitigate against the CSS `url()` method, ensure that you are URL encoding the data passed to the CSS `url()` method.
+По моему опыту, вызов функции `expression()` из контекста выполнения (JavaScript) был отключен. Чтобы предотвратить атаку через метод CSS `url()`, убедитесь, что вы кодируете URL, передаваемый в метод CSS `url()`.
 
 ```javascript
 var ESAPI = require('node-esapi');
 document.body.style.backgroundImage = "url(<%=ESAPI.encoder().encodeForJavascript(ESAPI.encoder().encodeForURL(companyName))%>)";
 ```
 
-## RULE \#5 - URL Escape then JavaScript Escape Before Inserting Untrusted Data into URL Attribute Subcontext within the Execution Context
+## ПРАВИЛО №5 - Кодирование URL, затем JavaScript-кодирование перед вставкой недоверенных данных в URL-атрибут в контексте выполнения
 
-The logic which parses URLs in both execution and rendering contexts looks to be the same. Therefore there is little change in the encoding rules for URL attributes in an execution (DOM) context.
+Логика, которая парсит URL-адреса в контексте выполнения и отображения, выглядит одинаково. Поэтому нет особых изменений в правилах кодирования для URL-атрибутов в контексте выполнения (DOM).
 
 ```javascript
 var ESAPI = require('node-esapi');
@@ -246,90 +246,90 @@ x.appendChild(y);
 document.body.appendChild(x);
 ```
 
-If you utilize fully qualified URLs then this will break the links as the colon in the protocol identifier (`http:` or `javascript:`) will be URL encoded preventing the `http` and `javascript` protocols from being invoked.
+Если вы используете полностью квалифицированные URL-адреса, это сломает ссылки, так как двоеточие в протоколе (`http:` или `javascript:`) будет закодировано как URL, что предотвратит выполнение протоколов `http` и `javascript`.
 
-## RULE \#6 - Populate the DOM using safe JavaScript functions or properties
+## ПРАВИЛО №6 - Заполнение DOM с использованием безопасных JavaScript-функций или свойств
 
-The most fundamental safe way to populate the DOM with untrusted data is to use the safe assignment property `textContent`.
+Самый безопасный способ заполнить DOM недоверенными данными — это использовать безопасное свойство назначения `textContent`.
 
-Here is an example of safe usage.
+Вот пример безопасного использования:
 
 ```html
 <script>
-element.textContent = untrustedData;  //does not execute code
+element.textContent = untrustedData;  // не выполняет код
 </script>
 ```
 
-## RULE \#7 - Fixing DOM Cross-site Scripting Vulnerabilities
+## ПРАВИЛО №7 - Исправление уязвимостей DOM XSS
 
-The best way to fix DOM based cross-site scripting is to use the right output method (sink). For example if you want to use user input to write in a `div tag` element don't use `innerHtml`, instead use `innerText` or `textContent`. This will solve the problem, and it is the right way to re-mediate DOM based XSS vulnerabilities.
+Лучший способ исправить DOM XSS — это использовать правильный метод вывода (источник). Например, если вы хотите использовать пользовательский ввод для записи в элемент `div`, не используйте `innerHtml`, вместо этого используйте `innerText` или `textContent`. Это решит проблему и является правильным способом устранения уязвимостей DOM XSS.
 
-**It is always a bad idea to use a user-controlled input in dangerous sources such as eval. 99% of the time it is an indication of bad or lazy programming practice, so simply don't do it instead of trying to sanitize the input.**
+**Использовать пользовательский ввод в опасных источниках, таких как eval, — это всегда плохая идея. В 99% случаев это признак плохой или ленивой практики программирования, так что просто не делайте этого вместо того, чтобы пытаться фильтровать ввод.**
 
-Finally, to fix the problem in our initial code, instead of trying to encode the output correctly which is a hassle and can easily go wrong we would simply use `element.textContent` to write it in a content like this:
+Наконец, чтобы решить проблему в нашем исходном коде, вместо попыток правильно кодировать вывод (что сложно и может легко пойти не так), мы просто используем `element.textContent` для записи его в контент, как показано ниже:
 
 ```html
-<b>Current URL:</b> <span id="contentholder"></span>
+<b>Текущий URL:</b> <span id="contentholder"></span>
 ...
 <script>
 document.getElementById("contentholder").textContent = document.baseURI;
 </script>
 ```
 
-It does the same thing but this time it is not vulnerable to DOM based cross-site scripting vulnerabilities.
+Это выполняет ту же задачу, но теперь код не уязвим для атак DOM XSS.
 
-## Guidelines for Developing Secure Applications Utilizing JavaScript
+## Рекомендации по разработке безопасных приложений с использованием JavaScript
 
-DOM based XSS is extremely difficult to mitigate against because of its large attack surface and lack of standardization across browsers.
+DOM XSS чрезвычайно сложно предотвратить из-за его широкой поверхности атаки и отсутствия стандартизации среди браузеров.
 
-The guidelines below are an attempt to provide guidelines for developers when developing Web based JavaScript applications (Web 2.0) such that they can avoid XSS.
+Ниже приведены рекомендации для разработчиков при разработке веб-приложений на основе JavaScript (Web 2.0), чтобы они могли избежать XSS.
 
-### GUIDELINE \#1 - Untrusted data should only be treated as displayable text
+### РЕКОМЕНДАЦИЯ №1 - Недоверенные данные должны рассматриваться только как текст для отображения
 
-Avoid treating untrusted data as code or markup within JavaScript code.
+Избегайте обработки недоверенных данных как кода или разметки внутри JavaScript.
 
-### GUIDELINE \#2 - Always JavaScript encode and delimit untrusted data as quoted strings when entering the application when building templated JavaScript
+### РЕКОМЕНДАЦИЯ №2 - Всегда кодируйте JavaScript и заключайте недоверенные данные в кавычки при входе в приложение при создании шаблонного JavaScript
 
-Always JavaScript encode and delimit untrusted data as quoted strings when entering the application as illustrated in the following example.
+Всегда кодируйте JavaScript и заключайте недоверенные данные в кавычки при входе в приложение, как показано в следующем примере:
 
 ```javascript
 var x = "<%= Encode.forJavaScript(untrustedData) %>";
 ```
 
-### GUIDELINE \#3 - Use document.createElement("..."), element.setAttribute("...","value"), element.appendChild(...) and similar to build dynamic interfaces
+### РЕКОМЕНДАЦИЯ №3 - Используйте `document.createElement("...")`, `element.setAttribute("...","value")`, `element.appendChild(...)` и подобные методы для создания динамических интерфейсов
 
-`document.createElement("...")`, `element.setAttribute("...","value")`, `element.appendChild(...)` and similar are safe ways to build dynamic interfaces.
+`document.createElement("...")`, `element.setAttribute("...","value")`, `element.appendChild(...)` и аналогичные методы безопасны для создания динамических интерфейсов.
 
-Please note, `element.setAttribute` is only safe for a limited number of attributes.
+Важно отметить, что `element.setAttribute` безопасен только для ограниченного числа атрибутов.
 
-Dangerous attributes include any attribute that is a command execution context, such as `onclick` or `onblur`.
+Опасные атрибуты включают любые атрибуты, которые могут выполнять команды, такие как `onclick` или `onblur`.
 
-Examples of safe attributes includes: `align`, `alink`, `alt`, `bgcolor`, `border`, `cellpadding`, `cellspacing`, `class`, `color`, `cols`, `colspan`, `coords`, `dir`, `face`, `height`, `hspace`, `ismap`, `lang`, `marginheight`, `marginwidth`, `multiple`, `nohref`, `noresize`, `noshade`, `nowrap`, `ref`, `rel`, `rev`, `rows`, `rowspan`, `scrolling`, `shape`, `span`, `summary`, `tabindex`, `title`, `usemap`, `valign`, `value`, `vlink`, `vspace`, `width`.
+Примеры безопасных атрибутов включают: `align`, `alink`, `alt`, `bgcolor`, `border`, `cellpadding`, `cellspacing`, `class`, `color`, `cols`, `colspan`, `coords`, `dir`, `face`, `height`, `hspace`, `ismap`, `lang`, `marginheight`, `marginwidth`, `multiple`, `nohref`, `noresize`, `noshade`, `nowrap`, `ref`, `rel`, `rev`, `rows`, `rowspan`, `scrolling`, `shape`, `span`, `summary`, `tabindex`, `title`, `usemap`, `valign`, `value`, `vlink`, `vspace`, `width`.
 
-### GUIDELINE \#4 - Avoid sending untrusted data into HTML rendering methods
+### РЕКОМЕНДАЦИЯ №4 - Избегайте отправки недоверенных данных в методы рендеринга HTML
 
-Avoid populating the following methods with untrusted data.
+Избегайте использования недоверенных данных в следующих методах:
 
 1. `element.innerHTML = "...";`
 2. `element.outerHTML = "...";`
 3. `document.write(...);`
 4. `document.writeln(...);`
 
-### GUIDELINE \#5 - Avoid the numerous methods which implicitly eval() data passed to it
+### РЕКОМЕНДАЦИЯ №5 - Избегайте методов, которые неявно вызывают `eval()` для переданных данных
 
-There are numerous methods which implicitly `eval()` data passed to it that must be avoided.
+Существует множество методов, которые неявно вызывают `eval()` для переданных данных, их следует избегать.
 
-Make sure that any untrusted data passed to these methods is:
+Убедитесь, что любые недоверенные данные, передаваемые в эти методы, выполняют следующие шаги:
 
-1. Delimited with string delimiters
-2. Enclosed within a closure or JavaScript encoded to N-levels based on usage
-3. Wrapped in a custom function.
+1. Заключены в строковые разделители.
+2. Заключены в замыкание или закодированы на N-уровнях в зависимости от использования.
+3. Обернуты в пользовательскую функцию.
 
-Ensure to follow step 3 above to make sure that the untrusted data is not sent to dangerous methods within the custom function or handle it by adding an extra layer of encoding.
+Следуйте шагу 3, чтобы убедиться, что недоверенные данные не передаются в опасные методы в пользовательской функции или обрабатывайте это, добавляя дополнительный слой кодирования.
 
-#### Utilizing an Enclosure (as suggested by Gaz)
+#### Использование замыкания (по предложению Gaz)
 
-The example that follows illustrates using closures to avoid double JavaScript encoding.
+Следующий пример иллюстрирует использование замыканий для избегания двойного JavaScript-кодирования:
 
 ```javascript
  var ESAPI = require('node-esapi');
@@ -339,31 +339,31 @@ The example that follows illustrates using closures to avoid double JavaScript e
  })("<%=ESAPI.encoder().encodeForJavascript(untrustedData)%>"), y);
 ```
 
-The other alternative is using N-levels of encoding.
+#### Многоуровневое кодирование
 
-#### N-Levels of Encoding
-
-If your code looked like the following, you would need to only double JavaScript encode input data.
+Если ваш код выглядит так, как показано ниже, вам нужно только дважды закодировать данные для JavaScript:
 
 ```javascript
 setTimeout("customFunction('<%=doubleJavaScriptEncodedData%>', y)");
-function customFunction (firstName, lastName)
-     alert("Hello" + firstName + " " + lastNam);
+function customFunction (firstName, lastName) {
+     alert("Hello " + firstName + " " + lastName);
 }
 ```
 
-The `doubleJavaScriptEncodedData` has its first layer of JavaScript encoding reversed (upon execution) in the single quotes.
+Данные, закодированные как `doubleJavaScriptEncodedData`, расшифровываются на первом уровне (при выполнении) в одинарных кавычках.
 
-Then the implicit `eval` of `setTimeout` reverses another layer of JavaScript encoding to pass the correct value to `customFunction`
+Затем неявный вызов `eval` в `setTimeout` расшифровывает ещё один уровень кодирования JavaScript для передачи правильного значения в `customFunction`.
 
-The reason why you only need to double JavaScript encode is that the `customFunction` function did not itself pass the input to another method which implicitly or explicitly called `eval` If *firstName* was passed to another JavaScript method which implicitly or explicitly called `eval()` then `<%=doubleJavaScriptEncodedData%>` above would need to be changed to `<%=tripleJavaScriptEncodedData%>`.
+Поскольку функция `customFunction` не передавала вводные данные в другой метод, который явно или неявно вызывает `eval()`, необходимо только двойное JavaScript-кодирование. Однако если *firstName* был бы передан другому JavaScript-методу, который явно или неявно вызывает `eval()`, тогда вместо `<%=doubleJavaScriptEncodedData%>` необходимо использовать `<%=tripleJavaScriptEncodedData%>`.
 
-An important implementation note is that if the JavaScript code tries to utilize the double or triple encoded data in string comparisons, the value may be interpreted as different values based on the number of `evals()` the data has passed through before being passed to the if comparison and the number of times the value was JavaScript encoded.
+### Примечания по реализации
 
-If **A** is double JavaScript encoded then the following **if** check will return false.
+Если JavaScript-код пытается использовать дважды или трижды закодированные данные в строковых сравнениях, значение может интерпретироваться по-разному в зависимости от количества вызовов `eval()`, через которые данные прошли, и числа уровней кодирования JavaScript.
 
-``` javascript
- var x = "doubleJavaScriptEncodedA";  //\u005c\u0075\u0030\u0030\u0034\u0031
+Пример:
+
+```javascript
+ var x = "doubleJavaScriptEncodedA";  // \u005c\u0075\u0030\u0030\u0034\u0031
  if (x == "A") {
     alert("x is A");
  } else if (x == "\u0041") {
@@ -371,41 +371,42 @@ If **A** is double JavaScript encoded then the following **if** check will retur
  }
 ```
 
-This brings up an interesting design point. Ideally, the correct way to apply encoding and avoid the problem stated above is to server-side encode for the output context where data is introduced into the application.
+Этот пример демонстрирует, как важно применять правильное кодирование в нужном контексте и избегать двойного кодирования, если оно не нужно.
 
-Then client-side encode (using a JavaScript encoding library such as [node-esapi](https://github.com/ESAPI/node-esapi/)) for the individual subcontext (DOM methods) which untrusted data is passed to.
+### Серверное и клиентское кодирование
 
-Here are some examples of how they are used:
+Идеальный подход — кодировать на серверной стороне для контекста, в который данные вводятся в приложение, а затем дополнительно кодировать на клиентской стороне (с помощью JavaScript-библиотек, таких как [node-esapi](https://github.com/ESAPI/node-esapi/)) для конкретного субконтекста (методы DOM), куда передаются недоверенные данные.
+
+Примеры:
 
 ```javascript
-//server-side encoding
+// серверное кодирование
 var ESAPI = require('node-esapi');
 var input = "<%=ESAPI.encoder().encodeForJavascript(untrustedData)%>";
 ```
 
 ```javascript
-//HTML encoding is happening in JavaScript
+// HTML-кодирование в JavaScript
 var ESAPI = require('node-esapi');
 document.writeln(ESAPI.encoder().encodeForHTML(input));
 ```
 
-One option is utilize ECMAScript 5 immutable properties in the JavaScript library.
-Another option provided by Gaz (Gareth) was to use a specific code construct to limit mutability with anonymous closures.
+Можно использовать неизменяемые свойства ECMAScript 5 для повышения безопасности или применить предложенный Gaz (Гаретом) конструктивный подход с замыканиями.
 
-An example follows:
+Пример:
 
 ```javascript
 function escapeHTML(str) {
      str = str + "''";
      var out = "''";
-     for(var i=0; i<str.length; i++) {
-         if(str[i] === '<') {
+     for (var i = 0; i < str.length; i++) {
+         if (str[i] === '<') {
              out += '&lt;';
-         } else if(str[i] === '>') {
+         } else if (str[i] === '>') {
              out += '&gt;';
-         } else if(str[i] === "'") {
+         } else if (str[i] === "'") {
              out += '&#39;';
-         } else if(str[i] === '"') {
+         } else if (str[i] === '"') {
              out += '&quot;';
          } else {
              out += str[i];
@@ -415,34 +416,34 @@ function escapeHTML(str) {
 }
 ```
 
-### GUIDELINE \#6 - Use untrusted data on only the right side of an expression
+### РЕКОМЕНДАЦИЯ \#6 - Используйте недоверенные данные только на правой стороне выражения
 
-Use untrusted data on only the right side of an expression, especially data that looks like code and may be passed to the application (e.g., `location` and `eval()`).
+Используйте недоверенные данные только на правой стороне выражения, особенно данные, которые выглядят как код и могут быть переданы в приложение (например, `location` и `eval()`).
 
 ```javascript
 window[userDataOnLeftSide] = "userDataOnRightSide";
 ```
 
-Using untrusted user data on the left side of the expression allows an attacker to subvert internal and external attributes of the window object, whereas using user input on the right side of the expression doesn't allow direct manipulation.
+Использование недоверенных пользовательских данных на левой стороне выражения позволяет злоумышленнику изменить внутренние и внешние атрибуты объекта window, тогда как использование пользовательских данных на правой стороне выражения не позволяет напрямую манипулировать ими.
 
-### GUIDELINE \#7 - When URL encoding in DOM be aware of character set issues
+### РЕКОМЕНДАЦИЯ \#7 - При URL-кодировании в DOM учитывайте проблемы с набором символов
 
-When URL encoding in DOM be aware of character set issues as the character set in JavaScript DOM is not clearly defined (Mike Samuel).
+При URL-кодировании в DOM учитывайте проблемы с набором символов, так как набор символов в JavaScript DOM не четко определен (Майк Сэмюэл).
 
-### GUIDELINE \#8 - Limit access to object properties when using object\[x\] accessors
+### РЕКОМЕНДАЦИЯ \#8 - Ограничивайте доступ к свойствам объекта при использовании `object[x]` аксессоров
 
-Limit access to object properties when using `object[x]` accessors (Mike Samuel). In other words, add a level of indirection between untrusted input and specified object properties.
+Ограничивайте доступ к свойствам объекта при использовании аксессоров `object[x]` (Майк Сэмюэл). Другими словами, добавьте уровень косвенности между недоверенным вводом и указанными свойствами объекта.
 
-Here is an example of the problem using map types:
+Пример проблемы с использованием типов карт:
 
 ```javascript
 var myMapType = {};
 myMapType[<%=untrustedData%>] = "moreUntrustedData";
 ```
 
-The developer writing the code above was trying to add additional keyed elements to the `myMapType` object. However, this could be used by an attacker to subvert internal and external attributes of the `myMapType` object.
+Разработчик, написавший этот код, пытался добавить дополнительные элементы с ключами в объект `myMapType`. Однако злоумышленник может использовать это для изменения внутренних и внешних атрибутов объекта `myMapType`.
 
-A better approach would be to use the following:
+Более подходящий способ использования:
 
 ```javascript
 if (untrustedData === 'location') {
@@ -450,11 +451,11 @@ if (untrustedData === 'location') {
 }
 ```
 
-### GUIDELINE \#9 - Run your JavaScript in a ECMAScript 5 canopy or sandbox
+### РЕКОМЕНДАЦИЯ \#9 - Запускайте свой JavaScript в канопи ECMAScript 5 или в песочнице
 
-Run your JavaScript in a ECMAScript 5 [canopy](https://github.com/jcoglan/canopy) or sandbox to make it harder for your JavaScript API to be compromised (Gareth Heyes and John Stevens).
+Запускайте свой JavaScript в канопи [ECMAScript 5](https://github.com/jcoglan/canopy) или в песочнице, чтобы усложнить компрометацию API вашего JavaScript (Гарет Хейес и Джон Стивенс).
 
-Examples of some JavaScript sandbox / sanitizers:
+Примеры песочниц/санитайзеров для JavaScript:
 
 - [js-xss](https://github.com/leizongmin/js-xss)
 - [sanitize-html](https://github.com/apostrophecms/sanitize-html)
@@ -462,15 +463,15 @@ Examples of some JavaScript sandbox / sanitizers:
 - [MDN - HTML Sanitizer API](https://developer.mozilla.org/en-US/docs/Web/API/HTML_Sanitizer_API)
 - [OWASP Summit 2011 - DOM Sandboxing](https://owasp.org/www-pdf-archive/OWASPSummit2011DOMSandboxingBrowserSecurityTrack.pdf)
 
-### GUIDELINE \#10 - Don't eval() JSON to convert it to native JavaScript objects
+### РЕКОМЕНДАЦИЯ \#10 - Не используйте `eval()` для преобразования JSON в нативные JavaScript объекты
 
-Don't `eval()` JSON to convert it to native JavaScript objects. Instead use `JSON.toJSON()` and `JSON.parse()` (Chris Schmidt).
+Не используйте `eval()` для преобразования JSON в нативные JavaScript объекты. Вместо этого используйте `JSON.toJSON()` и `JSON.parse()` (Крис Шмидт).
 
-## Common Problems Associated with Mitigating DOM Based XSS
+## Общие проблемы, связанные с предотвращением DOM-основанных XSS
 
-### Complex Contexts
+### Сложные контексты
 
-In many cases the context isn't always straightforward to discern.
+Во многих случаях контекст не всегда легко различить.
 
 ```html
 <a href="javascript:myFunction('<%=untrustedData%>', 'test');">Click Me</a>
@@ -482,9 +483,9 @@ Function myFunction (url,name) {
 </script>
 ```
 
-In the above example, untrusted data started in the rendering URL context (`href` attribute of an `a` tag) then changed to a JavaScript execution context (`javascript:` protocol handler) which passed the untrusted data to an execution URL subcontext (`window.location` of `myFunction`).
+В приведенном выше примере недоверенные данные начинаются в контексте URL-адреса (`href` атрибут тега `a`), затем меняются на контекст выполнения JavaScript (`javascript:` протокол) и передаются в субконтекст выполнения URL (`window.location` функции `myFunction`).
 
-Because the data was introduced in JavaScript code and passed to a URL subcontext the appropriate server-side encoding would be the following:
+Поскольку данные были введены в код JavaScript и переданы в субконтекст URL, подходящее серверное кодирование будет следующим:
 
 ```html
 <a href="javascript:myFunction('<%=ESAPI.encoder().encodeForJavascript(ESAPI.encoder().encodeForURL(untrustedData)) %>', 'test');">
@@ -492,45 +493,45 @@ Click Me</a>
  ...
 ```
 
-Or if you were using ECMAScript 5 with an immutable JavaScript client-side encoding libraries you could do the following:
+Или если вы используете ECMAScript 5 с неизменяемыми клиентскими библиотеками кодирования JavaScript, можно сделать следующее:
 
 ```html
-<!-- server side URL encoding has been removed.  Now only JavaScript encoding on server side. -->
+<!-- серверное кодирование URL было удалено. Теперь только кодирование JavaScript на стороне сервера. -->
 <a href="javascript:myFunction('<%=ESAPI.encoder().encodeForJavascript(untrustedData)%>', 'test');">Click Me</a>
  ...
 <script>
 Function myFunction (url,name) {
-    var encodedURL = ESAPI.encoder().encodeForURL(url);  //URL encoding using client-side scripts
+    var encodedURL = ESAPI.encoder().encodeForURL(url);  //URL-кодирование с использованием клиентских скриптов
     window.location = encodedURL;
 }
 </script>
 ```
 
-### Inconsistencies of Encoding Libraries
+### Несоответствия библиотек кодирования
 
-There are a number of open source encoding libraries out there:
+Существует несколько библиотек кодирования с открытым исходным кодом:
 
 1. OWASP [ESAPI](https://owasp.org/www-project-enterprise-security-api/)
 2. OWASP [Java Encoder](https://owasp.org/www-project-java-encoder/)
-3. Apache Commons Text [StringEscapeUtils](https://commons.apache.org/proper/commons-text/javadocs/api-release/org/apache/commons/text/StringEscapeUtils.html), replace one from [Apache Commons Lang3](https://commons.apache.org/proper/commons-lang/apidocs/org/apache/commons/lang3/StringEscapeUtils.html)
+3. Apache Commons Text [StringEscapeUtils](https://commons.apache.org/proper/commons-text/javadocs/api-release/org/apache/commons/text/StringEscapeUtils.html), замените одну из [Apache Commons Lang3](https://commons.apache.org/proper/commons-lang/apidocs/org/apache/commons/lang3/StringEscapeUtils.html)
 4. [Jtidy](http://jtidy.sourceforge.net/)
-5. Your company's custom implementation.
+5. Собственная реализация вашей компании.
 
-Some work on a denylist while others ignore important characters like "&lt;" and "&gt;".
+Некоторые из них работают на основе черного списка, в то время как другие игнорируют важные символы, такие как "<" и ">".
 
-Java Encoder is an active project providing supports for HTML, CSS and JavaScript encoding.
+Java Encoder — это активный проект, поддерживающий кодирование HTML, CSS и JavaScript.
 
-ESAPI is one of the few which works on an allowlist and encodes all non-alphanumeric characters. It is important to use an encoding library that understands which characters can be used to exploit vulnerabilities in their respective contexts. Misconceptions abound related to the proper encoding that is required.
+ESAPI — одна из немногих библиотек, которая работает на основе белого списка и кодирует все неалфавитно-цифровые символы. Важно использовать библиотеку кодирования, которая понимает, какие символы могут использоваться для эксплуатации уязвимостей в соответствующих контекстах. Существует множество заблуждений относительно правильного кодирования, необходимого для защиты.
 
-### Encoding Misconceptions
+### Заблуждения о кодировании
 
-Many security training curriculums and papers advocate the blind usage of HTML encoding to resolve XSS.
+Многие учебные курсы по безопасности и статьи рекомендуют использовать HTML-кодирование для защиты от XSS.
 
-This logically seems to be prudent advice as the JavaScript parser does not understand HTML encoding.
+Это кажется разумным советом, так как парсер JavaScript не понимает HTML-кодирования.
 
-However, if the pages returned from your web application utilize a content type of `text/xhtml` or the file type extension of `*.xhtml` then HTML encoding may not work to mitigate against XSS.
+Однако, если страницы вашего веб-приложения возвращаются с типом содержимого `text/xhtml` или расширением файла `*.xhtml`, то HTML-кодирование может не сработать для предотвращения XSS.
 
-For example:
+Например:
 
 ```html
 <script>
@@ -538,9 +539,9 @@ For example:
 </script>
 ```
 
-The HTML encoded value above is still executable. If that isn't enough to keep in mind, you have to remember that encodings are lost when you retrieve them using the value attribute of a DOM element.
+Закодированное значение выше все еще исполняется. Если этого недостаточно, следует помнить, что кодировки теряются при их извлечении с помощью атрибута `value` элемента DOM.
 
-Let's look at the sample page and script:
+Давайте посмотрим на пример страницы и скрипта:
 
 ```html
 <form name="myForm" ...>
@@ -548,31 +549,31 @@ Let's look at the sample page and script:
  ...
 </form>
 <script>
-  var x = document.myForm.lName.value;  //when the value is retrieved the encoding is reversed
-  document.writeln(x);  //any code passed into lName is now executable.
+  var x = document.myForm.lName.value;  //при извлечении значения кодирование отменяется
+  document.writeln(x);  //любой код, переданный в lName, теперь исполняется.
 </script>
 ```
 
-Finally there is the problem that certain methods in JavaScript which are usually safe can be unsafe in certain contexts.
+Наконец, существует проблема с тем, что некоторые методы JavaScript, которые обычно считаются безопасными, могут быть небезопасны в определенных контекстах.
 
-### Usually Safe Methods
+### Обычно безопасные методы
 
-One example of an attribute which is thought to be safe is `innerText`.
+Одним из атрибутов, который считается безопасным, является `innerText`.
 
-Some papers or guides advocate its use as an alternative to `innerHTML` to mitigate against XSS in `innerHTML`. However, depending on the tag which `innerText` is applied, code can be executed.
+Некоторые статьи или руководства рекомендуют его использование в качестве альтернативы `innerHTML`, чтобы предотвратить XSS в `innerHTML`. Однако, в зависимости от тега, к которому применяется `innerText`, код может быть выполнен.
 
 ```html
 <script>
  var tag = document.createElement("script");
- tag.innerText = "<%=untrustedData%>";  //executes code
+ tag.innerText = "<%=untrustedData%>";  //выполняет код
 </script>
 ```
 
-The `innerText` feature was originally introduced by Internet Explorer, and was formally specified in the HTML standard in 2016 after being adopted by all major browser vendors.
+Функция `innerText` была первоначально представлена в Internet Explorer и официально определена в стандарте HTML в 2016 году после того, как была принята всеми основными браузерами.
 
-### Detect DOM XSS using variant analysis
+### Обнаружение DOM XSS с использованием вариативного анализа
 
-**Vulnerable code:**
+**Уязвимый код:**
 
 ```
 <script>
@@ -581,4 +582,4 @@ document.write(x);
 </script>
 ```
 
-Semgrep rule to identify above dom xss [link](https://semgrep.dev/s/we30).
+Правило Semgrep для обнаружения XSS [ссылка](https://semgrep.dev/s/we30).

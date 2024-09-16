@@ -1,3 +1,3 @@
-# Injection Prevention Cheat Sheet in Java
+# Шпаргалка по предотвращению инъекций в Java
 
-This information has been moved to the dedicated [Java Security CheatSheet](Java_Security_Cheat_Sheet.md#injection-prevention-in-java)
+Информация из этой статьи была перемещена в профильную статью [Шпаргалка по безопасности Java](Java_Security_Cheat_Sheet.md#injection-prevention-in-java)

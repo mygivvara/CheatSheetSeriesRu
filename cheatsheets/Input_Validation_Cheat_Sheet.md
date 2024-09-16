@@ -1,91 +1,91 @@
-# Input Validation Cheat Sheet
+# Шпаргалка по валидации ввода
 
-## Introduction
+## Введение
 
-This article is focused on providing clear, simple, actionable guidance for providing Input Validation security functionality in your applications.
+Эта статья посвящена предоставлению ясных, простых и действенных рекомендаций по обеспечению функциональности проверки ввода в ваших приложениях.
 
-## Goals of Input Validation
+## Цели проверки ввода
 
-Input validation is performed to ensure only properly formed data is entering the workflow in an information system, preventing malformed data from persisting in the database and triggering malfunction of various downstream components. Input validation should happen as early as possible in the data flow, preferably as soon as the data is received from the external party.
+Проверка ввода выполняется для того, чтобы обеспечить поступление только корректно сформированных данных в рабочий процесс информационной системы, предотвращая сохранение некорректных данных в базе данных и сбои в работе различных компонентов. Проверка ввода должна происходить как можно раньше в потоке данных, желательно сразу после получения данных от внешней стороны.
 
-Data from all potentially untrusted sources should be subject to input validation, including not only Internet-facing web clients but also backend feeds over extranets, from [suppliers, partners, vendors or regulators](https://badcyber.com/several-polish-banks-hacked-information-stolen-by-unknown-attackers/), each of which may be compromised on their own and start sending malformed data.
+Данные из всех потенциально ненадежных источников должны подвергаться проверке ввода, включая не только веб-клиентов, доступных через интернет, но и бэкэнд-потоки через экстранеки, от [поставщиков, партнеров, поставщиков или регуляторов](https://badcyber.com/several-polish-banks-hacked-information-stolen-by-unknown-attackers/), каждый из которых может быть скомпрометирован и начать отправлять некорректные данные.
 
-Input Validation should not be used as the *primary* method of preventing [XSS](Cross_Site_Scripting_Prevention_Cheat_Sheet.md), [SQL Injection](SQL_Injection_Prevention_Cheat_Sheet.md) and other attacks which are covered in respective [cheat sheets](https://cheatsheetseries.owasp.org/) but can significantly contribute to reducing their impact if implemented properly.
+Проверка ввода не должна использоваться как *основной* метод предотвращения [XSS](Cross_Site_Scripting_Prevention_Cheat_Sheet.md), [SQL-инъекций](SQL_Injection_Prevention_Cheat_Sheet.md) и других атак, которые рассматриваются в соответствующих [шпаргалках](https://cheatsheetseries.owasp.org/), но может значительно помочь в снижении их воздействия при правильной реализации.
 
-## Input Validation Strategies
+## Стратегии проверки ввода
 
-Input validation should be applied at both syntactic and semantic levels:
+Проверка ввода должна применяться как на синтаксическом, так и на семантическом уровнях:
 
-- **Syntactic** validation should enforce correct syntax of structured fields (e.g. SSN, date, currency symbol).
-- **Semantic** validation should enforce correctness of their *values* in the specific business context (e.g. start date is before end date, price is within expected range).
+- **Синтаксическая** проверка должна обеспечивать корректность синтаксиса структурированных полей (например, ИНН, дата, символ валюты).
+- **Семантическая** проверка должна обеспечивать правильность их *значений* в конкретном бизнес-контексте (например, дата начала до даты окончания, цена в ожидаемом диапазоне).
 
-It is always recommended to prevent attacks as early as possible in the processing of the user's (attacker's) request. Input validation can be used to detect unauthorized input before it is processed by the application.
+Всегда рекомендуется предотвращать атаки как можно раньше в процессе обработки запроса пользователя (атаки). Проверка ввода может использоваться для обнаружения несанкционированного ввода до его обработки приложением.
 
-## Implementing Input Validation
+## Реализация проверки ввода
 
-Input validation can be implemented using any programming technique that allows effective enforcement of syntactic and semantic correctness, for example:
+Проверка ввода может быть реализована с использованием любой программной техники, которая позволяет эффективно обеспечивать синтаксическую и семантическую корректность, например:
 
-- Data type validators available natively in web application frameworks (such as [Django Validators](https://docs.djangoproject.com/en/1.11/ref/validators/), [Apache Commons Validators](https://commons.apache.org/proper/commons-validator/apidocs/org/apache/commons/validator/package-summary.html#doc.Usage.validator) etc).
-- Validation against [JSON Schema](http://json-schema.org/) and [XML Schema (XSD)](https://www.w3schools.com/xml/schema_intro.asp) for input in these formats.
-- Type conversion (e.g. `Integer.parseInt()` in Java, `int()` in Python) with strict exception handling
-- Minimum and maximum value range check for numerical parameters and dates, minimum and maximum length check for strings.
-- Array of allowed values for small sets of string parameters (e.g. days of week).
-- Regular expressions for any other structured data covering the whole input string `(^...$)` and **not** using "any character" wildcard (such as `.` or `\S`)
+- Валидаторы типов данных, доступные в фреймворках веб-приложений (например, [Django Validators](https://docs.djangoproject.com/en/1.11/ref/validators/), [Apache Commons Validators](https://commons.apache.org/proper/commons-validator/apidocs/org/apache/commons/validator/package-summary.html#doc.Usage.validator) и т.д.).
+- Проверка соответствия [JSON Schema](http://json-schema.org/) и [XML Schema (XSD)](https://www.w3schools.com/xml/schema_intro.asp) для ввода в этих форматах.
+- Преобразование типов (например, `Integer.parseInt()` в Java, `int()` в Python) с строгой обработкой исключений.
+- Проверка диапазона минимальных и максимальных значений для числовых параметров и дат, проверка минимальной и максимальной длины строк.
+- Массив разрешенных значений для небольших наборов строковых параметров (например, дни недели).
+- Регулярные выражения для любых других структурированных данных, охватывающие всю строку ввода `(^...$)` и **не** использующие подстановочный знак "любой символ" (например, `.` или `\S`).
 
 ### Allowlist vs Denylist
 
-It is a common mistake to use denylist validation in order to try to detect possibly dangerous characters and patterns like the apostrophe `'` character, the string `1=1`, or the `<script>` tag, but this is a massively flawed approach as it is trivial for an attacker to bypass such filters.
+Обычная ошибка заключается в использовании denylist (черного списка) для попытки обнаружения потенциально опасных символов и шаблонов, таких как апостроф `'`, строка `1=1` или тег `<script>`. Однако это крайне неэффективный подход, так как злоумышленник легко может обойти такие фильтры.
 
-Plus, such filters frequently prevent authorized input, like `O'Brian`, where the `'` character is fully legitimate. For more information on XSS filter evasion please see [this wiki page](https://owasp.org/www-community/xss-filter-evasion-cheatsheet).
+Кроме того, такие фильтры часто блокируют допустимый ввод, например `O'Brian`, где символ `'` абсолютно легален. Для получения дополнительной информации об обходе фильтров XSS см. [этую страницу вики](https://owasp.org/www-community/xss-filter-evasion-cheatsheet).
 
-Allowlist validation is appropriate for all input fields provided by the user. allowlist validation involves defining exactly what IS authorized, and by definition, everything else is not authorized.
+Проверка по allowlist (белому списку) подходит для всех полей ввода, предоставленных пользователем. Проверка по allowlist включает в себя определение точно того, что ДОПУСКАЕТСЯ, и, по определению, все остальное не допускается.
 
-If it's well structured data, like dates, social security numbers, zip codes, email addresses, etc. then the developer should be able to define a very strong validation pattern, usually based on regular expressions, for validating such input.
+Если это хорошо структурированные данные, такие как даты, номера социального страхования, почтовые индексы, адреса электронной почты и т.д., то разработчик должен быть в состоянии определить очень строгий шаблон проверки, обычно основанный на регулярных выражениях, для проверки такого ввода.
 
-If the input field comes from a fixed set of options, like a drop down list or radio buttons, then the input needs to match exactly one of the values offered to the user in the first place.
+Если поле ввода выбирается из фиксированного набора опций, например, выпадающий список или радиокнопки, то ввод должен точно соответствовать одному из значений, предложенных пользователю.
 
-### Validating Free-form Unicode Text
+### Проверка произвольного текста Unicode
 
-Free-form text, especially with Unicode characters, is perceived as difficult to validate due to a relatively large space of characters that need to be allowed.
+Произвольный текст, особенно с символами Unicode, воспринимается как трудный для проверки из-за относительно большого пространства символов, которые нужно разрешить.
 
-It's also free-form text input that highlights the importance of proper context-aware output encoding and quite clearly demonstrates that input validation is **not** the primary safeguards against Cross-Site Scripting. If your users want to type apostrophe `'` or less-than sign `<` in their comment field, they might have perfectly legitimate reason for that and the application's job is to properly handle it throughout the whole life cycle of the data.
+Также произвольный текстовый ввод подчеркивает важность правильного кодирования вывода с учетом контекста и ясно демонстрирует, что проверка ввода **не является** основной защитой от Cross-Site Scripting. Если ваши пользователи хотят ввести апостроф `'` или знак меньше `<` в поле комментария, у них могут быть абсолютно легитимные причины для этого, и задача приложения — правильно обработать это на протяжении всего жизненного цикла данных.
 
-The primary means of input validation for free-form text input should be:
+Основные методы проверки ввода для произвольного текстового ввода должны включать:
 
-- **Normalization:** Ensure canonical encoding is used across all the text and no invalid characters are present.
-- **Character category allowlisting:** Unicode allows listing categories such as "decimal digits" or "letters" which not only covers the Latin alphabet but also various other scripts used globally (e.g. Arabic, Cyrillic, CJK ideographs etc).
-- **Individual character allowlisting:** If you allow letters and ideographs in names and also want to allow apostrophe `'` for Irish names, but don't want to allow the whole punctuation category.
+- **Нормализация:** Убедитесь, что используется каноническое кодирование по всему тексту и нет недопустимых символов.
+- **Allowlisting категории символов:** Unicode позволяет перечислять категории, такие как "десятичные цифры" или "буквы", которые охватывают не только латинский алфавит, но и различные другие скрипты, используемые по всему миру (например, арабский, кириллицу, китайские иероглифы и т.д.).
+- **Allowlisting отдельных символов:** Если вы позволяете буквы и иероглифы в именах и также хотите разрешить апостроф `'` для ирландских имен, но не хотите разрешать всю категорию пунктуации.
 
-References:
+Ссылки:
 
-- [Input validation of free-form Unicode text in Python](https://web.archive.org/web/20170717174432/https://ipsec.pl/python/2017/input-validation-free-form-unicode-text-python.html/)
-- [UAX 31: Unicode Identifier and Pattern Syntax](https://unicode.org/reports/tr31/)
-- [UAX 15: Unicode Normalization Forms](https://www.unicode.org/reports/tr15/)
-- [UAX 24: Unicode Script Property](https://unicode.org/reports/tr24/)
+- [Проверка ввода произвольного текста Unicode в Python](https://web.archive.org/web/20170717174432/https://ipsec.pl/python/2017/input-validation-free-form-unicode-text-python.html/)
+- [UAX 31: Синтаксис идентификаторов и шаблонов Unicode](https://unicode.org/reports/tr31/)
+- [UAX 15: Формы нормализации Unicode](https://www.unicode.org/reports/tr15/)
+- [UAX 24: Свойство скрипта Unicode](https://unicode.org/reports/tr24/)
 
-### Regular Expressions (Regex)
+### Регулярные выражения (Regex)
 
-Developing regular expressions can be complicated, and is well beyond the scope of this cheat sheet.
+Разработка регулярных выражений может быть сложной задачей и выходит за рамки этого чек-листа.
 
-There are lots of resources on the internet about how to write regular expressions, including this [site](https://www.regular-expressions.info/) and the [OWASP Validation Regex Repository](https://owasp.org/www-community/OWASP_Validation_Regex_Repository).
+Существует множество ресурсов в интернете, которые могут помочь в написании регулярных выражений, включая [этот сайт](https://www.regular-expressions.info/) и [Репозиторий регулярных выражений OWASP](https://owasp.org/www-community/OWASP_Validation_Regex_Repository).
 
-When designing regular expression, be aware of [RegEx Denial of Service (ReDoS) attacks](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS). These attacks cause a program using a poorly designed Regular Expression to operate very slowly and utilize CPU resources for a very long time.
+При проектировании регулярных выражений будьте внимательны к [атакам Denial of Service (ReDoS) на регулярные выражения](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS). Эти атаки могут заставить программу, использующую плохо спроектированное регулярное выражение, работать очень медленно и потреблять ресурсы процессора длительное время.
 
-In summary, input validation should:
+В общем, проверка ввода должна:
 
-- Be applied to all input data, at minimum.
-- Define the allowed set of characters to be accepted.
-- Define a minimum and maximum length for the data (e.g. `{1,25}`).
+- Применяться ко всем входным данным как минимум.
+- Определять допустимый набор символов.
+- Определять минимальную и максимальную длину данных (например, `{1,25}`).
 
-## Allow List Regular Expression Examples
+## Примеры регулярных выражений для Allow List
 
-Validating a U.S. Zip Code (5 digits plus optional -4)
+Проверка почтового индекса США (5 цифр плюс необязательные -4)
 
 ```text
 ^\d{5}(-\d{4})?$
 ```
 
-Validating U.S. State Selection From a Drop-Down Menu
+Проверка выбора штата США из выпадающего списка
 
 ```text
 ^(AA|AE|AP|AL|AK|AS|AZ|AR|CA|CO|CT|DE|DC|FM|FL|GA|GU|
@@ -94,150 +94,150 @@ NV|NH|NJ|NM|NY|NC|ND|MP|OH|OK|OR|PW|PA|PR|RI|SC|SD|TN|
 TX|UT|VT|VI|VA|WA|WV|WI|WY)$
 ```
 
-**Java Regex Usage Example:**
+**Пример использования Regex в Java:**
 
-Example validating the parameter "zip" using a regular expression.
+Пример проверки параметра "zip" с использованием регулярного выражения.
 
 ```java
-private static final Pattern zipPattern = Pattern.compile("^\d{5}(-\d{4})?$");
+private static final Pattern zipPattern = Pattern.compile("^\d{5}(-\d{4})?$");
 
-public void doPost( HttpServletRequest request, HttpServletResponse response) {
-  try {
-      String zipCode = request.getParameter( "zip" );
-      if ( !zipPattern.matcher( zipCode ).matches() ) {
-          throw new YourValidationException( "Improper zipcode format." );
-      }
-      // do what you want here, after its been validated ..
-  } catch(YourValidationException e ) {
-      response.sendError( response.SC_BAD_REQUEST, e.getMessage() );
-  }
+public void doPost(HttpServletRequest request, HttpServletResponse response) {
+  try {
+      String zipCode = request.getParameter("zip");
+      if (!zipPattern.matcher(zipCode).matches()) {
+          throw new YourValidationException("Неверный формат почтового индекса.");
+      }
+      // Продолжайте обработку после проверки
+  } catch (YourValidationException e) {
+      response.sendError(response.SC_BAD_REQUEST, e.getMessage());
+  }
 }
 ```
 
-Some Allowlist validators have also been predefined in various open source packages that you can leverage. For example:
+Некоторые валидаторы Allowlist также уже предопределены в различных открытых исходных пакетах, которые вы можете использовать. Например:
 
 - [Apache Commons Validator](http://commons.apache.org/proper/commons-validator/)
 
-## Client-side vs Server-side Validation
+## Валидация на стороне клиента и на стороне сервера
 
-Input validation **must** be implemented on the server-side before any data is processed by an application’s functions, as any JavaScript-based input validation performed on the client-side can be circumvented by an attacker who disables JavaScript or uses a web proxy. Implementing both client-side JavaScript-based validation for UX and server-side validation for security is the recommended approach, leveraging each for their respective strengths.
+Валидация ввода **должна** быть реализована на стороне сервера перед обработкой данных функциями приложения, так как валидация ввода на стороне клиента, выполненная на основе JavaScript, может быть обойдена атакующим, который отключает JavaScript или использует веб-прокси. Рекомендуется использовать как валидацию на стороне клиента для удобства пользователя, так и валидацию на стороне сервера для безопасности, используя каждую из них для их соответствующих целей.
 
-## Validating Rich User Content
+## Валидация богатого пользовательского контента
 
-It is very difficult to validate rich content submitted by a user. For more information, please see the XSS cheat sheet on [Sanitizing HTML Markup with a Library Designed for the Job](Cross_Site_Scripting_Prevention_Cheat_Sheet.md).
+Очень трудно валидировать богатый контент, отправляемый пользователем. Для получения дополнительной информации см. раздел о XSS на [Чек-лист по очистке HTML-разметки с использованием специализированной библиотеки](Cross_Site_Scripting_Prevention_Cheat_Sheet.md).
 
-## Preventing XSS and Content Security Policy
+## Предотвращение XSS и Политика безопасности контента
 
-All user data controlled must be encoded when returned in the HTML page to prevent the execution of malicious data (e.g. XSS). For example `<script>` would be returned as `&lt;script&gt;`
+Все данные, контролируемые пользователем, должны быть закодированы при возвращении на HTML-странице, чтобы предотвратить выполнение вредоносных данных (например, XSS). Например, `<script>` будет возвращен как `&lt;script&gt;`.
 
-The type of encoding is specific to the context of the page where the user controlled data is inserted. For example, HTML entity encoding is appropriate for data placed into the HTML body. However, user data placed into a script would need JavaScript specific output encoding.
+Тип кодирования специфичен для контекста страницы, где вставляются данные, контролируемые пользователем. Например, HTML-сущностное кодирование подходит для данных, размещенных в теле HTML. Однако данные пользователя, размещенные в скрипте, потребуют специфического для JavaScript кодирования вывода.
 
-Detailed information on XSS prevention here: [OWASP XSS Prevention Cheat Sheet](Cross_Site_Scripting_Prevention_Cheat_Sheet.md)
+Подробную информацию о предотвращении XSS можно найти здесь: [OWASP Чек-лист по предотвращению XSS](Cross_Site_Scripting_Prevention_Cheat_Sheet.md).
 
-## File Upload Validation
+## Валидация загрузки файлов
 
-Many websites allow users to upload files, such as a profile picture or more. This section helps provide that feature securely.
+Многие веб-сайты позволяют пользователям загружать файлы, такие как фотографии профиля и другие. Этот раздел поможет обеспечить безопасное использование этой функции.
 
-Check the [File Upload Cheat Sheet](File_Upload_Cheat_Sheet.md).
+Проверьте [Чек-лист по загрузке файлов](File_Upload_Cheat_Sheet.md).
 
-### Upload Verification
+### Проверка загрузки
 
-- Use input validation to ensure the uploaded filename uses an expected extension type.
-- Ensure the uploaded file is not larger than a defined maximum file size.
-- If the website supports ZIP file upload, do a validation check before unzipping the file. The check includes the target path, level of compression, estimated unzip size.
+- Используйте валидацию ввода, чтобы убедиться, что загружаемое имя файла имеет ожидаемое расширение.
+- Убедитесь, что загружаемый файл не превышает заданный максимальный размер файла.
+- Если сайт поддерживает загрузку ZIP-файлов, выполните проверку перед распаковкой файла. Проверка включает целевой путь, уровень сжатия, оценочный размер после распаковки.
 
-### Upload Storage
+### Хранение загруженных файлов
 
-- Use a new filename to store the file on the OS. Do not use any user controlled text for this filename or for the temporary filename.
-- When the file is uploaded to web, it's suggested to rename the file on storage. For example, the uploaded filename is *test.JPG*, rename it to *JAI1287uaisdjhf.JPG* with a random filename. The purpose of doing it to prevent the risks of direct file access and ambiguous filename to evade the filter, such as `test.jpg;.asp or /../../../../../test.jpg`.
-- Uploaded files should be analyzed for malicious content (anti-malware, static analysis, etc).
-- The file path should not be able to specify by client-side. It's decided by server-side.
+- Используйте новое имя файла для хранения на ОС. Не используйте текст, контролируемый пользователем, для этого имени файла или для временного имени файла.
+- Когда файл загружается на веб-сайт, рекомендуется переименовать файл на хранилище. Например, загружаемое имя файла *test.JPG* можно переименовать в *JAI1287uaisdjhf.JPG* с помощью случайного имени файла. Цель этого — предотвратить риски прямого доступа к файлу и неясные имена файлов, чтобы обойти фильтр, такие как `test.jpg;.asp` или `/../../../../../test.jpg`.
+- Загруженные файлы должны быть проанализированы на наличие вредоносного содержимого (антивирус, статический анализ и т. д.).
+- Путь к файлу не должен указываться со стороны клиента. Он определяется на стороне сервера.
 
-### Public Serving of Uploaded Content
+### Публичное размещение загруженного контента
 
-- Ensure uploaded images are served with the correct content-type (e.g. image/jpeg, application/x-xpinstall)
+- Убедитесь, что загруженные изображения обслуживаются с правильным типом контента (например, image/jpeg, application/x-xpinstall).
 
-### Beware of Specific File Types
+### Остерегайтесь определенных типов файлов
 
-The upload feature should be using an allowlist approach to only allow specific file types and extensions. However, it is important to be aware of the following file types that, if allowed, could result in security vulnerabilities:
+Функция загрузки должна использовать подход с allowlist, чтобы разрешить только определенные типы файлов и расширения. Однако важно учитывать следующие типы файлов, которые, если их разрешить, могут привести к уязвимостям безопасности:
 
-- **crossdomain.xml** / **clientaccesspolicy.xml:** allows cross-domain data loading in Flash, Java and Silverlight. If permitted on sites with authentication this can permit cross-domain data theft and CSRF attacks. Note this can get pretty complicated depending on the specific plugin version in question, so its best to just prohibit files named "crossdomain.xml" or "clientaccesspolicy.xml".
-- **.htaccess** and **.htpasswd:** Provides server configuration options on a per-directory basis, and should not be permitted. See [HTACCESS documentation](http://en.wikipedia.org/wiki/Htaccess).
-- Web executable script files are suggested not to be allowed such as `aspx, asp, css, swf, xhtml, rhtml, shtml, jsp, js, pl, php, cgi`.
+- **crossdomain.xml** / **clientaccesspolicy.xml:** позволяют загрузку данных между доменами в Flash, Java и Silverlight. Если это разрешено на сайтах с аутентификацией, это может позволить кражу данных между доменами и атаки CSRF. Обратите внимание, что это может быть довольно сложным в зависимости от конкретной версии плагина, поэтому лучше просто запретить файлы с именем "crossdomain.xml" или "clientaccesspolicy.xml".
+- **.htaccess** и **.htpasswd:** предоставляют параметры конфигурации сервера для каждой директории и не должны разрешаться. См. [документацию HTACCESS](http://en.wikipedia.org/wiki/Htaccess).
+- Веб-исполняемые скрипты, такие как `aspx, asp, css, swf, xhtml, rhtml, shtml, jsp, js, pl, php, cgi`, рекомендуется не разрешать.
 
-### Image Upload Verification
+### Проверка загрузки изображений
 
-- Use image rewriting libraries to verify the image is valid and to strip away extraneous content.
-- Set the extension of the stored image to be a valid image extension based on the detected content type of the image from image processing (e.g. do not just trust the header from the upload).
-- Ensure the detected content type of the image is within a list of defined image types (jpg, png, etc)
+- Используйте библиотеки переписывания изображений для проверки их валидности и удаления лишнего контента.
+- Установите расширение сохраненного изображения в соответствии с действительным расширением изображения на основе определенного типа контента изображения из обработки изображений (например, не доверяйте только заголовку из загрузки).
+- Убедитесь, что определенный тип контента изображения находится в списке допустимых типов изображений (jpg, png и т. д.).
 
-## Email Address Validation
+## Валидация адреса электронной почты
 
-### Syntactic Validation
+### Синтаксическая валидация
 
-The format of email addresses is defined by [RFC 5321](https://tools.ietf.org/html/rfc5321#section-4.1.2), and is far more complicated than most people realise. As an example, the following are all considered to be valid email addresses:
+Формат адресов электронной почты определяется [RFC 5321](https://tools.ietf.org/html/rfc5321#section-4.1.2) и значительно сложнее, чем большинство людей предполагают. Например, следующие адреса считаются допустимыми:
 
 - `"><script>alert(1);</script>"@example.org`
 - `user+subaddress@example.org`
 - `user@[IPv6:2001:db8::1]`
 - `" "@example.org`
 
-Properly parsing email addresses for validity with regular expressions is very complicated, although there are a number of [publicly available documents on regex](https://datatracker.ietf.org/doc/html/draft-seantek-mail-regexen-03#rfc.section.3).
+Правильный анализ адресов электронной почты на корректность с помощью регулярных выражений очень сложен, хотя есть ряд [доступных документов по regex](https://datatracker.ietf.org/doc/html/draft-seantek-mail-regexen-03#rfc.section.3).
 
-The biggest caveat on this is that although the RFC defines a very flexible format for email addresses, most real world implementations (such as mail servers) use a far more restricted address format, meaning that they will reject addresses that are *technically* valid.  Although they may be technically correct, these addresses are of little use if your application will not be able to actually send emails to them.
+Самое большое предостережение заключается в том, что хотя RFC определяет очень гибкий формат для адресов электронной почты, большинство реальных реализаций (таких как почтовые серверы) используют гораздо более ограниченный формат адреса, что означает, что они будут отклонять адреса, которые *технически* являются корректными. Хотя они могут быть технически правильными, такие адреса мало полезны, если ваше приложение не сможет отправить на них электронные письма.
 
-As such, the best way to validate email addresses is to perform some basic initial validation, and then pass the address to the mail server and catch the exception if it rejects it. This means that the application can be confident that its mail server can send emails to any addresses it accepts. The initial validation could be as simple as:
+Таким образом, лучший способ валидации адресов электронной почты — это выполнить базовую начальную валидацию, а затем передать адрес почтовому серверу и поймать исключение, если он его отклонит. Это означает, что приложение может быть уверено, что его почтовый сервер может отправлять электронные письма на любые принятые адреса. Начальная валидация может быть простой, как:
 
-- The email address contains two parts, separated with an `@` symbol.
-- The email address does not contain dangerous characters (such as backticks, single or double quotes, or null bytes).
-    - Exactly which characters are dangerous will depend on how the address is going to be used (echoed in page, inserted into database, etc).
-- The domain part contains only letters, numbers, hyphens (`-`) and periods (`.`).
-- The email address is a reasonable length:
-    - The local part (before the `@`) should be no more than 63 characters.
-    - The total length should be no more than 254 characters.
+- Адрес электронной почты содержит две части, разделенные символом `@`.
+- Адрес электронной почты не содержит опасных символов (таких как обратные кавычки, одинарные или двойные кавычки, или нулевые байты).
+    - Какие именно символы являются опасными, будет зависеть от того, как адрес будет использоваться (выводится на страницу, вставляется в базу данных и т. д.).
+- Часть домена содержит только буквы, цифры, дефисы (`-`) и точки (`.`).
+- Адрес электронной почты имеет разумную длину:
+    - Локальная часть (до `@`) не должна превышать 63 символов.
+    - Общая длина не должна превышать 254 символа.
 
-### Semantic Validation
+### Семантическая валидация
 
-Semantic validation is about determining whether the email address is correct and legitimate. The most common way to do this is to send an email to the user, and require that they click a link in the email, or enter a code that has been sent to them. This provides a basic level of assurance that:
+Семантическая валидация направлена на определение правильности и легитимности адреса электронной почты. Наиболее распространенный способ сделать это — отправить пользователю письмо и потребовать, чтобы он кликнул по ссылке в письме или ввел код, который был отправлен ему. Это предоставляет базовый уровень уверенности в том, что:
 
-- The email address is correct.
-- The application can successfully send emails to it.
-- The user has access to the mailbox.
+- Адрес электронной почты корректен.
+- Приложение может успешно отправлять на него электронные письма.
+- Пользователь имеет доступ к почтовому ящику.
 
-The links that are sent to users to prove ownership should contain a token that is:
+Ссылки, отправляемые пользователям для подтверждения прав на адрес, должны содержать токен, который:
 
-- At least 32 characters long.
-- Generated using a [secure source of randomness](Cryptographic_Storage_Cheat_Sheet.md#secure-random-number-generation).
-- Single use.
-- Time limited (e.g, expiring after eight hours).
+- Длиной не менее 32 символов.
+- Сгенерирован с использованием [безопасного источника случайности](Cryptographic_Storage_Cheat_Sheet.md#secure-random-number-generation).
+- Используется один раз.
+- Ограничен по времени (например, истекает через восемь часов).
 
-After validating the ownership of the email address, the user should then be required to authenticate on the application through the usual mechanism.
+После проверки прав на адрес электронной почты пользователю следует пройти аутентификацию в приложении через обычный механизм.
 
-#### Disposable Email Addresses
+#### Одноразовые адреса электронной почты
 
-In some cases, users may not want to give their real email address when registering on the application, and will instead provide a disposable email address. These are publicly available addresses that do not require the user to authenticate, and are typically used to reduce the amount of spam received by users' primary email addresses.
+В некоторых случаях пользователи могут не захотеть предоставлять свой настоящий адрес электронной почты при регистрации в приложении и вместо этого предоставить одноразовый адрес электронной почты. Эти адреса являются общедоступными и не требуют от пользователя аутентификации, обычно они используются для сокращения количества спама, получаемого на основной адрес электронной почты пользователя.
 
-Blocking disposable email addresses is almost impossible, as there are a large number of websites offering these services, with new domains being created every day. There are a number of publicly available lists and commercial lists of known disposable domains, but these will always be incomplete.
+Блокировка одноразовых адресов электронной почты почти невозможна, так как существует множество сайтов, предлагающих такие услуги, и каждый день создаются новые домены. Существует несколько общедоступных списков и коммерческих списков известных одноразовых доменов, но они всегда будут неполными.
 
-If these lists are used to block the use of disposable email addresses then the user should be presented with a message explaining why they are blocked (although they are likely to simply search for another disposable provider rather than giving their legitimate address).
+Если эти списки используются для блокировки одноразовых адресов электронной почты, пользователю следует предоставить сообщение, объясняющее причину блокировки (хотя он, вероятно, просто найдет другого поставщика одноразовых адресов, а не предоставит свой настоящий адрес).
 
-If it is essential that disposable email addresses are blocked, then registrations should only be allowed from specifically-allowed email providers. However, if this includes public providers such as Google or Yahoo, users can simply register their own disposable address with them.
+Если необходимо заблокировать одноразовые адреса электронной почты, то регистрации следует разрешать только от специально разрешенных провайдеров электронной почты. Однако, если это включает в себя публичные провайдеры, такие как Google или Yahoo, пользователи могут просто зарегистрировать свой собственный одноразовый адрес у них.
 
-#### Sub-Addressing
+#### Подадресация
 
-Sub-addressing allows a user to specify a *tag* in the local part of the email address (before the `@` sign), which will be ignored by the mail server. For example, if that `example.org` domain supports sub-addressing, then the following email addresses are equivalent:
+Подадресация позволяет пользователю указать *тег* в локальной части адреса электронной почты (до знака `@`), который будет игнорироваться почтовым сервером. Например, если домен `example.org` поддерживает подадресацию, то следующие адреса электронной почты эквивалентны:
 
 - `user@example.org`
 - `user+site1@example.org`
 - `user+site2@example.org`
 
-Many mail providers (such as Microsoft Exchange) do not support sub-addressing. The most notable provider who does is Gmail, although there are many others that also do.
+Многие почтовые провайдеры (например, Microsoft Exchange) не поддерживают подадресацию. Наиболее заметный провайдер, который это делает, — Gmail, хотя есть и многие другие.
 
-Some users will use a different *tag* for each website they register on, so that if they start receiving spam to one of the sub-addresses they can identify which website leaked or sold their email address.
+Некоторые пользователи будут использовать разные *теги* для каждого сайта, на котором они регистрируются, чтобы, если они начнут получать спам на один из подадресов, они могли определить, какой сайт утек или продал их адрес электронной почты.
 
-Because it could allow users to register multiple accounts with a single email address, some sites may wish to block sub-addressing by stripping out everything between the `+` and `@` signs. This is not generally recommended, as it suggests that the website owner is either unaware of sub-addressing or wishes to prevent users from identifying them when they leak or sell email addresses. Additionally, it can be trivially bypassed by using [disposable email addresses](#disposable-email-addresses), or simply registering multiple email accounts with a trusted provider.
+Поскольку это может позволить пользователям регистрировать несколько аккаунтов с одним адресом электронной почты, некоторые сайты могут пожелать заблокировать подадресацию, удаляя все между знаками `+` и `@`. Это обычно не рекомендуется, так как это предполагает, что владелец сайта либо не осведомлен о подадресации, либо хочет предотвратить идентификацию их при утечке или продаже адресов электронной почты. Кроме того, это можно легко обойти, используя [одноразовые адреса электронной почты](#disposable-email-addresses) или просто регистрируя несколько учетных записей электронной почты у доверенного провайдера.
 
-## References
+## Источники
 
 - [OWASP Top 10 Proactive Controls 2024: C3: Validate all Input & Handle Exceptions](https://owasp.org/www-project-proactive-controls/v4/en/c3-validate-all-input)
 - [CWE-20 Improper Input Validation](https://cwe.mitre.org/data/definitions/20.html)

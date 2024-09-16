@@ -1,115 +1,115 @@
-# Database Security Cheat Sheet
+# Шпаргалка по безопасности базы данных
 
-## Introduction
+## Введение
 
-This cheat sheet provides advice for securely configuring SQL and NoSQL databases. It is designed to be used by application developers if they are responsible for managing the databases. For details about protecting against SQL Injection attacks, see the [SQL Injection Prevention Cheat Sheet](SQL_Injection_Prevention_Cheat_Sheet.md).
+Эта шпаргалка предоставляет рекомендации по безопасной настройке SQL и NoSQL баз данных. Она предназначена для разработчиков приложений, если они несут ответственность за управление базами данных. Для получения информации о защите от атак с использованием SQL-инъекций, см. [Шпаргалку по предотвращению SQL-инъекций](SQL_Injection_Prevention_Cheat_Sheet.md).
 
-## Protecting the Backend Database
+## Защита бекенд базы данных
 
-The application's backend database should be isolated from other servers and only connect with as few hosts as possible. This task will depend on the system and network architecture. Consider these suggestions:
+Бекенд базы данных приложения должен быть изолирован от других серверов и подключаться только к минимальному количеству хостов. Эта задача зависит от архитектуры системы и сети. Рассмотрите следующие предложения:
 
-- Disabling network (TCP) access and requiring all access is over a local socket file or named pipe.
-- Configuring the database to only bind on localhost.
-- Restricting access to the network port to specific hosts with firewall rules.
-- Placing the database server in a separate DMZ isolated from the application server.
+- Отключение сетевого (TCP) доступа и требование, чтобы весь доступ осуществлялся через локальный файл сокета или именованный канал.
+- Настройка базы данных для привязки только к localhost.
+- Ограничение доступа к сетевому порту для определённых хостов с помощью правил брандмауэра.
+- Размещение сервера базы данных в отдельной DMZ, изолированной от сервера приложений.
 
-Similar protections should protect any web-based management tools used with the database, such as phpMyAdmin.
+Аналогичные меры защиты должны применяться к любым веб-инструментам управления базой данных, таким как phpMyAdmin.
 
-When an application is running on an untrusted system (such as a thick-client), it should always connect to the backend through an API that can enforce appropriate access control and restrictions. Direct connections should **never ever** be made from a thick client to the backend database.
+Когда приложение работает на ненадёжной системе (например, толстый клиент), оно всегда должно подключаться к бекенду через API, который может обеспечить контроль доступа и ограничения. Прямые подключения с толстого клиента к базе данных **никогда** не должны осуществляться.
 
-### Implementing Transport Layer Protection
+### Реализация защиты транспортного уровня
 
-Most database default configurations start with unencrypted network connections, though some do encrypt the initial authentication (such as Microsoft SQL Server). Even if the initial authentication is encrypted, the rest of the traffic will be unencrypted and all kinds of sensitive information will be sent across the network in clear text. The following steps should be taken to prevent unencrypted traffic:
+Большинство баз данных по умолчанию используют нешифрованные сетевые соединения, хотя некоторые из них шифруют начальную аутентификацию (например, Microsoft SQL Server). Даже если начальная аутентификация шифруется, остальной трафик передаётся в открытом виде, что может привести к утечке конфиденциальной информации. Для предотвращения передачи нешифрованного трафика выполните следующие шаги:
 
-- Configure the database to only allow encrypted connections.
-- Install a trusted digital certificate on the server.
-- The client application to connect using TLSv1.2+ with modern ciphers (e.g, AES-GCM or ChaCha20).
-- The client application to verify that the digital certificate is correct.
+- Настройте базу данных на прием только зашифрованных соединений.
+- Установите доверенный цифровой сертификат на сервере.
+- Настройте клиентское приложение для использования TLSv1.2+ с современными шифрами (например, AES-GCM или ChaCha20).
+- Убедитесь, что клиентское приложение проверяет правильность цифрового сертификата.
 
-The [Transport Layer Security Cheat Sheet](Transport_Layer_Security_Cheat_Sheet.md) contains further guidance on securely configuring TLS.
+Дополнительные рекомендации по настройке TLS можно найти в [Шпаргалке по безопасности транспортного уровня](Transport_Layer_Security_Cheat_Sheet.md).
 
-## Configuring Secure Authentication
+## Настройка безопасной аутентификации
 
-The database should always require authentication, including connections from the local server. Database accounts should be:
+База данных всегда должна требовать аутентификацию, включая подключения с локального сервера. Аккаунты базы данных должны:
 
-- Protected with strong and unique passwords.
-- Used by a single application or service.
-- Configured with the minimum permissions required as discussed in the [permissions section below](#creating-secure-permissions).
+- Быть защищены сильными и уникальными паролями.
+- Использоваться только одним приложением или сервисом.
+- Настраиваться с минимальными правами, как обсуждается в разделе [Создание безопасных разрешений](#создание-безопасных-разрешений).
 
-As with any system that has its own user accounts, the usual account management processes should be followed, including:
+Как и в любой системе с учётными записями пользователей, следует применять стандартные процессы управления учётными записями, включая:
 
-- Regular reviews of the accounts to ensure that they are still required.
-- Regular reviews of permissions.
-- Removing user accounts when an application is decommissioned.
-- Changing the passwords when staff leave, or there is reason to believe that they may have been compromised.
+- Регулярные проверки аккаунтов, чтобы убедиться в их необходимости.
+- Регулярные проверки разрешений.
+- Удаление учётных записей при отключении приложения.
+- Изменение паролей при увольнении сотрудников или при подозрении на их компрометацию.
 
-For Microsoft SQL Server, consider the use of [Windows or Integrated-Authentication](https://docs.microsoft.com/en-us/dotnet/framework/data/adonet/sql/authentication-in-sql-server), which uses existing Windows accounts rather than SQL Server accounts. This also removes the requirement to store credentials in the application, as it will connect using the credentials of the Windows user it is running under. The [Windows Native Authentication Plugins](https://dev.mysql.com/doc/connector-net/en/connector-net-programming-authentication-windows-native.html) provides similar functionality for MySQL.
+Для Microsoft SQL Server рассмотрите возможность использования [Windows или интегрированной аутентификации](https://docs.microsoft.com/ru-ru/dotnet/framework/data/adonet/sql/authentication-in-sql-server), которая использует существующие учётные записи Windows вместо учётных записей SQL Server. Это также избавляет от необходимости хранить учетные данные в приложении, так как оно подключится, используя учётные данные пользователя Windows. Плагин [Windows Native Authentication Plugins](https://dev.mysql.com/doc/connector-net/en/connector-net-programming-authentication-windows-native.html) предоставляет аналогичную функциональность для MySQL.
 
-### Storing Database Credentials Securely
+### Безопасное хранение учетных данных базы данных
 
-Database credentials should never be stored in the application source code, especially if they are unencrypted. Instead, they should be stored in a configuration file that:
+Учетные данные базы данных никогда не должны храниться в исходном коде приложения, особенно в незашифрованном виде. Вместо этого их следует хранить в конфигурационном файле, который:
 
-- Is outside of the web root.
-- Has appropriate permissions so that it can only be read by the required user(s).
-- Is not checked into source code repositories.
+- Находится за пределами корневого каталога веб-сайта.
+- Имеет соответствующие разрешения, чтобы его мог читать только необходимый пользователь (или пользователи).
+- Не добавляется в репозиторий исходного кода.
 
-Where possible, these credentials should also be encrypted or otherwise protected using built-in functionality, such as the `web.config` encryption available in [ASP.NET](https://docs.microsoft.com/en-us/dotnet/framework/data/adonet/connection-strings-and-configuration-files#encrypting-configuration-file-sections-using-protected-configuration).
+По возможности эти учетные данные также должны быть зашифрованы или защищены другими средствами, такими как доступная в [ASP.NET](https://docs.microsoft.com/ru-ru/dotnet/framework/data/adonet/connection-strings-and-configuration-files#encrypting-configuration-file-sections-using-protected-configuration) шифровка в `web.config`.
 
-## Creating Secure Permissions
+## Создание безопасных разрешений
 
-When developers are assigning permissions to database user accounts, they should employ the principle of least privilege (i.e, the accounts should only have the minimal permissions required for the application to function). This principle can be applied at a number of increasingly granular levels depending on the functionality available in the database. You can do the following in all environments:
+При назначении разрешений учетным записям пользователей базы данных разработчики должны следовать принципу наименьших привилегий (т. е. учётные записи должны иметь только минимальные права, необходимые для работы приложения). Этот принцип можно применять на нескольких уровнях в зависимости от функциональности базы данных. В любом окружении можно выполнить следующее:
 
-- Do not use the built-in `root`, `sa` or `SYS` accounts.
-- Do not grant the account administrative rights over the database instance.
-- Make sure the account can only connect from allowed hosts. This would often be `localhost` or the address of the application server.
-- The account should only access the specific databases it needs. Development, UAT and Production environments should all use separate databases and accounts.
-- Only grant the required permissions on the databases. Most applications would only need `SELECT`, `UPDATE` and `DELETE` permissions. The account should not be the owner of the database as this can lead to privilege escalation vulnerabilities.
-- Avoid using database links or linked servers. Where they are required, use an account that has been granted access to only the minimum databases, tables, and system privileges required.
+- Не используйте встроенные учётные записи `root`, `sa` или `SYS`.
+- Не предоставляйте учётной записи административные права на экземпляр базы данных.
+- Убедитесь, что учётная запись может подключаться только с разрешённых хостов, таких как `localhost` или адрес сервера приложения.
+- Учётная запись должна иметь доступ только к тем базам данных, которые ей необходимы. В средах разработки, тестирования и продакшена должны использоваться отдельные базы данных и учетные записи.
+- Предоставляйте только необходимые права на базы данных. Большинству приложений требуются только права на `SELECT`, `UPDATE` и `DELETE`. Учетная запись не должна быть владельцем базы данных, так как это может привести к уязвимостям, связанным с повышением привилегий.
+- Избегайте использования ссылок на базы данных или связанных серверов. Если они необходимы, используйте учетную запись с минимальными правами доступа к необходимым базам данных, таблицам и системным привилегиям.
 
-Most security-critical applications, apply permissions at more granular levels, including:
+Большинство критически важных приложений применяют разрешения на более детализированных уровнях, таких как:
 
-- Table-level permissions.
-- Column-level permissions.
-- Row-level permissions
-- Blocking access to the underlying tables, and requiring all access through restricted [views](<https://en.wikipedia.org/wiki/View_(SQL)>).
+- Разрешения на уровне таблиц.
+- Разрешения на уровне столбцов.
+- Разрешения на уровне строк.
+- Ограничение доступа к основным таблицам и требование использовать доступ через ограниченные [представления](<https://ru.wikipedia.org/wiki/Представление_(SQL)>).
 
-## Database Configuration and Hardening
+## Конфигурация и усиление безопасности базы данных
 
-The database server's underlying operating system should be hardened by basing the it on a secure baseline such as the [CIS Benchmarks](https://www.cisecurity.org/cis-benchmarks/) or the [Microsoft Security Baselines](https://docs.microsoft.com/en-us/windows/security/threat-protection/windows-security-baselines).
+Операционная система сервера базы данных должна быть усилена с использованием надёжных базовых конфигураций, таких как [CIS Benchmarks](https://www.cisecurity.org/cis-benchmarks/) или [Microsoft Security Baselines](https://docs.microsoft.com/ru-ru/windows/security/threat-protection/windows-security-baselines).
 
-The database application should also be properly configured and hardened. The following principles should apply to any database application and platform:
+Приложение базы данных также должно быть правильно настроено и защищено. Следующие принципы применимы ко всем базам данных:
 
-- Install any required security updates and patches.
-- Configure the database services to run under a low privileged user account.
-- Remove any default accounts and databases.
-- Store [transaction logs](https://en.wikipedia.org/wiki/Transaction_log) on a separate disk to the main database files.
-- Configure a regular backup of the database. Ensure that the backups are protected with appropriate permissions, and ideally encrypted.
+- Установите необходимые обновления безопасности и патчи.
+- Настройте службы базы данных для работы от учётной записи с минимальными правами.
+- Удалите любые стандартные учётные записи и базы данных.
+- Храните [журналы транзакций](https://ru.wikipedia.org/wiki/Журнал_транзакций) на отдельном диске от основных файлов базы данных.
+- Настройте регулярное резервное копирование базы данных. Убедитесь, что резервные копии защищены соответствующими разрешениями и, по возможности, зашифрованы.
 
-The following sections gives some further recommendations for specific database software, in addition to the more general recommendations given above.
+Ниже приведены дополнительные рекомендации для конкретных баз данных в дополнение к общим рекомендациям.
 
-### Hardening a Microsoft SQL Server
+### Усиление безопасности Microsoft SQL Server
 
-- Disable `xp_cmdshell`, `xp_dirtree` and other stored procedures that are not required.
-- Disable Common Language Runtime (CLR) execution.
-- Disable the SQL Browser service.
-- Disable [Mixed Mode Authentication](https://docs.microsoft.com/en-us/sql/relational-databases/security/choose-an-authentication-mode?view=sql-server-ver15) unless it is required.
-- Ensure that the sample [Northwind and AdventureWorks databases](https://docs.microsoft.com/en-us/dotnet/framework/data/adonet/sql/linq/downloading-sample-databases) have been removed.
-- See Microsoft's articles on [securing SQL Server](https://docs.microsoft.com/en-us/sql/relational-databases/security/securing-sql-server).
+- Отключите `xp_cmdshell`, `xp_dirtree` и другие хранимые процедуры, которые не требуются.
+- Отключите выполнение CLR (Common Language Runtime).
+- Отключите службу SQL Browser.
+- Отключите [Mixed Mode Authentication](https://docs.microsoft.com/ru-ru/sql/relational-databases/security/choose-an-authentication-mode?view=sql-server-ver15), если она не требуется.
+- Убедитесь, что примеры баз данных [Northwind и AdventureWorks](https://docs.microsoft.com/ru-ru/dotnet/framework/data/adonet/sql/linq/downloading-sample-databases) удалены.
+- См. статьи Microsoft по [защите SQL Server](https://docs.microsoft.com/ru-ru/sql/relational-databases/security/securing-sql-server).
 
-### Hardening a MySQL or a MariaDB Server
+### Усиление безопасности MySQL или MariaDB
 
-- Run the `mysql_secure_installation` script to remove the default databases and accounts.
-- Disable the [FILE](https://dev.mysql.com/doc/refman/8.0/en/privileges-provided.html#priv_file) privilege for all users to prevent them reading or writing files.
-- See the [Oracle MySQL](https://dev.mysql.com/doc/refman/8.0/en/security-guidelines.html) and [MariaDB](https://mariadb.com/kb/en/library/securing-mariadb/) hardening guides.
+- Запустите скрипт `mysql_secure_installation` для удаления стандартных баз данных и учетных записей.
+- Отключите привилегию [FILE](https://dev.mysql.com/doc/refman/8.0/en/privileges-provided.html#priv_file) для всех пользователей, чтобы предотвратить чтение или запись файлов.
+- См. руководство по безопасности [Oracle MySQL](https://dev.mysql.com/doc/refman/8.0/en/security-guidelines.html) и [MariaDB](https://mariadb.com/ru/library/securing-mariadb/).
 
-### Hardening a PostgreSQL Server
+### Усиление безопасности PostgreSQL
 
-- See the [PostgreSQL Server Setup and Operation documentation](https://www.postgresql.org/docs/current/runtime.html) and the older [Security documentation](https://www.postgresql.org/docs/7.0/security.htm).
+- См. [Документацию по настройке и эксплуатации PostgreSQL](https://www.postgresql.org/docs/current/runtime.html) и более старую [документацию по безопасности](https://www.postgresql.org/docs/7.0/security.htm).
 
 ### MongoDB
 
-- See the [MongoDB security checklist](https://docs.mongodb.com/manual/administration/security-checklist/).
+- См. [контрольный список безопасности MongoDB](https://docs.mongodb.com/manual/administration/security-checklist/).
 
 ### Redis
 
-- See the [Redis security guide](https://redis.io/topics/security).
+- См. [руководство по безопасности Redis](https://redis.io/topics/security).

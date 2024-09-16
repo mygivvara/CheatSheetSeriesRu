@@ -1,26 +1,26 @@
-# Bean Validation Cheat Sheet
+# Шпаргалка по Bean Validation
 
-## Introduction
+## Введение
 
-This article is focused on providing clear, simple, actionable guidance for providing Java Bean Validation security functionality in your applications.
+Эта статья направлена на предоставление четких, простых и практических рекомендаций по обеспечению безопасности с помощью Java Bean Validation в ваших приложениях.
 
-Bean validation (JSR303 aka [Bean Validation 1.0](https://beanvalidation.org/1.0/spec/) /JSR349 aka [Bean Validation 1.1](https://beanvalidation.org/1.1/spec/)) is one of the most common ways to perform [input validation](https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html) in Java. It is an application layer agnostic validation spec which provides the developer with the means to define a set of validation constraints on a domain model and then perform validation of those constraints through out the various application tiers.
+Валидация бинов (JSR303, также известная как [Bean Validation 1.0](https://beanvalidation.org/1.0/spec/) / JSR349, также известная как [Bean Validation 1.1](https://beanvalidation.org/1.1/spec/)) является одним из наиболее распространенных способов выполнения [валидации ввода](https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html) в Java. Это независимая от уровня приложения спецификация валидации, которая предоставляет разработчику возможность определять набор ограничений валидации для доменной модели и затем выполнять валидацию этих ограничений на различных уровнях приложения.
 
-One advantage of this approach is that the validation constraints and the corresponding validators are only written once, thus reducing duplication of effort and ensuring uniformity:
+Одним из преимуществ этого подхода является то, что ограничения валидации и соответствующие валидаторы пишутся только один раз, что уменьшает дублирование усилий и обеспечивает единообразие:
 
-### Typical Validation
+### Типичная валидация
 
 ![Typical](../assets/Bean_Validation_Cheat_Sheet_Typical.png)
 
-### Bean Validation
+### Валидация бинов
 
 ![JSR](../assets/Bean_Validation_Cheat_Sheet_JSR.png)
 
-## Setup
+## Настройка
 
-The examples in this guide use Hibernate Validator (the reference implementation for Bean Validation 1.1).
+Примеры в этом руководстве используют Hibernate Validator (референсную реализацию для Bean Validation 1.1).
 
-Add Hibernate Validator to your **pom.xml**:
+Добавьте Hibernate Validator в ваш файл **pom.xml**:
 
 ```xml
 <dependency>
@@ -30,7 +30,7 @@ Add Hibernate Validator to your **pom.xml**:
 </dependency>
 ```
 
-Enable bean validation support in Spring's **context.xml**:
+Включите поддержку валидации бинов в **context.xml** Spring:
 
 ```xml
 <beans:beans ...
@@ -40,55 +40,55 @@ Enable bean validation support in Spring's **context.xml**:
 </beans:beans>
 ```
 
-For more info, please see the [setup guide](https://hibernate.org/validator/documentation/getting-started/)
+Для получения дополнительной информации, пожалуйста, ознакомьтесь с [руководством по настройке](https://hibernate.org/validator/documentation/getting-started/).
 
 ## Basics
 
-In order to get started using Bean Validation, you must add validation constraints (`@Pattern`, `@Digits`, `@Min`, `@Max`, `@Size`, `@Past`, `@Future`, `@CreditCardNumber`, `@Email`, `@URL`, etc.) to your model and then utilize the `@Valid` annotation when passing your model around in various application layers.
+Чтобы начать использовать Bean Validation, необходимо добавить ограничения валидации (`@Pattern`, `@Digits`, `@Min`, `@Max`, `@Size`, `@Past`, `@Future`, `@CreditCardNumber`, `@Email`, `@URL`, и др.) в вашу модель и использовать аннотацию `@Valid` при передаче вашей модели на различных уровнях приложения.
 
-Constraints can be applied in several places:
+Ограничения могут быть применены в нескольких местах:
 
-- Fields
-- Properties
-- Classes
+- Поля
+- Свойства
+- Классы
 
-For Bean Validation 1.1 also on:
+Для Bean Validation 1.1 также в:
 
-- Parameters
-- Return values
-- Constructors
+- Параметрах
+- Возвращаемых значениях
+- Конструкторах
 
-For the sake of simplicity all the examples below feature field constraints and all validation is triggered by the controller. Refer to the Bean Validation documentation for a full list of examples.
+Для упрощения все приведенные ниже примеры используют ограничения для полей, и вся валидация инициируется контроллером. Обратитесь к документации по Bean Validation для полного списка примеров.
 
-When it comes to error handling, the Hibernate Validator returns a `BindingResult` object which contains a `List<ObjectError>`. The examples below feature simplistic error handling, while a production ready application would have a more elaborate design that takes care of logging and error page redirection.
+Что касается обработки ошибок, Hibernate Validator возвращает объект `BindingResult` который содержит `List<ObjectError>`. Примеры ниже содержат упрощенную обработку ошибок, тогда как готовое к использованию приложение должно иметь более сложный дизайн, учитывающий логирование и перенаправление на страницы ошибок.
 
-## Predefined Constraints
+## Предопределенные ограничения
 
 ### @Pattern
 
-**Annotation**:
+**Аннотация**:
 
 `@Pattern(regex=,flag=)`
 
-**Data Type**:
+**Тип данных:**:
 
 `CharSequence`
 
-**Use**:
+**Использование:**:
 
-Checks if the annotated string matches the regular expression regex considering the given flag match. Please visit [OWASP Validation Regex Repository](https://owasp.org/www-community/OWASP_Validation_Regex_Repository) for other useful regex's.
+Проверяет, соответствует ли аннотированная строка регулярному выражению `regex` с учетом заданного флага соответствия. Пожалуйста, посетите [OWASP Validation Regex Repository](https://owasp.org/www-community/OWASP_Validation_Regex_Repository) для других полезных регулярных выражений.
 
-**Reference**:
+**Ссылка**:
 
-[Documentation](https://docs.jboss.org/hibernate/validator/5.2/reference/en-US/html/ch02.html#section-builtin-constraints)
+[Документация](https://docs.jboss.org/hibernate/validator/5.2/reference/en-US/html/ch02.html#section-builtin-constraints)
 
-**Model**:
+**Модель**:
 
 ```java
 import org.hibernate.validator.constraints.Pattern;
 
 public class Article  {
- //Constraint: Alpha Numeric article titles only using a regular expression
+ //Ограничение: Буквенно-цифровые названия статей, в которых используются только регулярные выражения
  @Pattern(regexp = "[a-zA-Z0-9 ]")
  private String articleTitle;
  public String getArticleTitle()  {
@@ -103,7 +103,7 @@ public class Article  {
 }
 ```
 
-**Controller**:
+**Контроллер**:
 
 ```java
 import javax.validation.Valid;
@@ -134,29 +134,29 @@ public class ArticleController  {
 
 ### @Digits
 
-**Annotation**:
+**Аннотация**:
 
 `@Digits(integer=,fraction=)`
 
-**Data Type**:
+**Тип данных**:
 
-`BigDecimal`, `BigInteger`, `CharSequence`, `byte`, `short`, `int`, `long` and the respective wrappers of the primitive types; Additionally supported by HV: any sub-type of Number
+`BigDecimal`, `BigInteger`, `CharSequence`, `byte`, `short`, `int`, `long` и соответствующие обертки примитивных типов; Также поддерживаются Hibernate Validator: любые подтипы `Number`
 
-**Use**:
+**Использование**:
 
-Checks whether the annotated value is a number having up to integer digits and fraction fractional digits
+Проверяет, является ли аннотированное значение числом, имеющим до `integer` цифр в целой части и `fraction` цифр в дробной части.
 
-**Reference**:
+**Ссылка**:
 
-[Documentation](https://docs.jboss.org/hibernate/validator/5.2/reference/en-US/html/ch02.html#section-builtin-constraints)
+[Документация](https://docs.jboss.org/hibernate/validator/5.2/reference/en-US/html/ch02.html#section-builtin-constraints)
 
-**Model**:
+**Модель:**:
 
 ```java
 import org.hibernate.validator.constraints.Digits;
 
 public class Customer {
-  //Constraint: Age can only be 3 digits long or less
+  //Ограничение: возраст может состоять максимум из 3 цифр
   @Digits(integer = 3, fraction = 0)
   private int age;
 
@@ -172,7 +172,7 @@ public class Customer {
 }
 ```
 
-**Controller**:
+**Контроллер**:
 
 ```java
 import javax.validation.Valid;
@@ -205,30 +205,30 @@ public class CustomerController  {
 
 ### @Size
 
-**Annotation**:
+**Аннотация**:
 
 `@Size(min=,` `max=)`
 
-**Data Type**:
+**Тип данных**:
 
 `CharSequence`, `Collection`, `Map` and `Arrays`
 
-**Use**:
+**Использование**:
 
-Checks if the annotated element's size is between min and max (inclusive)
+Проверяет, что размер аннотированного элемента находится в пределах от `min` and `max` (включительно)
 
-**Reference**:
+**Ссылка**:
 
-[Documentation](https://docs.jboss.org/hibernate/validator/5.2/reference/en-US/html/ch02.html#section-builtin-constraints)
+[Документация](https://docs.jboss.org/hibernate/validator/5.2/reference/en-US/html/ch02.html#section-builtin-constraints)
 
-**Model**:
+**Модель**:
 
 ```java
 import org.hibernate.validator.constraints.Size;
 
 public class Message {
 
-   //Constraint: Message must be at least 10 characters long, but less than 500
+   //Ограничение: сообщение должно быть длиной минимум 10 символов, но не более 500
    @Size(min = 10, max = 500)
    private String message;
 
@@ -244,7 +244,7 @@ public class Message {
 }
 ```
 
-**Controller**:
+**Контроллер**:
 
 ```java
 import javax.validation.Valid;
@@ -277,23 +277,23 @@ HttpServletResponse response){
 
 ### @Past / @Future
 
-**Annotation**:
+**Аннотация**:
 
 `@Past,` `@Future`
 
-**Data Type**:
+**Тип данных**:
 
 `java.util.Date`, `java.util.Calendar`, `java.time.chrono.ChronoZonedDateTime`, `java.time.Instant`, `java.time.OffsetDateTime`
 
-**Use**:
+**Использование**:
 
-Checks whether the annotated date is in the past / future
+Проверяет, находится ли аннотированная дата в прошлом или будущем.
 
-**Reference**:
+**Ссылка**:
 
-[Documentation](https://docs.jboss.org/hibernate/validator/5.2/reference/en-US/html/ch02.html#section-builtin-constraints)
+[Документация](https://docs.jboss.org/hibernate/validator/5.2/reference/en-US/html/ch02.html#section-builtin-constraints)
 
-**Model**:
+**Модель**:
 
 ```java
 import org.hibernate.validator.constraints.Past;
@@ -301,7 +301,7 @@ import org.hibernate.validator.constraints.Future;
 
 public class DoctorVisit {
 
-   //Constraint: Birthdate must be in the past
+   //Ограничение: Дата рождения должна быть в прошлом
    @Past
    private Date birthDate;
 
@@ -313,7 +313,7 @@ public class DoctorVisit {
       this.birthDate = birthDate;
    }
 
-   //Constraint: Schedule visit date must be in the future
+   //Ограничение: Дата запланированного визита должна быть в будущем
    @Future
    private String scheduledVisitDate;
 
@@ -329,7 +329,7 @@ public class DoctorVisit {
 }
 ```
 
-**Controller**:
+**Контроллер**:
 
 ```java
 import javax.validation.Valid;
@@ -360,27 +360,27 @@ public class DoctorVisitController {
 }
 ```
 
-### Combining Constraints
+### Сочетание ограничений
 
-Validation annotations can be combined in any suitable way. For instance, to specify a valid reviewRating value between 1 and 5, specify the validation like this :
+Аннотации валидации могут быть скомбинированы любым подходящим образом. Например, чтобы указать допустимое значение рейтинга отзыва в пределах от 1 до 5, задайте валидацию следующим образом:
 
-**Annotation**:
+**Аннотация**:
 
 `@Min(value=),` `@Max(value=)`
 
-**Data Type**:
+**Тип данных**:
 
-`BigDecimal`, `BigInteger`, `byte`, `short`, `int`, `long` and the respective wrappers of the primitive types; Additionally supported by HV: any sub-type of `CharSequence` (the numeric value represented by the character sequence is evaluated), any sub-type of Number
+`BigDecimal`, `BigInteger`, `byte`, `short`, `int`, `long` и соответствующие обертки примитивных типов; Также поддерживается Hibernate Validator: любые подтипы `CharSequence` (числовое значение, представленное последовательностью символов, оценивается), любые подтипы `Number`
 
-**Use**:
+**Использование**:
 
-Checks whether the annotated value is higher/lower than or equal to the specified minimum
+Проверяет, является ли аннотированное значение больше/меньше или равно заданному минимальному/максимальному значению.
 
-**Reference:**
+**Ссылка**:
 
-[Documentation](https://docs.jboss.org/hibernate/validator/5.2/reference/en-US/html/ch02.html#section-builtin-constraints)
+[Документация](https://docs.jboss.org/hibernate/validator/5.2/reference/en-US/html/ch02.html#section-builtin-constraints)
 
-**Model**:
+**Модель**:
 
 ```java
 import org.hibernate.validator.constraints.Min;
@@ -388,7 +388,7 @@ import org.hibernate.validator.constraints.Max;
 
 public class Review {
 
- //Constraint: Review rating must be between 1 and 5
+ //Ограничение: Рейтинг отзыва должен быть от 1 до 5
  @Min(1)
  @Max(5)
  private int reviewRating;
@@ -404,7 +404,7 @@ public class Review {
 }
 ```
 
-**Controller**:
+**Контроллер**:
 
 ```java
 import javax.validation.Valid;
@@ -435,13 +435,13 @@ public class ReviewController {
 }
 ```
 
-### Cascading Constraints
+### Каскадные ограничения
 
-Validating one bean is a good start, but often, beans are nested or in a complete graph of beans. To validate that graph in one go, apply cascading validation with [@Valid](https://docs.jboss.org/hibernate/validator/5.2/reference/en-US/html/ch03.html#_cascaded_validation)
+Проверка одного Java Bean — это хороший старт, но часто Bean-ы вложены или образуют полный граф Bean-ов. Чтобы проверить этот граф за один раз, применяйте каскадную валидацию с аннотацией [@Valid](https://docs.jboss.org/hibernate/validator/5.2/reference/en-US/html/ch03.html#_cascaded_validation)
 
-### Additional Constraints
+### Дополнительные ограничения
 
-In addition to providing the complete set of JSR303 constraints, Hibernate Validator also defines some additional constraints for convenience:
+Помимо полного набора ограничений JSR303, Hibernate Validator также определяет некоторые дополнительные ограничения для удобства:
 
 - `@CreditCardNumber`
 - `@EAN`
@@ -451,23 +451,23 @@ In addition to providing the complete set of JSR303 constraints, Hibernate Valid
 - `@ScriptAssert`
 - `@URL`
 
-Take a look at this [table](https://docs.jboss.org/hibernate/validator/5.2/reference/en-US/html/ch02.html#table-custom-constraints) for the complete list.
+Просмотрите эту [таблицу](https://docs.jboss.org/hibernate/validator/5.2/reference/en-US/html/ch02.html#table-custom-constraints) для полного списка.
 
-Note that `@SafeHtml`, a previously valid constraint, has been deprecated according to the [Hibernate Validator 6.1.0.Final and 6.0.18.Final release blogpost](https://in.relation.to/2019/11/20/hibernate-validator-610-6018-released/). Please refrain from using the `@SafeHtml` constraint.
+Обратите внимание, что `@SafeHtml`, ранее допустимое ограничение, было устаревшим в соответствии с [блогом о релизе Hibernate Validator 6.1.0.Final и 6.0.18.Final](https://in.relation.to/2019/11/20/hibernate-validator-610-6018-released/). Пожалуйста, воздержитесь от использования ограничения `@SafeHtml`.
 
-## Custom Constraints
+## Пользовательские ограничения
 
-One of the most powerful features of bean validation is the ability to define your own constraints that go beyond the simple validation offered by built-in constraints.
+Одной из самых мощных функций валидации бинов является возможность определять собственные ограничения, которые выходят за рамки простой валидации, предлагаемой встроенными ограничениями.
 
-Creating custom constraints is beyond the scope of this guide. Please see this [documentation](https://docs.jboss.org/hibernate/validator/5.2/reference/en-US/html/ch06.html).
+Создание пользовательских ограничений выходит за рамки данного руководства. Ознакомьтесь с [документацией](https://docs.jboss.org/hibernate/validator/5.2/reference/en-US/html/ch06.html) для получения подробной информации.
 
-## Error Messages
+## Сообщения об ошибках
 
-It is possible to specify a message ID with the validation annotation, so that error messages are customized :
+Можно указать ID сообщения с аннотацией валидации, чтобы настраивать сообщения об ошибках:
 
 ```java
 @Pattern(regexp = "[a-zA-Z0-9 ]", message="article.title.error")
 private String articleTitle;
 ```
 
-Spring MVC will then look up a message with ID *article.title.error* in a defined MessageSource. More on this [documentation](https://www.silverbaytech.com/2013/04/16/custom-messages-in-spring-validation/).
+Spring MVC затем будет искать сообщение с ID *article.title.error* в определенном `MessageSource`. Подробнее об этом читайте в [документации](https://www.silverbaytech.com/2013/04/16/custom-messages-in-spring-validation/).

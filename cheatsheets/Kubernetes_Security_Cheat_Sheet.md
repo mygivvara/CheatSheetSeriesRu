@@ -1,398 +1,395 @@
-# Kubernetes Security Cheat Sheet
+# Шпаргалка по безопасности Kubernetes
 
-## Overview
+## Обзор
 
-This cheat sheet provides a starting point for securing a Kubernetes cluster. It is divided into the following categories:
+Эта шпаргалка предоставляет отправную точку для обеспечения безопасности кластера Kubernetes. Она разделена на следующие категории:
 
-- Receive Alerts for Kubernetes Updates
-- INTRODUCTION: What is Kubernetes?
-- Securing Kubernetes hosts
-- Securing Kubernetes components
-- Using the Kubernetes dashboard
-- Kubernetes Security Best Practices: Build Phase
-- Kubernetes Security Best Practices: Deploy Phase
-- Kubernetes Security Best Practices: Runtime Phase
+- Получение уведомлений о обновлениях Kubernetes
+- ВВЕДЕНИЕ: Что такое Kubernetes?
+- Защита хостов Kubernetes
+- Защита компонентов Kubernetes
+- Использование панели управления Kubernetes
+- Лучшие практики безопасности Kubernetes: этап сборки
+- Лучшие практики безопасности Kubernetes: этап развертывания
+- Лучшие практики безопасности Kubernetes: этап выполнения
 
-For more information about Kubernetes, refer to the Appendix.
+Для получения дополнительной информации о Kubernetes см. Приложение.
 
-## Receive Alerts for Security Updates and Reporting Vulnerabilities
+## Получение уведомлений о обновлениях безопасности и отчетность об уязвимостях
 
-Join the kubernetes-announce group (<https://kubernetes.io/docs/reference/issues-security/security/>) for emails about security announcements. See the security reporting page (<https://kubernetes.io/docs/reference/issues-security/security>) for more on how to report vulnerabilities.
+Присоединитесь к группе kubernetes-announce (<https://kubernetes.io/docs/reference/issues-security/security/>) для получения уведомлений по электронной почте о объявлениях безопасности. Подробнее о том, как сообщать об уязвимостях, см. на странице по безопасности (<https://kubernetes.io/docs/reference/issues-security/security>).
 
-## INTRODUCTION: What Is Kubernetes?
+## ВВЕДЕНИЕ: Что такое Kubernetes?
 
-Kubernetes is an open source container orchestration engine for automating deployment, scaling, and management of containerized applications. The open source project is hosted by the Cloud Native Computing Foundation (CNCF).
+Kubernetes — это система с открытым исходным кодом для оркестрации контейнеров, автоматизирующая развертывание, масштабирование и управление контейнеризованными приложениями. Проект с открытым исходным кодом поддерживается Cloud Native Computing Foundation (CNCF).
 
-When you deploy Kubernetes, you get a cluster. A Kubernetes cluster consists of a set of worker machines, called nodes that run containerized applications. The control plane manages the worker nodes and the Pods in the cluster.
+Когда вы разворачиваете Kubernetes, вы получаете кластер. Кластер Kubernetes состоит из набора рабочих машин, называемых узлами, которые запускают контейнеризованные приложения. Плоскость управления (Control Plane) управляет рабочими узлами и Подами в кластере.
 
-### Control Plane Components
+### Компоненты плоскости управления
 
-The control plane's components make global decisions about the cluster, as well as detecting and responding to cluster events. It consists of components such as kube-apiserver, etcd, kube-scheduler, kube-controller-manager and cloud-controller-manager.
+Компоненты плоскости управления принимают глобальные решения о кластере, а также обнаруживают и реагируют на события в кластере. Она состоит из таких компонентов, как kube-apiserver, etcd, kube-scheduler, kube-controller-manager и cloud-controller-manager.
 
-**Component:** kube-apiserver  
-**Description:** Exposes the Kubernetes API. The API server is the front end for the Kubernetes control plane.
+**Компонент:** kube-apiserver  
+**Описание:** Предоставляет API Kubernetes. Сервер API является интерфейсом управления Kubernetes.
 
-**Component:** etcd  
-**Description:** A consistent and highly-available key-value store used as Kubernetes' backing store for all cluster data.
+**Компонент:** etcd  
+**Описание:** Консистентное и высокодоступное хранилище ключ-значение, используемое как основное хранилище данных для всех данных кластера Kubernetes.
 
-**Component:** kube-scheduler  
-**Description:** Watches for newly created Pods with no assigned node, and selects a node for them to run on.
+**Компонент:** kube-scheduler  
+**Описание:** Отслеживает вновь созданные Поды без назначенного узла и выбирает для них узел для выполнения.
 
-**Component:** kube-controller-manager  
-**Description:** Runs controller processes. Logically, each controller is a separate process, but to reduce complexity, they are all compiled into a single binary and run in a single process.
+**Компонент:** kube-controller-manager  
+**Описание:** Запускает процессы контроллеров. Логически каждый контроллер является отдельным процессом, но для уменьшения сложности все они скомпилированы в один бинарный файл и выполняются в одном процессе.
 
-**Component:** cloud-controller-manager  
-**Description:** The cloud controller manager lets you link your cluster into your cloud provider's API, and separates out the components that interact with that cloud platform from components that just interact with your cluster.
+**Компонент:** cloud-controller-manager  
+**Описание:** Менеджер облачных контроллеров позволяет вам интегрировать кластер с API вашего облачного провайдера и отделяет компоненты, взаимодействующие с облачной платформой, от компонентов, взаимодействующих с самим кластером.
 
-### Node Components
+### Компоненты узла
 
-Node components run on every node, maintaining running pods and providing the Kubernetes runtime environment. It consists of components such as kubelet, kube-proxy and container runtime.
+Компоненты узла работают на каждом узле, поддерживая работу Подов и предоставляя среду выполнения Kubernetes. Она включает в себя такие компоненты, как kubelet, kube-proxy и среда выполнения контейнеров.
 
-**Component:** kubelet  
-**Description:** An agent that runs on each node in the cluster. It makes sure that containers are running in a Pod.
+**Компонент:** kubelet  
+**Описание:** Агент, который работает на каждом узле в кластере. Он гарантирует, что контейнеры работают внутри Подов.
 
-**Component:** kube-proxy  
-**Description:** A network proxy that runs on each node in your cluster, implementing part of the Kubernetes Service concept.
+**Компонент:** kube-proxy  
+**Описание:** Сетевой прокси-сервер, который работает на каждом узле в вашем кластере и реализует часть концепции Сервиса Kubernetes.
 
-**Container:** runtime  
-**Description:** The container runtime is the software that is responsible for running containers |
+**Контейнер:** runtime  
+**Описание:** Программное обеспечение, ответственное за запуск контейнеров.
 
-## SECTION 1: Securing Kubernetes Hosts
+## РАЗДЕЛ 1: Защита хостов Kubernetes
 
-Kubernetes can be deployed in different ways: on bare metal, on-premise, and in the public cloud (a custom Kubernetes build on virtual machines OR use a managed service). Since Kubernetes is designed to be highly portable, customers can easily and migrate their workloads and switch between multiple installations.
+Kubernetes можно развернуть разными способами: на физических серверах, в локальной инфраструктуре или в публичном облаке (кастомная сборка Kubernetes на виртуальных машинах ИЛИ использование управляемого сервиса). Поскольку Kubernetes разработан для высокой переносимости, пользователи могут легко перемещать свои рабочие нагрузки и переключаться между несколькими установками.
 
-Because Kubernetes can be designed to fit a large variety of scenarios, this flexibility is a weakness when it comes to securing Kubernetes clusters. The engineers responsible for deploying the Kubernetes platform must know about all the potential attack vectors and vulnerabilities for their clusters.
+Однако эта гибкость представляет собой слабое место с точки зрения безопасности кластеров Kubernetes. Инженеры, отвечающие за развертывание платформы Kubernetes, должны знать обо всех потенциальных векторах атак и уязвимостях своих кластеров.
 
-To harden the underlying hosts for Kubernetes clusters, we recommend that you install the latest version of the operating systems, harden the operating systems, implement necessary patch management and configuration management systems, implement essential firewall rules and undertake specific datacenter-based security measures.
+Чтобы усилить защиту базовых хостов для кластеров Kubernetes, мы рекомендуем установить последнюю версию операционных систем, усилить их безопасность, внедрить необходимые системы управления патчами и конфигурациями, настроить важные правила межсетевого экрана и принять специфические меры безопасности в датацентре.
 
-### Updating Kubernetes
+### Обновление Kubernetes
 
-Since no one can track all potential attack vectors for your Kubernetes cluster, the first and best defense is to always run the latest stable version of Kubernetes.
+Поскольку никто не может отследить все потенциальные векторы атак на ваш кластер Kubernetes, первой и самой важной линией защиты является всегда использование последней стабильной версии Kubernetes.
 
-In case vulnerabilities are found in running containers, it is recommended to always update the source image and redeploy the containers. **Try to avoid direct updates to the running containers as this can break the image-container relationship.**
+Если в работающих контейнерах обнаружены уязвимости, рекомендуется всегда обновлять исходный образ и повторно разворачивать контейнеры. **Старайтесь избегать прямого обновления работающих контейнеров, так как это может нарушить связь между образом и контейнером.**
 
 ```
-Example: apt-update
+Пример: apt-update
 ```
 
-**Upgrading containers is extremely easy with the Kubernetes rolling updates feature - this allows gradually updating a running application by upgrading its images to the latest version.**
+**Обновление контейнеров становится очень простым благодаря функции постепенного обновления (rolling updates) Kubernetes, которая позволяет обновлять запущенные приложения, постепенно обновляя их образы до последней версии.**
 
-#### Release schedule for Kubernetes
+#### График выпусков Kubernetes
 
-The Kubernetes project maintains release branches for the most recent three minor releases and it backports the applicable fixes, including security fixes, to those three release branches, depending on severity and feasibility. Patch releases are cut from those branches at a regular cadence, plus additional urgent releases, when required. Hence it is always recommended to upgrade the Kubernetes cluster to the latest available stable version. It is recommended to refer to the version skew policy for further details <https://kubernetes.io/docs/setup/release/version-skew-policy/>.
+Проект Kubernetes поддерживает ветки релизов для последних трёх минорных версий и осуществляет обратное портирование применимых исправлений, включая исправления безопасности, в эти три ветки, в зависимости от серьезности и возможности реализации. Патчи выпускаются на регулярной основе, а также при необходимости — дополнительные срочные выпуски. Поэтому всегда рекомендуется обновлять кластер Kubernetes до последней доступной стабильной версии. Рекомендуется ознакомиться с политикой несовпадения версий по ссылке <https://kubernetes.io/docs/setup/release/version-skew-policy/>.
 
-There are several techniques such as rolling updates, and node pool migrations that allow you to complete an update with minimal disruption and downtime.
+Существуют различные техники, такие как постепенные обновления (rolling updates) и миграции пулов узлов, которые позволяют выполнить обновление с минимальными сбоями и простоями.
 
---
+## РАЗДЕЛ 2: Защита компонентов Kubernetes
 
-## SECTION 2: Securing Kubernetes Components
+Этот раздел описывает, как обеспечить безопасность компонентов Kubernetes. Он охватывает следующие темы:
 
-This section discusses how to secure Kubernetes components. It covers the following topics:
-
-- Securing the Kubernetes Dashboard
-- Restricting access to etcd (Important)
-- Controlling network access to sensitive ports
-- Controlling access to the Kubernetes API
-- Implementing role-based access control in Kubernetes
-- Limiting access to Kubelets
+- Защита панели управления Kubernetes
+- Ограничение доступа к etcd (Важно)
+- Контроль сетевого доступа к чувствительным портам
+- Контроль доступа к API Kubernetes
+- Внедрение ролевого контроля доступа в Kubernetes
+- Ограничение доступа к Kubelet
 
 --
 
-### Securing the Kubernetes Dashboard
+### Защита панели управления Kubernetes
 
-The Kubernetes dashboard is a webapp for managing your cluster. It is not a part of the Kubernetes cluster itself, it has to be installed by the owners of the cluster. Thus, there are a lot of tutorials on how to do this. Unfortunately, most of them create a service account with very high privileges. This caused Tesla and some others to be hacked via such a poorly configured K8s dashboard. (Reference: Tesla cloud resources are hacked to run cryptocurrency-mining malware - <https://arstechnica.com/information-technology/2018/02/tesla-cloud-resources-are-hacked-to-run-cryptocurrency-mining-malware/>)
+Панель управления Kubernetes — это веб-приложение для управления кластером. Оно не является частью самого кластера и должно быть установлено владельцами кластера. Существует множество руководств по установке панели управления. К сожалению, большинство из них создают учетные записи с очень высокими привилегиями. Это привело к тому, что Tesla и некоторые другие компании стали жертвами атак через неправильно настроенную панель управления Kubernetes. (Ссылка: Ресурсы Tesla взломаны для майнинга криптовалюты - <https://arstechnica.com/information-technology/2018/02/tesla-cloud-resources-are-hacked-to-run-cryptocurrency-mining-malware/>)
 
-To prevent attacks via the dashboard, you should follow some tips:
+Чтобы предотвратить атаки через панель управления, рекомендуется следовать следующим советам:
 
-- Do not expose the dashboard without additional authentication to the public. There is no need to access such a powerful tool from outside your LAN
-- Turn on Role-Based Access Control (see below), so you can limit the service account the dashboard uses
-- Do not grant the service account of the dashboard high privileges
-- Grant permissions per user, so each user only can see what they are supposed to see
-- If you are using network policies, you can block requests to the dashboard even from internal pods (this will not affect the proxy tunnel via kubectl proxy)
-- Before version 1.8, the dashboard had a service account with full privileges, so check that there is no role binding for cluster-admin left.
-- Deploy the dashboard with an authenticating reverse proxy, with multi-factor authentication enabled. This can be done with either embedded OIDC `id_tokens` or using Kubernetes Impersonation. This allows you to use the dashboard with the user's credentials instead of using a privileged `ServiceAccount`. This method can be used on both on-prem and managed cloud clusters.
-
---
-
-### Restricting Access To etcd (IMPORTANT)
-
-etcd is a critical Kubernetes component which stores information on states and secrets, and it should be protected differently from the rest of your cluster. Write access to the API server's etcd is equivalent to gaining root on the entire cluster, and even read access can be used to escalate privileges fairly easily.
-
-The Kubernetes scheduler will search etcd for pod definitions that do not have a node. It then sends the pods it finds to an available kubelet for scheduling. Validation for submitted pods is performed by the API server before it writes them to etcd, so malicious users writing directly to etcd can bypass many security mechanisms - e.g. PodSecurityPolicies.
-
-Administrators should always use strong credentials from the API servers to their etcd server, such as mutual auth via TLS client certificates, and it is often recommended to isolate the etcd servers behind a firewall that only the API servers may access.
-
-#### Limiting access to the primary etcd instance
-
-Allowing other components within the cluster to access the primary etcd instance with read or write access to the full keyspace is equivalent to granting cluster-admin access. Using separate etcd instances for other components or using etcd ACLs to restrict read and write access to a subset of the keyspace is strongly recommended.
+- Не открывайте доступ к панели управления без дополнительной аутентификации в интернет. Нет необходимости в доступе к такому мощному инструменту вне вашей локальной сети (LAN)
+- Включите Ролевой Контроль Доступа (см. ниже), чтобы ограничить учетную запись службы, используемую панелью управления
+- Не предоставляйте учетной записи службы панели управления высокие привилегии
+- Предоставляйте права каждому пользователю индивидуально, чтобы они видели только то, что им разрешено
+- Если вы используете сетевые политики, можно заблокировать запросы к панели управления даже из внутренних Подов (это не повлияет на туннель прокси через kubectl proxy)
+- В версиях до 1.8 панель управления имела учетную запись службы с полными привилегиями, поэтому проверьте, чтобы не осталось привязки роли cluster-admin
+- Разверните панель управления с аутентифицирующим обратным прокси и включите многофакторную аутентификацию. Это можно сделать с помощью встроенных OIDC `id_tokens` или используя Kubernetes Impersonation. Это позволяет использовать панель управления с учетными данными пользователя вместо привилегированной учетной записи `ServiceAccount`. Этот метод можно использовать как в локальных кластерах, так и в управляемых облачных кластерах.
 
 --
 
-### Controlling Network Access to Sensitive Ports
+### Ограничение доступа к etcd (ВАЖНО)
 
-It is highly recommended to configure authentication and authorization on the cluster and cluster nodes. Since Kubernetes clusters usually listen on a range of well-defined and distinctive ports, it is easier for attackers to identify the clusters and attack them.
+etcd — это критический компонент Kubernetes, который хранит информацию о состоянии и секретах, и его следует защищать иначе, чем остальные части кластера. Доступ на запись к etcd от API-сервера эквивалентен получению root-доступа ко всему кластеру, а даже доступ на чтение может использоваться для эскалации привилегий.
 
-An overview of the default ports used in Kubernetes is provided below. Make sure that your network blocks access to ports, and you should seriously consider limiting access to the Kubernetes API server to trusted networks.
+Планировщик Kubernetes ищет в etcd определения Подов, не имеющих узла, и направляет их на выполнение в доступные узлы. Валидация Подов проводится API-сервером перед записью в etcd, поэтому злоумышленники, пишущие напрямую в etcd, могут обойти многие механизмы безопасности, такие как политики безопасности Подов (PodSecurityPolicies).
 
-**Control plane node(s):**
+Администраторы должны использовать сильные учетные данные для API-серверов при доступе к etcd, например, взаимную аутентификацию через TLS-сертификаты клиента, и часто рекомендуется изолировать серверы etcd за межсетевым экраном, доступным только для API-серверов.
 
-| Protocol | Port Range | Purpose                 |
-| -------- | ---------- | ----------------------- |
-| TCP      | 6443-      | Kubernetes API Server   |
-| TCP      | 2379-2380  | etcd server client API  |
-| TCP      | 10250      | Kubelet API             |
-| TCP      | 10251      | kube-scheduler          |
-| TCP      | 10252      | kube-controller-manager |
-| TCP      | 10255      | Read-Only Kubelet API   |
+#### Ограничение доступа к основной инстанции etcd
 
-**Worker nodes:**
-
-| Protocol | Port Range  | Purpose               |
-| -------- | ----------- | --------------------- |
-| TCP      | 10250       | Kubelet API           |
-| TCP      | 10255       | Read-Only Kubelet API |
-| TCP      | 30000-32767 | NodePort Services     |
+Разрешение другим компонентам внутри кластера доступа к основной инстанции etcd с правами на чтение или запись всего ключевого пространства эквивалентно предоставлению доступа на уровне cluster-admin. Рекомендуется использовать отдельные инстанции etcd для других компонентов или применять ACL в etcd для ограничения доступа к части ключевого пространства.
 
 --
 
-### Controlling Access To The Kubernetes API
+### Контроль сетевого доступа к чувствительным портам
 
-The first line of defense of Kubernetes against attackers is limiting and securing access to API requests, because those requests are used to control the Kubernetes platform. For more information, refer to the documentation at <https://kubernetes.io/docs/reference/access-authn-authz/controlling-access/>.
+Настоятельно рекомендуется настроить аутентификацию и авторизацию на уровне кластера и узлов. Поскольку кластеры Kubernetes обычно прослушивают определенный набор портов, злоумышленники могут легко определить эти порты и атаковать кластер.
 
-This part contains the following topics:
+Ниже приведен обзор стандартных портов, используемых в Kubernetes. Убедитесь, что ваша сеть блокирует доступ к этим портам, и всерьез рассмотрите возможность ограничения доступа к API-серверу Kubernetes только доверенным сетям.
 
-- How Kubernetes handles API authorization
-- External API Authentication for Kubernetes (recommended)
-- Kubernetes Built-In API Authentication (not recommended)
-- Implementing role-based access in Kubernetes
-- Limiting access to Kubelets
+**Узлы плоскости управления:**
 
---
+| Протокол | Диапазон портов | Назначение                 |
+| -------- | --------------- | -------------------------- |
+| TCP      | 6443-           | API-сервер Kubernetes      |
+| TCP      | 2379-2380       | API для клиентов сервера etcd |
+| TCP      | 10250           | API Kubelet                |
+| TCP      | 10251           | kube-scheduler             |
+| TCP      | 10252           | kube-controller-manager    |
+| TCP      | 10255           | API Kubelet (только для чтения) |
 
-#### How Kubernetes handles API authorization
+**Рабочие узлы:**
 
-In Kubernetes, you must be authenticated (logged in) before your request can be authorized (granted permission to access), and Kubernetes expects attributes that are common to REST API requests. This means that existing organization-wide or cloud-provider-wide access control systems which may handle other APIs work with Kubernetes authorization.
-
-When Kubernetes authorizes API requests using the API server, permissions are denied by default. It evaluates all of the request attributes against all policies and allows or denies the request. All parts of an API request must be allowed by some policy in order to proceed.
-
---
-
-#### External API Authentication for Kubernetes (RECOMMENDED)
-
-Due to the weakness of Kubernetes' internal mechanisms for authenticating APIs, we strongly recommended that larger or production clusters use one of the external API authentication methods.
-
-- [OpenID Connect](https://kubernetes.io/docs/reference/access-authn-authz/authentication/#openid-connect-tokens) (OIDC) lets you externalize authentication, use short lived tokens, and leverage centralized groups for authorization.
-- Managed Kubernetes distributions such as GKE, EKS and AKS support authentication using credentials from their respective IAM providers.
-- [Kubernetes Impersonation](https://kubernetes.io/docs/reference/access-authn-authz/authentication/#user-impersonation) can be used with both managed cloud clusters and on-prem clusters to externalize authentication without having to have access to the API server configuration parameters.
-
-In addition to choosing the appropriate authentication system, API access should be considered privileged and use Multi-Factor Authentication (MFA) for all user access.
-
-For more information, consult Kubernetes authentication reference documentation at <https://kubernetes.io/docs/reference/access-authn-authz/authentication>.
+| Протокол | Диапазон портов  | Назначение                 |
+| -------- | ---------------- | -------------------------- |
+| TCP      | 10250            | API Kubelet                |
+| TCP      | 10255            | API Kubelet (только для чтения) |
+| TCP      | 30000-32767      | Сервисы NodePort           |
 
 --
 
-#### Options for Kubernetes Built-In API Authentication (NOT RECOMMENDED)
+### Контроль доступа к API Kubernetes
 
-Kubernetes provides a number of internal mechanisms for API server authentication but these are usually only suitable for non-production or small clusters. We will briefly discuss each internal mechanism and explain why you should not use them.
+Первая линия защиты Kubernetes от атакующих — это ограничение и защита доступа к API-запросам, так как они используются для управления платформой Kubernetes. Подробнее см. в документации: <https://kubernetes.io/docs/reference/access-authn-authz/controlling-access/>.
 
-- [Static Token File](https://kubernetes.io/docs/reference/access-authn-authz/authentication/#static-token-file): Authentication makes use of clear text tokens stored in a CSV file on API server node(s). WARNING: You cannot modify credentials in this file until the API server is restarted.
+Этот раздел охватывает следующие темы:
 
-- [X509 Client Certs](https://kubernetes.io/docs/reference/access-authn-authz/authentication/#x509-client-certs) are available but are unsuitable for production use, since Kubernetes does [not support certificate revocation](https://github.com/kubernetes/kubernetes/issues/18982). As a result, these user credentials cannot be modified or revoked without rotating the root certificate authority key and re-issuing all cluster certificates.
-
-- [Service Accounts Tokens](https://kubernetes.io/docs/reference/access-authn-authz/authentication/#service-account-tokens) are also available for authentication. Their primary intended use is to allow workloads running in the cluster to authenticate to the API server, however they can also be used for user authentication.
+- Как Kubernetes обрабатывает авторизацию API-запросов
+- Внешняя аутентификация API для Kubernetes (рекомендуется)
+- Встроенная аутентификация API Kubernetes (не рекомендуется)
+- Внедрение ролевого контроля доступа в Kubernetes
+- Ограничение доступа к Kubelet
 
 --
 
-### Implementing Role-Based Access Control in Kubernetes
+#### Как Kubernetes обрабатывает авторизацию API-запросов
 
-Role-based access control (RBAC) is a method for regulating access to computer or network resources based on the roles of individual users within your organization. Fortunately, Kubernetes comes with an integrated Role-Based Access Control (RBAC) component with default roles that allow you to define user responsibilities depending on what actions a client might want to perform. You should use the Node and RBAC authorizers together in combination with the NodeRestriction admission plugin.
+В Kubernetes, прежде чем запрос может быть авторизован (получить разрешение на доступ), пользователь должен быть аутентифицирован (войти в систему). Kubernetes ожидает атрибутов, типичных для REST API-запросов. Это означает, что существующие системы управления доступом на уровне организации или облачного провайдера, которые работают с другими API, могут использоваться для авторизации запросов в Kubernetes.
 
-The RBAC component matches an incoming user or group to a set of permissions linked to roles. These permissions combine verbs (get, create, delete) with resources (pods, services, nodes) and can be namespace or cluster scoped. RBAC authorization uses the rbac.authorization.k8s.io API group to drive authorization decisions, allowing you to dynamically configure policies through the Kubernetes API.
+Когда Kubernetes авторизует API-запросы через API-сервер, по умолчанию разрешения на доступ отклоняются. Он оценивает все атрибуты запроса в соответствии со всеми существующими политиками и разрешает или отклоняет запрос. Для выполнения запроса все его части должны быть разрешены какой-либо политикой.
 
-To enable RBAC, start the API server with the --authorization-mode flag set to a comma-separated list that includes RBAC; for example:
+--
+
+#### Внешняя аутентификация API для Kubernetes (РЕКОМЕНДУЕТСЯ)
+
+Из-за слабости внутренних механизмов Kubernetes для аутентификации API настоятельно рекомендуется, чтобы для крупных или производственных кластеров использовались одни из внешних методов аутентификации API.
+
+- [OpenID Connect](https://kubernetes.io/docs/reference/access-authn-authz/authentication/#openid-connect-tokens) (OIDC) позволяет вынести аутентификацию на внешний уровень, использовать токены с коротким сроком действия и централизованные группы для авторизации.
+- Управляемые дистрибутивы Kubernetes, такие как GKE, EKS и AKS, поддерживают аутентификацию с использованием учетных данных их соответствующих поставщиков IAM.
+- [Имперсонация в Kubernetes](https://kubernetes.io/docs/reference/access-authn-authz/authentication/#user-impersonation) может использоваться как в управляемых облачных кластерах, так и в локальных кластерах для вынесения аутентификации на внешний уровень без необходимости доступа к параметрам конфигурации API-сервера.
+
+Кроме выбора подходящей системы аутентификации, доступ к API должен рассматриваться как привилегированный и использовать многофакторную аутентификацию (MFA) для всех пользователей.
+
+Дополнительную информацию можно найти в справочной документации по аутентификации Kubernetes: <https://kubernetes.io/docs/reference/access-authn-authz/authentication>.
+
+--
+
+#### Опции для встроенной аутентификации API в Kubernetes (НЕ РЕКОМЕНДУЕТСЯ)
+
+Kubernetes предоставляет несколько внутренних механизмов для аутентификации API-сервера, но они обычно подходят только для небольших или непроизводственных кластеров. Ниже мы кратко рассмотрим каждый механизм и объясним, почему не рекомендуется их использовать.
+
+- [Статический файл токенов](https://kubernetes.io/docs/reference/access-authn-authz/authentication/#static-token-file): Аутентификация с использованием открытых текстовых токенов, хранящихся в CSV-файле на узлах API-сервера. ВНИМАНИЕ: Вы не сможете изменить учетные данные в этом файле, пока не перезапустите API-сервер.
+
+- [Клиентские сертификаты X509](https://kubernetes.io/docs/reference/access-authn-authz/authentication/#x509-client-certs) доступны, но не подходят для использования в производственных средах, так как Kubernetes [не поддерживает отзыв сертификатов](https://github.com/kubernetes/kubernetes/issues/18982). В результате, учетные данные пользователей не могут быть изменены или отозваны без замены ключа корневого центра сертификации и перевыпуска всех сертификатов кластера.
+
+- [Токены учетных записей службы](https://kubernetes.io/docs/reference/access-authn-authz/authentication/#service-account-tokens) также могут использоваться для аутентификации. Их основное предназначение — предоставить возможность рабочим нагрузкам, выполняющимся в кластере, аутентифицироваться на API-сервере, хотя они также могут использоваться для аутентификации пользователей.
+
+--
+
+### Внедрение ролевого контроля доступа в Kubernetes
+
+Ролевой контроль доступа (RBAC) — это метод регулирования доступа к ресурсам компьютера или сети на основе ролей отдельных пользователей в вашей организации. К счастью, Kubernetes имеет встроенный компонент RBAC с предустановленными ролями, который позволяет определить обязанности пользователей в зависимости от того, какие действия клиент может выполнить. Рекомендуется использовать авторизаторы Node и RBAC в сочетании с плагином NodeRestriction.
+
+Компонент RBAC сопоставляет пользователя или группу с набором разрешений, связанных с ролями. Эти разрешения сочетают глаголы (получить, создать, удалить) с ресурсами (Pods, сервисы, узлы) и могут быть ограничены на уровне пространства имен или всего кластера. Авторизация RBAC использует группу API rbac.authorization.k8s.io для принятия решений об авторизации, что позволяет динамически настраивать политики через API Kubernetes.
+
+Чтобы включить RBAC, необходимо запустить API-сервер с флагом --authorization-mode, установив его в список, включающий RBAC, например:
 
 ```bash
 kube-apiserver --authorization-mode=Example,RBAC --other-options --more-options
 ```
 
-For detailed examples of utilizing RBAC, refer to Kubernetes documentation at <https://kubernetes.io/docs/reference/access-authn-authz/rbac>
+Для подробных примеров использования RBAC см. документацию Kubernetes: <https://kubernetes.io/docs/reference/access-authn-authz/rbac>
 
 --
 
-### Limiting access to the Kubelets
+### Ограничение доступа к Kubelet
 
-Kubelets expose HTTPS endpoints which grant powerful control over the node and containers. By default Kubelets allow unauthenticated access to this API. Production clusters should enable Kubelet authentication and authorization.
+Kubelet открывает HTTPS-эндпоинты, которые предоставляют мощный контроль над узлом и контейнерами. По умолчанию Kubelet разрешает неаутентифицированный доступ к этому API. В производственных кластерах необходимо включить аутентификацию и авторизацию для Kubelet.
 
-For more information, refer to Kubelet authentication/authorization documentation at <https://kubernetes.io/docs/reference/access-authn-authz/kubelet-authn-authz/>
-
---
-
-## SECTION 3: Kubernetes Security Best Practices: Build Phase
-
-During the build phase, you should secure your Kubernetes container images by building secure images and scanning those images for any known vulnerabilities.
+Дополнительную информацию можно найти в документации по аутентификации/авторизации Kubelet: <https://kubernetes.io/docs/reference/access-authn-authz/kubelet-authn-authz/>.
 
 --
 
-### What is a container image?
+## РАЗДЕЛ 3: Лучшие практики безопасности Kubernetes: Этап сборки
 
-A container image (CI) is an immutable, lightweight, standalone, executable package of software that includes everything needed to run an application: code, runtime, system tools, system libraries and settings [<https://www.docker.com/resources/what-container>]. Each image shares the kernel of the operating system present in the host machine.
-
-Your CIs must be built on a approved and secure base image. This base image must be scanned and monitored at regular intervals to ensure that all CIs are based on a secure and authentic image. Implement strong governance policies that determine how images are built and stored in trusted image registries.
+На этапе сборки необходимо обеспечить безопасность образов контейнеров Kubernetes, создавая безопасные образы и сканируя их на наличие известных уязвимостей.
 
 --
 
-#### Ensure that CIs are up to date
+### Что такое образ контейнера?
 
-Ensure your images (and any third-party tools you include) are up-to-date and use the latest versions of their components.
+Образ контейнера (CI) — это неизменяемый, легковесный, автономный, исполняемый пакет программного обеспечения, который включает все необходимое для запуска приложения: код, среду выполнения, системные инструменты, системные библиотеки и настройки [<https://www.docker.com/resources/what-container>]. Каждый образ использует ядро операционной системы, установленной на хост-машине.
 
---
-
-### Only use authorized images in Your environment
-
-Downloading and running CIs from unknown sources is very dangerous. Make sure that only images adhering to the organization’s policy are allowed to run, or else the organization is open to risk of running vulnerable or even malicious containers.
+Ваши образы контейнеров должны быть построены на утвержденном и безопасном базовом образе. Этот базовый образ необходимо регулярно сканировать и мониторить, чтобы убедиться, что все образы контейнеров создаются на основе безопасного и подлинного образа. Внедрите строгие правила управления, определяющие, как создаются образы и хранятся в доверенных реестрах образов.
 
 --
 
-### Use A CI Pipeline To Control and Identify Vulnerabilities
+#### Обеспечение актуальности CI
 
-The Kubernetes container registry serves as a central repository of all container images in the system. Depending on your needs, you can utilize a public repository or have a private repository as the container registry. We recommend that you store your approved images in a private registry and only push approved images to these registries, which automatically reduces the number of potential images that enter your pipeline down to a fraction of the hundreds of thousands of publicly available images.
-
-Also, we strongly recommend that you add a CI pipeline that integrates security assessment (like vulnerability scanning) into the build process. This pipeline should vet all code that is approved for production and is used to build the images. After an image is built, it should be scanned for security vulnerabilities. Only if no issues are found, then the image would be pushed to a private registry then deployed to production. If the security assessment mechanism fails any code, it should create a failure in the pipeline, which will help you find images with security problems and prevent them from entering the image registry.
-
-Many source code repositories provide scanning capabilities (e.g. [Github](https://docs.github.com/en/code-security/supply-chain-security), [GitLab](https://docs.gitlab.com/ee/user/application_security/container_scanning/index.html)), and many CI tools offer integration with open source vulnerability scanners such as [Trivy](https://github.com/aquasecurity/trivy) or [Grype](https://github.com/anchore/grype).
-
-Projects are developing image authorization plugins for Kubernetes that prevent unauthorized images from shipping. For more information, refer to the PR <https://github.com/kubernetes/kubernetes/pull/27129>.
+Убедитесь, что ваши образы (и любые сторонние инструменты, которые вы включаете) актуальны и используют последние версии своих компонентов.
 
 --
 
-### Minimize Features in All CIs
+### Используйте только авторизованные образы в вашей среде
 
-As a best practice, Google and other tech giants have strictly limiting the code in their runtime container for years. This approach improves the signal-to-noise of scanners (e.g. CVE) and reduces the burden of establishing provenance to just what you need.
-
-Consider using minimal CIs such as distroless images (see below). If this is not possible, do not include OS package managers or shells in CIs because they may have unknown vulnerabilities. If you absolutely must include any OS packages, remove the package manager at a later step in the generation process.
+Загрузка и запуск CI из неизвестных источников очень опасны. Убедитесь, что только образы, соответствующие политике организации, разрешены для использования, иначе организация рискует запустить уязвимые или даже вредоносные контейнеры.
 
 --
 
-#### Use distroless or empty images when possible
+### Используйте конвейер CI для управления и выявления уязвимостей
 
-Distroless images sharply reduce the attack surface because they do not include shells and contain fewer packages than other images. For more information on distroless images, refer to <https://github.com/GoogleContainerTools/distroless>.
+Реестр контейнеров Kubernetes служит центральным хранилищем всех образов контейнеров в системе. В зависимости от ваших нужд вы можете использовать публичный реестр или иметь частный реестр в качестве хранилища контейнеров. Мы рекомендуем хранить утвержденные образы в частном реестре и загружать только утвержденные образы в эти реестры, что автоматически сокращает количество потенциальных образов, попадающих в ваш конвейер, до минимального числа по сравнению с сотнями тысяч доступных публично образов.
 
-An empty image, ideal for statically compiled languages like Go, because the image is empty - the attack surface it is truly minimal - only your code!
+Также настоятельно рекомендуется интегрировать конвейер CI, который включает оценку безопасности (например, сканирование на уязвимости) в процесс сборки. Этот конвейер должен проверять весь код, одобренный для производства, и используемый для создания образов. После создания образа он должен быть просканирован на наличие уязвимостей. Только если не будет найдено проблем, образ можно отправить в частный реестр и затем развернуть в производственной среде. Если механизм оценки безопасности не пройдет проверку кода, это должно вызвать сбой в конвейере, что поможет вам выявить образы с проблемами безопасности и предотвратит их попадание в реестр образов.
 
-For more information, refer to <https://hub.docker.com/_/scratch>
+Многие репозитории исходного кода предоставляют возможности сканирования (например, [Github](https://docs.github.com/en/code-security/supply-chain-security), [GitLab](https://docs.gitlab.com/ee/user/application_security/container_scanning/index.html)), а многие инструменты CI предлагают интеграцию с открытыми сканерами уязвимостей, такими как [Trivy](https://github.com/aquasecurity/trivy) или [Grype](https://github.com/anchore/grype).
+
+Проекты разрабатывают плагины для авторизации образов в Kubernetes, которые предотвращают отправку неавторизованных образов. Для получения дополнительной информации см. PR <https://github.com/kubernetes/kubernetes/pull/27129>.
+
+--
+
+### Минимизация функционала всех CI
+
+В качестве лучшей практики, Google и другие технологические гиганты уже много лет строго ограничивают количество кода в своих контейнерах во время выполнения. Такой подход улучшает соотношение сигнала к шуму для сканеров (например, CVE) и снижает нагрузку по установлению подлинности компонентов только до необходимых.
+
+Рассмотрите возможность использования минимальных CI, таких как distroless-образы (см. ниже). Если это невозможно, не включайте в CI менеджеры пакетов ОС или оболочки, так как они могут содержать неизвестные уязвимости. Если необходимо включить пакеты ОС, удалите менеджер пакетов на последнем этапе процесса генерации.
+
+--
+
+#### Использование distroless или пустых образов
+
+Distroless-образы значительно сокращают поверхность атаки, так как они не содержат оболочки и включают меньше пакетов по сравнению с другими образами. Подробнее о distroless-образах можно узнать здесь: <https://github.com/GoogleContainerTools/distroless>.
+
+Пустой образ, идеальный для статически скомпилированных языков, таких как Go, имеет минимальную поверхность атаки — только ваш код!
+
+Для получения дополнительной информации, см. <https://hub.docker.com/_/scratch>.
 
 ---
 
-## SECTION 4: Kubernetes Security Best Practices: Deploy Phase
+## РАЗДЕЛ 4: Лучшие практики безопасности Kubernetes: Этап развертывания
 
-Once a Kubernetes infrastructure is in place, you must configure it securely before any workloads are deployed. And as you configure your infrastructure, ensure that you have visibility into what CIs are being deployed and how they are being deployed or else you will not be able to identify and respond to security policy violations. Before deployment, your system should know and be able to tell you:
+После того как инфраструктура Kubernetes настроена, её необходимо безопасно конфигурировать перед развертыванием рабочих нагрузок. При этом важно обеспечить видимость того, какие CI развертываются и как они развертываются. Без этого вы не сможете определить и отреагировать на нарушения политики безопасности. До развертывания система должна уметь определять и сообщать вам:
 
-- **What is being deployed** - including information about the image being used, such as components or vulnerabilities, and the pods that will be deployed.
-- **Where it is going to be deployed** - which clusters, namespaces, and nodes.
-- **How it is deployed** - whether it runs privileged, what other deployments it can communicate with, the pod security context that is applied, if any.
-- **What it can access** - including secrets, volumes, and other infrastructure components such as the host or orchestrator API.
-- **Is it compliant?** - whether it complies with your policies and security requirements.
-
---
-
-### Code that uses namespaces to isolate Kubernetes resources
-
-Namespaces give you the ability to create logical partitions, enforce separation of your resources and limit the scope of user permissions.
+- **Что развертывается** — включая информацию о используемом образе, такие как его компоненты или уязвимости, а также о подах, которые будут развернуты.
+- **Где будет развернуто** — в каких кластерах, пространствах имен и на каких узлах.
+- **Как оно развернуто** — работает ли оно с привилегиями, с какими другими развертываниями оно может взаимодействовать, какой контекст безопасности подов применен, если таковой имеется.
+- **К чему оно имеет доступ** — включая секреты, тома и другие компоненты инфраструктуры, такие как хост или API оркестратора.
+- **Соответствует ли оно требованиям** — соблюдает ли оно ваши политики и требования безопасности.
 
 --
 
-#### Setting the namespace for a request
+### Код, использующий пространства имен для изоляции ресурсов Kubernetes
 
-To set the namespace for a current request, use the --namespace flag. Refer to the following examples:
+Пространства имен (namespaces) позволяют создавать логические разделы, обеспечивать разделение ресурсов и ограничивать область действий пользователей.
+
+--
+
+#### Установка пространства имен для запроса
+
+Чтобы установить пространство имен для текущего запроса, используйте флаг `--namespace`. Примеры команд:
 
 ```bash
-kubectl run nginx --image=nginx --namespace=<insert-namespace-name-here>
-kubectl get pods --namespace=<insert-namespace-name-here>
+kubectl run nginx --image=nginx --namespace=<вставьте-имя-пространства-имен>
+kubectl get pods --namespace=<вставьте-имя-пространства-имен>
 ```
 
 --
 
-#### Setting the namespace preference
+#### Установка предпочтительного пространства имен
 
-You can permanently save the namespace for all subsequent kubectl commands in that context with:
+Вы можете сохранить пространство имен для всех последующих команд `kubectl` в этом контексте:
 
 ```bash
-kubectl config set-context --current --namespace=<insert-namespace-name-here>
+kubectl config set-context --current --namespace=<вставьте-имя-пространства-имен>
 ```
 
-Then validate it with the following command:
+Проверьте настройку следующей командой:
 
 ```bash
 kubectl config view --minify | grep namespace:
 ```
 
-Learn more about namespaces at <https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces>
+Подробнее о пространствах имен можно узнать на <https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces>.
 
 --
 
-### Use the ImagePolicyWebhook to govern image provenance
+### Использование ImagePolicyWebhook для управления происхождением образов
 
-We strongly recommend that you use the admission controller ImagePolicyWebhook to prevent unapproved images from being used, reject pods that use unapproved images, and refuse CIs that meet the following criteria:
+Мы настоятельно рекомендуем использовать контроллер допуска ImagePolicyWebhook для предотвращения использования неутвержденных образов, отклонения подов с неутвержденными образами и отказа в использовании CI, соответствующих следующим критериям:
 
-- Images that haven’t been scanned recently
-- Images that use a base image that’s not explicitly allowed
-- Images from insecure registries
+- Образы, которые не были недавно просканированы
+- Образы, использующие неподтвержденные базовые образы
+- Образы из небезопасных регистров
 
-Learn more about webhook at <https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#imagepolicywebhook>
-
---
-
-### Implement continuous security vulnerability scanning
-
-Since new vulnerabilities are always being discovered, you may not always know if your containers may have recently-disclosed vulnerabilities (CVEs) or outdated packages. To maintain a strong security posture, do regular production scanning of first-party containers (applications you have built and previously scanned) as well as third-party containers (which are sourced from trusted repository and vendors).
-
-Open Source projects such as [ThreatMapper](https://github.com/deepfence/ThreatMapper) can assist in identifying and prioritizing vulnerabilities.
+Подробнее о вебхуке читайте на <https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#imagepolicywebhook>.
 
 --
 
-### Continuously assess the privileges used by containers
+### Реализуйте постоянное сканирование на уязвимости безопасности
 
-We strongly recommend that all your containers should adhere to the principle of least privilege, since your security risk is heavily influenced by the capabilities, role bindings, and privileges given to containers. Each container should only have the minimum privileges and capabilities that allows it to perform its intended function.
+Поскольку новые уязвимости постоянно обнаруживаются, ваши контейнеры могут быть подвержены недавно выявленным уязвимостям (CVE) или устаревшим пакетам. Для поддержания высокого уровня безопасности регулярно проводите сканирование как собственных контейнеров (те, которые вы создали и ранее сканировали), так и сторонних контейнеров (полученных из доверенных репозиториев и у проверенных поставщиков).
 
-**Use Pod security policies to control the security-related attributes of pods, which includes container privilege levels.**
-
-All security policies should include the following conditions:
-
-- Application processes do not run as root.
-- Privilege escalation is not allowed.
-- The root filesystem is read-only.
-- The default (masked) /proc filesystem mount is used.
-- The host network or process space should NOT be used - using `hostNetwork: true` will cause NetworkPolicies to be ignored since the Pod will use its host network.
-- Unused and unnecessary Linux capabilities are eliminated.
-- Use SELinux options for more fine-grained process controls.
-- Give each application its own Kubernetes Service Account.
-- If a container does not need to access the Kubernetes API, do not let it mount the service account credentials.
-
-For more information on Pod security policies, refer to the documentation at <https://kubernetes.io/docs/concepts/policy/pod-security-policy/>.
+Проекты с открытым исходным кодом, такие как [ThreatMapper](https://github.com/deepfence/ThreatMapper), могут помочь в выявлении и приоритезации уязвимостей.
 
 --
 
-### Apply security context to your pods and containers
+### Постоянно оценивайте привилегии, используемые контейнерами
 
-The security context is a property that is defined in the deployment yaml and controls the security parameters for all pod/container/volumes, and it should be applied throughout your infrastructure. When the security context property is properly implemented everywhere, it can eliminate entire classes of attacks that rely on privileged access. For example, any attack that depends on installing software or writing to the file system will be stopped if you specify read-only root file systems in the security context.
+Мы настоятельно рекомендуем, чтобы все контейнеры следовали принципу наименьших привилегий, так как уровень безопасности сильно зависит от предоставленных контейнерам возможностей, привязок ролей и привилегий. Каждый контейнер должен иметь только те минимальные привилегии и возможности, которые необходимы для выполнения его основной функции.
 
-When you are configuring the security context for your pods, only grant the privileges that are needed for the resources to function in your containers and volumes. Some of the important parameters in the security context property are:
+**Используйте политики безопасности подов (Pod Security Policies) для контроля параметров безопасности подов, включая уровни привилегий контейнеров.**
 
-Security Context Settings:
+Все политики безопасности должны включать следующие условия:
 
-1. SecurityContext->**runAsNonRoot**  
-   Description: Indicates that containers should run as non-root user.
+- Процессы приложения не должны запускаться от имени пользователя root.
+- Эскалация привилегий не допускается.
+- Файловая система root доступна только для чтения.
+- Используется стандартная (скрытая) точка монтирования файловой системы /proc.
+- Сетевое пространство узла или пространство процессов не должно использоваться (установка `hostNetwork: true` приведет к игнорированию NetworkPolicies, так как под будет использовать сеть узла).
+- Удаляются неиспользуемые и ненужные возможности Linux.
+- Используйте параметры SELinux для более точного управления процессами.
+- Для каждого приложения создайте отдельную учетную запись Kubernetes Service Account.
+- Если контейнеру не требуется доступ к API Kubernetes, не позволяйте ему монтировать учетные данные сервисной учетной записи.
 
-2. SecurityContext->**Capabilities**  
-   Description: Controls the Linux capabilities assigned to the container.
+Подробнее о политиках безопасности подов можно узнать в документации на <https://kubernetes.io/docs/concepts/policy/pod-security-policy/>.
 
-3. SecurityContext->**readOnlyRootFilesystem**  
-   Description: Controls whether a container will be able to write into the root filesystem.
+--
 
-4. PodSecurityContext->**runAsNonRoot**  
-   Description: Prevents running a container with 'root' user as part of the pod |
+### Применение контекста безопасности к подам и контейнерам
 
-#### Security context example: A pod definition that includes security context parameters
+Контекст безопасности (security context) — это свойство, определенное в файле развертывания YAML, которое управляет параметрами безопасности для всех подов, контейнеров и томов, и его необходимо применять по всей инфраструктуре. При правильной реализации контекста безопасности можно устранить целые классы атак, которые зависят от привилегированного доступа. Например, любая атака, основанная на установке программного обеспечения или записи в файловую систему, будет остановлена, если вы укажете файловую систему root только для чтения в контексте безопасности.
+
+При настройке контекста безопасности для подов предоставляйте только те привилегии, которые необходимы для работы ресурсов в контейнерах и томах. Некоторые важные параметры контекста безопасности:
+
+Параметры контекста безопасности:
+
+1. **SecurityContext->runAsNonRoot**  
+   Описание: Указывает, что контейнеры должны запускаться не от имени пользователя root.
+
+2. **SecurityContext->Capabilities**  
+   Описание: Управляет возможностями Linux, назначенными контейнеру.
+
+3. **SecurityContext->readOnlyRootFilesystem**  
+   Описание: Управляет тем, сможет ли контейнер записывать данные в файловую систему root.
+
+4. **PodSecurityContext->runAsNonRoot**  
+   Описание: Предотвращает запуск контейнера с пользователем root в составе пода.
+#### Пример контекста безопаности
 
 ```yaml
 apiVersion: v1
@@ -411,103 +408,91 @@ spec:
     runAsNonRoot: true
 ```
 
-For more information on security context for Pods, refer to the documentation at <https://kubernetes.io/docs/tasks/configure-pod-container/security-context>
+Для дополнительной информации о контексте безопасности для подов, смотрите <https://kubernetes.io/docs/tasks/configure-pod-container/security-context>
 
-### Providing extra security with a service mesh
+For more information on security context for Pods, refer to the documentation at <https://kubernetes.io/docs/tasks/configure-pod-container/security-context>.
 
-A service mesh is an infrastructure layer that can handle communications between services in applications quickly, securely and reliably, which can help reduce the complexity of managing microservices and deployments. They provide a uniform way to secure, connect and monitor microservices. and a service mesh is great at resolving operational challenges and issues when running those containers and microservices.
+### Дополнительная безопасность с использованием service mesh
 
-#### Advantages of a service mesh
+Service mesh — это слой инфраструктуры, который управляет взаимодействием между сервисами приложений быстро, безопасно и надежно. Он помогает упростить управление микросервисами и их развертыванием, предоставляя единообразный способ обеспечения безопасности, подключения и мониторинга микросервисов. Service mesh также решает эксплуатационные задачи, связанные с запуском контейнеров и микросервисов.
 
-A service mesh provides the following advantages:
+#### Преимущества service mesh
 
-1. Observability
+1. **Наблюдаемость**
 
-It generates tracing and telemetry metrics, which make it easy to understand your system and quickly root cause any problems.
+Service mesh генерирует трассировку и метрики телеметрии, что упрощает понимание вашей системы и быстрое выявление причин проблем.
 
-2. Specialized security features
+2. **Специализированные функции безопасности**
 
-It provides security features which quickly identify any compromising traffic that enters your cluster and can secure the services inside your network if they are properly implemented. It can also help you manage security through mTLS, ingress and egress control, and more.
+Service mesh быстро идентифицирует любой компрометирующий трафик, попадающий в ваш кластер, и может защитить сервисы внутри сети при правильной реализации. Он также помогает управлять безопасностью с помощью mTLS, контроля входящего и исходящего трафика и других функций.
 
-3. Ability to secure microservices with mTLS
+3. **Безопасность микросервисов с помощью mTLS**
 
-Since securing microservices is hard, there are many tools that address microservices security. However, the service mesh is the most elegant solution for addressing encryption of on-the-wire traffic within the network.
+Service mesh эффективно защищает трафик между микросервисами с помощью шифрования mTLS (взаимное TLS). Mesh автоматически шифрует и дешифрует запросы и ответы, снимая это бремя с разработчиков приложений. Он также может улучшить производительность, повторно используя существующие соединения, что снижает потребность в дорогостоящем создании новых.
 
-It provides defense with mutual TLS (mTLS) encryption of the traffic between your services, and the mesh can automatically encrypt and decrypt requests and responses, which removes that burden from application developers. The mesh can also improve performance by prioritizing the reuse of existing, persistent connections, which reduces the need for the computationally expensive creation of new ones. With service mesh, you can secure traffic over the wire and also make strong identity-based authentication and authorizations for each microservice.
+4. **Контроль входящего и исходящего трафика**
 
-We see that a service mesh has a lot of value of enterprise companies, because a mesh allows you to see whether mTLS is enabled and working between each of your services. Also, you can get immediate alerts if the security status changes.
+Service mesh позволяет контролировать трафик, проходящий через систему, и защищать периметр с помощью правил входа, а также управлять взаимодействием с внешними сервисами через контроль исходящего трафика.
 
-4. Ingress & egress control
+5. **Операционный контроль**
 
-It allows you to monitor and address compromising traffic as it passes through the mesh. For example, if Istio integrates with Kubernetes as an ingress controller, it can take care of load balancing for ingress. This allows defenders to add a level of security at the perimeter with ingress rules, while egress control allows you to see and manage external services and control how your services interact with traffic.
+Mesh помогает командам безопасности и платформам задавать макро-контроль для обеспечения правильных политик доступа, при этом позволяя разработчикам проводить необходимые настройки в рамках этих границ.
 
-5. Operational Control
+6. **Управление RBAC**
 
-It can help security and platform teams set the right macro controls to enforce access controls, while allowing developers to make customizations they need to move quickly within these guardrails.
+Service mesh помогает реализовать эффективную систему управления доступом на основе ролей (RBAC), которая ограничивает привилегии пользователей минимально необходимыми и обеспечивает доступ к системам по принципу «по умолчанию все запрещено».
 
-6. Ability to manage RBAC
+--
 
-A service mesh can help defenders implement a strong Role Based Access Control (RBAC) system, which is arguably one of the most critical requirements in large engineering organizations. Even a secure system can be easily circumvented by over-privileged users or employees, and an RBAC system can:
+#### Недостатки service mesh
 
-- Restrict privileged users to least privileges necessary to perform job responsibilities
-- Ensure that access to systems are set to “deny all” by default
-- Help developers make sure that proper documentation detailing roles and responsibilities are in place, which is one of the most critical security concerns in the enterprise.
+Хотя service mesh имеет множество преимуществ, с его использованием связаны также определённые сложности, среди которых:
 
-#### Disadvantages of the security mesh
+- **Усложнение инфраструктуры**  
+  Введение прокси, sidecar-контейнеров и других компонентов добавляет дополнительный слой сложности в уже и так сложную среду разработки и эксплуатации.
 
-Though a service mesh has many advantages, they also bring in a unique set of challenges and a few of them are listed below:
+- **Необходимость дополнительной экспертизы**  
+  Если добавить mesh, такой как Istio, поверх оркестратора, например, Kubernetes, операторам потребуется глубокое знание обеих технологий.
 
-- Adds A New Layer of Complexity
+- **Замедление инфраструктуры**  
+  Поскольку service mesh — это сложная и инвазивная технология, она может значительно замедлить архитектуру.
 
-When proxies, sidecars and other components are introduced an already sophisticated environment, it dramatically increases the complexity of development and operations.
+- **Необходимость освоения новой платформы**  
+  Service mesh заставляет разработчиков и операторов адаптироваться к новой, жёстко структурированной платформе и её правилам.
 
-- Additional Expertise Is Required
+### Внедрение централизованного управления политиками
 
-If a mesh like Istio is added on top of an orchestrator such as Kubernetes, operators need to become experts in both technologies.
+Существует множество проектов, которые предоставляют централизованное управление политиками для Kubernetes-кластера, включая [Open Policy Agent](https://www.openpolicyagent.org/) (OPA), [Kyverno](https://kyverno.io/), и [Validating Admission Policy](https://kubernetes.io/docs/reference/access-authn-authz/validating-admission-policy/) (встроенная, но пока ещё бета-функция Kubernetes начиная с версии 1.28). Для примера мы сосредоточимся на OPA в этом cheat sheet.
 
-- Infrastructure Can Be Slowed
+OPA был запущен в 2016 году с целью унификации выполнения политик в различных технологиях и системах, и его можно использовать для обеспечения выполнения политик на таких платформах, как Kubernetes. На текущий момент OPA является частью CNCF как инкубационный проект и предоставляет единый метод применения политик безопасности в стеке. В то время как разработчики могут контролировать кластер с помощью RBAC и политик безопасности для pod'ов, эти технологии действуют только внутри кластера, но не за его пределами.
 
-Because a service mesh is an invasive and intricate technology, it can significantly slow down an architecture.
+OPA — это универсальный инструмент выполнения политик, который не базируется на других проектах, что делает его гибким. Политики OPA могут интегрироваться с API, SSH-демоном Linux, объектными хранилищами (например, Ceph), а также использовать любые допустимые JSON-данные в качестве входных атрибутов, если они содержат необходимую информацию. Вы можете самостоятельно выбирать входные и выходные данные — например, вернуть JSON-объект с логическим значением, числом, строкой или даже сложной структурой данных.
 
-- Requires Adoption of Yet Another Platform
+#### Основные случаи использования OPA
 
-Since service meshes are invasive, they force developers and operators to adapt to a highly opinionated platform and conform to its rules.
+##### OPA для авторизации приложений
 
-### Implementing centralized policy management
+OPA предоставляет готовую технологию авторизации, что избавляет команду от необходимости разрабатывать её с нуля. Он использует декларативный язык политик для создания и применения правил, таких как «Алиса может записывать в этот репозиторий» или «Боб может обновить эту учётную запись». Это решение предоставляет разработчикам инструменты для интеграции политик в приложения и позволяет конечным пользователям создавать свои политики для своих арендаторов.
 
-There are numerous projects which are able to provide centralized policy management for a Kubernetes cluster, including the [Open Policy Agent](https://www.openpolicyagent.org/) (OPA) project, [Kyverno](https://kyverno.io/), or the [Validating Admission Policy](https://kubernetes.io/docs/reference/access-authn-authz/validating-admission-policy/) (a built-in, yet beta (aka off by default) feature as of 1.28). In order to provide an example with some depth, we will focus on OPA in this cheat sheet.
+Если у вас уже есть собственное решение для авторизации приложений, возможно, OPA вам не подойдёт. Однако если вы стремитесь повысить эффективность разработки, масштабируя её для микросервисов и декомпозируя монолитные приложения, OPA или его аналоги могут быть решением.
 
-OPA was started in 2016 to unify policy enforcement across different technologies and systems, and it can be used to enforce policies on a platform like Kubernetes. Currently, OPA is part of CNCF as an incubating project. It can create a unified method of enforcing security policy in the stack. While developers can can impose fine-grained control over the cluster with RBAC and Pod security policies, these technologies only apply to the cluster but not outside the cluster.
+##### OPA для контроля доступа в Kubernetes
 
-Since OPA is a general-purpose, domain-agnostic policy enforcement tool that is not based on any other project, the policy queries and decisions do not follow a specific format. Thus it can be integrated with APIs, the Linux SSH daemon, an object store like Ceph, and you can use any valid JSON data as request attributes as long as it provides the required data. OPA allows you to choose what is input and what is output--for example, you can opt to have OPA return a True or False JSON object, a number, a string, or even a complex data object.
+Kubernetes предоставляет разработчикам значительный контроль над такими аспектами, как вычисления, сеть и хранилище, что позволяет им настраивать инфраструктуру под свои нужды. Это, в свою очередь, требует от администраторов и команд безопасности контроля за тем, чтобы разработчики не нанесли вред своей работе или работе других.
 
-#### Most common use cases of OPA
+OPA помогает построить политики безопасности, которые ограничивают доступ только к доверенным источникам контейнерных образов, запрещают запуск ПО с правами root, требуют шифрование данных на хранилище и предотвращают их удаление при перезапуске пода. OPA интегрируется напрямую с Kubernetes API и имеет полномочия отклонять любые ресурсы, которые не соответствуют установленным политикам. Политики могут применяться также на ранних стадиях разработки (например, в CICD-пайплайне или даже на этапе разработки на локальных компьютерах), чтобы разработчики получали обратную связь как можно раньше.
 
-##### OPA for application authorization
+##### OPA для авторизации в service mesh
 
-OPA can provide developers with an already-developed authorization technology so the team doesn’t have to develop one from scratch. It uses a declarative policy language purpose built for writing and enforcing rules such as, “Alice can write to this repository,” or “Bob can update this account.” This technology provides a rich suite of tools that can allow developers to integrate policies into their applications and allow end users to also create policy for their tenants.
+Наконец, OPA может управлять использованием архитектуры service mesh. Администраторы могут создавать политики для обеспечения соответствия требованиям безопасности, даже если это требует изменения исходного кода. OPA можно встроить в service mesh для контроля API микросервисов и предотвращения бокового движения в микросервисной архитектуре, обеспечивая при этом гибкую политику авторизации для межсервисных взаимодействий.
 
-If you already have a homegrown application authorization solution, you may not want to swap in OPA. But if you want to improve developer efficiency by moving to a solution that scales with microservices and allows you to decompose monolithic apps, you’re going to need a distributed authorization system and OPA (or one of the related competitors) could be the answer.
+### Ограничение использования ресурсов в кластере
 
-##### OPA for Kubernetes admission control
+Важно определить квоты на ресурсы для контейнеров в Kubernetes, так как все ресурсы в кластере Kubernetes по умолчанию создаются без ограничений по CPU и запросам/ограничениям памяти. Если вы запускаете контейнеры без ограничений ресурсов, ваша система может столкнуться с риском отказа в обслуживании (DoS) или сценариями "шумного соседа". К счастью, OPA может использовать квоты на ресурсы для пространства имен, что позволит ограничить количество или емкость ресурсов, предоставляемых этому пространству имен, и ограничить его, задавая емкость CPU, память или пространство на диске.
 
-Since Kubernetes gives developers tremendous control over the traditional silos of "compute, networking and storage," they can use it to set up their network exactly the way they want and set up storage exactly the way they want. But this means that administrators and security teams must make sure that developers don’t shoot themselves (or their neighbors) in the foot.
+Кроме того, OPA может ограничить количество подов, сервисов или томов в каждом пространстве имен и может ограничивать максимальный или минимальный размер некоторых из указанных ресурсов. Квоты на ресурсы устанавливают значения по умолчанию, если они не указаны, и предотвращают запросы пользователей на неоправданно высокие или низкие значения для обычно зарезервированных ресурсов, таких как память.
 
-OPA can address these security concerns by allowing security to build policies that require all container images to be from trusted sources, prevent developers from running software as root, make sure storage is always marked with the encrypt bit and storage does not get deleted just because a pod gets restarted, that limits internet access, etc.
-
-It can also allow administrators to make sure that policy changes don’t inadvertently do more damage than good. OPA integrates directly into the Kubernetes API server and it has complete authority to reject any resource that the admission policy says does not belong in a cluster—-whether it is compute-related, network-related, storage-related, etc. Moreover, policy can be run out-of-band to monitor results and OPA's policies can be exposed early in the development lifecycle (e.g. the CICD pipeline or even on developer laptops) if developers need feedback early.
-
-##### OPA for service mesh authorization
-
-And finally, OPA can regulate use of service mesh architectures. Often, administrators ensure that compliance regulations are satisfied by building policies into the service mesh even when modification to source code is involved. Even if you’re not embedding OPA to implement application authorization logic (the top use case discussed above), you can control the APIs microservices by putting authorization policies into the service mesh. But if you are motivated by security, you can implement policies in the service mesh to limit lateral movement within a microservice architecture.
-
-### Limiting resource usage on a cluster
-
-It is important to define resource quotas for containers in Kubernetes, since all resources in a Kubernetes cluster are created with unbounded CPU limits and memory requests/limits by default. If you run resource-unbound containers, your system will be in risk of Denial of Service (DoS) or “noisy neighbor” scenarios. Fortunately, OPA can use resource quotas on a namespace, which will limit the number or capacity of resources granted to that namespace and restrict that namespace by defining its CPU capacity, memory, or persistent disk space.
-
-Additionally, the OPA can limit how many pods, services, or volumes exist in each namespace, and it can restrict the maximum or minimum size of some of the resources above. The resource quotas provide default limits when none are specified and prevent users from requesting unreasonably high or low values for commonly reserved resources like memory.
-
-Below is an example of defining namespace resource quota in the appropriate yaml. It limits the number of pods in the namespace to 4, limits their CPU requests between 1 and 2 and memory requests between 1GB to 2GB.
+Ниже приведен пример определения квоты на ресурсы пространства имен в соответствующем файле yaml. Этот пример ограничивает количество подов в пространстве имен до 4, ограничивает запросы CPU от 1 до 2 и запросы памяти от 1 ГБ до 2 ГБ.
 
 `compute-resources.yaml`:
 
@@ -525,23 +510,23 @@ spec:
     limits.memory: 2Gi
 ```
 
-Assign a resource quota to namespace:
+Назначьте квоту на ресурсы для пространства имен:
 
 ```bash
 kubectl create -f ./compute-resources.yaml --namespace=myspace
 ```
 
-For more information on configuring resource quotas, refer to the Kubernetes documentation at <https://kubernetes.io/docs/concepts/policy/resource-quotas/>.
+Для получения дополнительной информации о настройке квот на ресурсы, обратитесь к документации Kubernetes по адресу <https://kubernetes.io/docs/concepts/policy/resource-quotas/>.
 
-### Use Kubernetes network policies to control traffic between pods and clusters
+### Использование сетевых политик Kubernetes для управления трафиком между подами и кластерами
 
-If your cluster runs different applications, a compromised application could attack other neighboring applications. This scenario might happen because Kubernetes allows every pod to contact every other pod by default. If ingress from an external network endpoint is allowed, the pod will be able to send its traffic to an endpoint outside the cluster.
+Если в вашем кластере работают разные приложения, скомпрометированное приложение может атаковать другие соседние приложения. Это может произойти, потому что Kubernetes по умолчанию позволяет каждому поду контактировать с любым другим подом. Если разрешен входящий трафик из внешней сети, под сможет отправлять свой трафик на конечную точку за пределами кластера.
 
-It is strongly recommended that developers implement network segmentation, because it is a key security control that ensures that containers can only communicate with other approved containers and prevents attackers from pursuing lateral movement across containers. However, applying network segmentation in the cloud is challenging because of the “dynamic” nature of container network identities (IPs).
+Рекомендуется внедрить сетевую сегментацию, так как это ключевой элемент безопасности, который гарантирует, что контейнеры могут общаться только с другими одобренными контейнерами и предотвращает перемещение атакующих между контейнерами. Однако применение сетевой сегментации в облаке представляет собой сложную задачу из-за «динамической» природы сетевых идентификаторов контейнеров (IP).
 
-While users of Google Cloud Platform can benefit from automatic firewall rules, which prevent cross-cluster communication, other users can apply similar implementations by deploying on-premises using network firewalls or SDN solutions. Also, the Kubernetes Network SIG is working on methods that will greatly improve the pod-to-pod communication policies. A new network policy API should address the need to create firewall rules around pods, limiting the network access that a containerized can have.
+Пользователи Google Cloud Platform могут воспользоваться автоматическими правилами брандмауэра, которые предотвращают межкластерное общение. Другие пользователи могут применять аналогичные реализации, развертывая на собственных серверах с помощью сетевых брандмауэров или решений SDN. Также группа Kubernetes Network SIG работает над методами, которые значительно улучшат политики связи между подами. Новый API сетевых политик должен решить проблему создания правил брандмауэра для подов, ограничивая сетевой доступ, который может иметь контейнер.
 
-The following is an example of a network policy that controls the network for “backend” pods, which only allows inbound network access from “frontend” pods:
+Ниже приведен пример сетевой политики, которая контролирует сеть для подов «backend», разрешая входящий сетевой доступ только от подов «frontend»:
 
 ```json
 POST /apis/net.alpha.kubernetes.io/v1alpha1/namespaces/tenant-a/networkpolicys
@@ -567,134 +552,132 @@ POST /apis/net.alpha.kubernetes.io/v1alpha1/namespaces/tenant-a/networkpolicys
 }
 ```
 
-For more information on configuring network policies, refer to the Kubernetes documentation at <https://kubernetes.io/docs/concepts/services-networking/network-policies>.
+Для получения дополнительной информации о настройке сетевых политик, обратитесь к документации Kubernetes по адресу <https://kubernetes.io/docs/concepts/services-networking/network-policies>.
 
-### Securing data
+### Защита данных
 
-#### Keep secrets as secrets
+#### Держите секреты в секрете
 
-It is important to learn how sensitive data such as credentials and keys are stored and accessed in your infrastructure. Kubernetes keeps them in a "secret," which is a small object that contains sensitive data, like a password or token.
+Важно понимать, как чувствительные данные, такие как учетные данные и ключи, хранятся и используются в вашей инфраструктуре. Kubernetes хранит их в объекте "секрет" (Secret), который представляет собой небольшой объект, содержащий чувствительные данные, такие как пароль или токен.
 
-It is best for secrets to be mounted into read-only volumes in your containers, rather than exposing them as environment variables. Also, secrets must be kept separate from an image or pod or anyone with access to the image would have access to the secret as well, even though a pod is not able to access the secrets of another pod. Complex applications that handle multiple processes and have public access are especially vulnerable in this regard.
+Лучше монтировать секреты в контейнерах в виде только для чтения, а не передавать их как переменные окружения. Также секреты должны храниться отдельно от образа или пода, чтобы никто с доступом к образу не мог получить доступ к секретам. Особенно уязвимы сложные приложения, которые обрабатывают несколько процессов и имеют публичный доступ.
 
-#### Encrypt secrets at rest
+#### Шифрование секретов в покое
 
-Always encrypt your backups using a well reviewed backup and encryption solution and consider using full disk encryption where possible, because the etcd database contains any information accessible via the Kubernetes API. Access to this database could provide an attacker with significant visibility into the state of your cluster.
+Всегда шифруйте свои резервные копии, используя тщательно проверенное решение для резервного копирования и шифрования, и рассмотрите возможность использования полного шифрования диска, если это возможно. Это важно, поскольку база данных etcd содержит любую информацию, доступную через API Kubernetes. Доступ к этой базе данных может предоставить злоумышленнику значительное представление о состоянии вашего кластера.
 
-Kubernetes supports encryption at rest, a feature introduced in 1.7, and v1 beta since 1.13, which will encrypt Secret resources in etcd and prevent parties with access to your etcd backups from viewing the content of those secrets. While this feature is currently beta, it offers an additional level of defense when backups are not encrypted or an attacker gains read access to etcd.
+Kubernetes поддерживает шифрование в покое, функция, введенная в версии 1.7 и в beta-версии начиная с 1.13, которая шифрует ресурсы Secret в etcd и предотвращает доступ к содержимому этих секретов для сторон с доступом к резервным копиям etcd. Хотя эта функция в настоящее время находится на стадии beta, она предоставляет дополнительный уровень защиты, если резервные копии не зашифрованы или если злоумышленник получает доступ к etcd.
 
-#### Alternatives to Kubernetes Secret resources
+#### Альтернативы ресурсам Kubernetes Secret
 
-Since an external secrets manager can store and manage your secrets rather than storing them in Kubernetes Secrets, you may want to consider this security alternative. A manager provides a number of benefits over using Kubernetes Secrets, including the ability to handle secrets across multiple clusters (or clouds), and the ability to control and rotate secrets centrally.
+Поскольку внешний менеджер секретов может хранить и управлять вашими секретами вместо хранения их в Kubernetes Secrets, вы можете рассмотреть эту альтернативу с точки зрения безопасности. Менеджер предоставляет ряд преимуществ по сравнению с использованием Kubernetes Secrets, включая возможность обработки секретов через несколько кластеров (или облаков) и возможность централизованного управления и ротации секретов.
 
-For more information on Secrets and their alternatives, refer to the documentation at <https://kubernetes.io/docs/concepts/configuration/secret/>.
+Для получения дополнительной информации о секретах и их альтернативных вариантах, обратитесь к документации по адресу <https://kubernetes.io/docs/concepts/configuration/secret/>.
 
-Also see the [Secrets Management](Secrets_Management_Cheat_Sheet.md) cheat sheet for more details and best practices on managing secrets.
+Также ознакомьтесь с [шпаргалкой по управлению секретами](Secrets_Management_Cheat_Sheet.md) для получения дополнительных деталей и лучших практик по управлению секретами.
 
-#### Finding exposed secrets
+#### Поиск раскрытых секретов
 
-We strongly recommend that you review the secret material present on the container against the principle of 'least privilege' and assess the risk posed by a compromise.
+Мы настоятельно рекомендуем вам проверять материалы секретов, присутствующие в контейнере, в соответствии с принципом наименьших привилегий, и оценивать риск, связанный с компрометацией.
 
-Remember that open-source tools such as [SecretScanner](https://github.com/deepfence/SecretScanner) and [ThreatMapper](https://github.com/deepfence/ThreatMapper) can scan container filesystems for sensitive resources, such as API tokens, passwords, and keys. Such resources would be accessible to any user who had access to the unencrypted container filesystem, whether during build, at rest in a registry or backup, or running.
+Помните, что инструменты с открытым исходным кодом, такие как [SecretScanner](https://github.com/deepfence/SecretScanner) и [ThreatMapper](https://github.com/deepfence/ThreatMapper), могут сканировать файловые системы контейнеров на наличие чувствительных ресурсов, таких как API токены, пароли и ключи. Такие ресурсы могут быть доступны любому пользователю, который имеет доступ к незашифрованной файловой системе контейнера, будь то во время сборки, в покое в реестре или резервной копии, или при запуске.
 
----
+## РАЗДЕЛ 5: Лучшие практики безопасности Kubernetes: Фаза выполнения
 
-## SECTION 5: Kubernetes Security Best Practices: Runtime Phase
+Когда инфраструктура Kubernetes переходит в фазу выполнения, контейнеризированные приложения сталкиваются с множеством новых проблем безопасности. Необходимо обеспечить видимость вашего рабочего окружения, чтобы вы могли обнаруживать и реагировать на угрозы по мере их появления.
 
-When the Kubernetes infrastructure enters the runtime phase, containerized applications are exposed to a slew of new security challenges. You must gain visibility into your running environment so you can detect and respond to threats as they arise.
+Если вы проактивно обеспечите безопасность ваших контейнеров и развертываний Kubernetes на этапах сборки и развертывания, вы сможете значительно снизить вероятность инцидентов безопасности в фазе выполнения и последующие усилия, необходимые для их устранения.
 
-If you proactively secure your containers and Kubernetes deployments at the build and deploy phases, you can greatly reduce the likelihood of security incidents at runtime and the subsequent effort needed to respond to them.
+Во-первых, отслеживайте наиболее важные с точки зрения безопасности активности контейнеров, включая:
 
-First, monitor the most security-relevant container activities, including:
+- Активность процессов
+- Сетевые коммуникации между контейнеризированными сервисами
+- Сетевые коммуникации между контейнеризированными сервисами и внешними клиентами и серверами
 
-- Process activity
-- Network communications among containerized services
-- Network communications between containerized services and external clients and servers
+Обнаружение аномалий путем наблюдения за поведением контейнеров обычно легче в контейнерах, чем в виртуальных машинах, благодаря декларативной природе контейнеров и Kubernetes. Эти свойства позволяют легче инспектировать то, что вы развернули, и ожидаемую активность.
 
-Detecting anomalies by observing container behavior is generally easier in containers than in virtual machines because of the declarative nature of containers and Kubernetes. These attributes allow easier introspection into what you have deployed and its expected activity.
+### Использование Pod Security Admission для предотвращения развертывания рискованных контейнеров/подов
 
-### Use Pod Security Admission to prevent risky containers/Pods from being deployed
+Ранее рекомендуемая [Pod Security Policy](https://kubernetes.io/docs/concepts/policy/pod-security-policy/) устарела и была заменена [Pod Security Admission](https://kubernetes.io/docs/concepts/security/pod-security-admission/), новой функцией, которая позволяет применять политики безопасности к подам в кластере Kubernetes.
 
-The previously recommended [Pod Security Policy](https://kubernetes.io/docs/concepts/policy/pod-security-policy/) is deprecated and replaced by [Pod Security Admission](https://kubernetes.io/docs/concepts/security/pod-security-admission/), a new feature that allows you to enforce security policies on pods in a Kubernetes cluster.
+Рекомендуется использовать уровень `baseline` как минимальное требование безопасности для всех подов, чтобы обеспечить стандартный уровень безопасности по всему кластеру. Однако кластеры должны стремиться к применению уровня `restricted`, который следует лучшим практикам усиления безопасности подов.
 
-It is recommended to use the `baseline` level as a minimum security requirement for all pods to ensure a standard level of security across the cluster. However, clusters should strive to apply the `restricted` level which follows pod hardening best practices.
+Для получения дополнительной информации о настройке Pod Security Admission обратитесь к документации по адресу <https://kubernetes.io/docs/tasks/configure-pod-container/enforce-standards-admission-controller/>.
 
-For more information on configuring Pod Security Admission, refer to the documentation at <https://kubernetes.io/docs/tasks/configure-pod-container/enforce-standards-admission-controller/>.
+### Безопасность контейнерного времени выполнения
 
-### Container Runtime Security
+Если контейнеры защищены на этапе выполнения, команды безопасности имеют возможность обнаруживать и реагировать на угрозы и аномалии, пока контейнеры или рабочие нагрузки находятся в рабочем состоянии. Обычно это достигается путем перехвата системных вызовов низкого уровня и поиска событий, которые могут указывать на компрометацию. Некоторые примеры событий, которые должны вызвать предупреждение, включают:
 
-If containers are hardened containers at runtime, security teams have the ability to detect and respond to threats and anomalies while the containers or workloads are in a running state. Typically, this is carried out by intercepting the low-level system calls and looking for events that may indicate compromise. Some examples of events that should trigger an alert would include:
+- Выполнение командной оболочки внутри контейнера
+- Монтирование контейнером чувствительного пути с хоста, такого как /proc
+- Неожиданное чтение чувствительного файла в работающем контейнере, такого как /etc/shadow
+- Установление исходящего сетевого соединения
 
-- A shell is run inside a container
-- A container mounts a sensitive path from the host such as /proc
-- A sensitive file is unexpectedly read in a running container such as /etc/shadow
-- An outbound network connection is established
+Инструменты с открытым исходным кодом, такие как Falco от Sysdig, могут помочь операторам наладить безопасность контейнерного времени выполнения, предоставляя защитникам множество готовых обнаружений, а также возможность создавать собственные правила.
 
-Open source tools such as Falco from Sysdig can help operators get up and running with container runtime security by providing defenders with a large number of out-of-the-box detections as well as the ability to create custom rules.
+### Песочница для контейнеров
 
-### Container Sandboxing
+Когда среды выполнения контейнеров имеют возможность делать прямые вызовы к ядру хоста, ядро часто взаимодействует с аппаратным обеспечением и устройствами для обработки запроса. Хотя Cgroups и namespaces предоставляют контейнерам определенную степень изоляции, ядро все еще представляет собой значительную поверхность атаки. Когда защитникам приходится работать с многопользовательскими и крайне ненадежными кластерами, они часто добавляют дополнительный уровень песочницы, чтобы гарантировать отсутствие выхода контейнеров и эксплуатации ядра. Рассмотрим несколько технологий с открытым исходным кодом, которые помогают еще больше изолировать работающие контейнеры от ядра хоста:
 
-When container runtimes are permitted to make direct calls to the host kernel, the kernel often interacts with hardware and devices to respond to the request. Though Cgroups and namespaces give containers a certain amount of isolation, the kernel still presents a large attack surface. When defenders have to deal with multi-tenant and highly untrusted clusters, they often add additional layer of sandboxing to ensure that container breakout and kernel exploits are not present. Below, we will explore a few OSS technologies that help further isolate running containers from the host kernel:
+- **Kata Containers**: Kata Containers — это проект с открытым исходным кодом, который использует упрощенные виртуальные машины для минимизации использования ресурсов и максимизации производительности, чтобы дополнительно изолировать контейнеры.
+- **gVisor**: gVisor — это более легковесное ядро, чем виртуальная машина (даже упрощенная). Это собственное независимое ядро, написанное на Go, которое находится между контейнером и ядром хоста. Оно представляет собой сильную песочницу — gVisor поддерживает около 70% системных вызовов Linux из контейнера, но использует только около 20 системных вызовов к ядру хоста.
+- **Firecracker**: Это суперлегковесная виртуальная машина, работающая в пользовательском пространстве. Поскольку она ограничена политиками seccomp, cgroup и namespace, системные вызовы сильно ограничены. Firecracker разработан с учетом безопасности, однако он может не поддерживать все развертывания Kubernetes или среды выполнения контейнеров.
 
-- Kata Containers: Kata Containers is an OSS project that uses stripped-down VMs to keep the resource footprint minimal and maximize performance to ultimately isolate containers further.
-- gVisor : gVisor is a more lightweight kernel than a VM (even stripped down). It is its own independent kernel written in Go and sits in the middle of a container and the host kernel. It is a strong sandbox--gVisor supports ~70% of the linux system calls from the container but ONLY uses about 20 system calls to the host kernel.
-- Firecracker: It is a super lightweight VM that runs in user space. Since it is locked down by seccomp, cgroup, and namespace policies, the system calls are very limited. Firecracker is built with security in mind, however it may not support all Kubernetes or container runtime deployments.
+### Предотвращение загрузки нежелательных модулей ядра
 
-### Preventing containers from loading unwanted kernel modules
+Поскольку ядро Linux автоматически загружает модули ядра с диска при необходимости в определенных обстоятельствах, таких как подключение аппаратного обеспечения или монтирование файловой системы, это может представлять собой значительную поверхность атаки. Особенно важно для Kubernetes то, что даже непривилегированные процессы могут вызвать загрузку определенных модулей ядра, связанных с сетевыми протоколами, просто создавая сокет соответствующего типа. Это может позволить злоумышленникам использовать уязвимости в модулях ядра, которые администратор предполагал, что не используются.
 
-Because Linux kernel automatically loads kernel modules from disk if needed in certain circumstances, such as when a piece of hardware is attached or a filesystem is mounted, this can be a significant attack surface. Of particular relevance to Kubernetes, even unprivileged processes can cause certain network-protocol-related kernel modules to be loaded, just by creating a socket of the appropriate type. This situation may allow attackers to exploit a security hole in kernel modules that the administrator assumed was not in use.
-
-To prevent specific modules from being automatically loaded, you can uninstall them from the node, or add rules to block them. On most Linux distributions, you can do that by creating a file such as `/etc/modprobe.d/kubernetes-blacklist.conf` with contents like:
+Чтобы предотвратить автоматическую загрузку конкретных модулей, вы можете удалить их с узла или добавить правила для их блокировки. На большинстве дистрибутивов Linux это можно сделать, создав файл, например `/etc/modprobe.d/kubernetes-blacklist.conf`, с таким содержимым:
 
 ```conf
-# DCCP is unlikely to be needed, has had multiple serious
-# vulnerabilities, and is not well-maintained.
+# DCCP вряд ли будет нужен, имеет несколько серьезных
+# уязвимостей и плохо поддерживается.
 blacklist dccp
 
-# SCTP is not used in most Kubernetes clusters, and has also had
-# vulnerabilities in the past.
+# SCTP не используется в большинстве кластеров Kubernetes и также имел
+# уязвимости в прошлом.
 blacklist sctp
 ```
 
-To block module loading more generically, you can use a Linux Security Module (such as SELinux) to completely deny the module_request permission to containers, preventing the kernel from loading modules for containers under any circumstances. (Pods would still be able to use modules that had been loaded manually, or modules that were loaded by the kernel on behalf of some more-privileged process).
+Чтобы более обобщенно блокировать загрузку модулей, вы можете использовать модуль безопасности Linux (например, SELinux), чтобы полностью запретить контейнерам разрешение на модуль_request, что предотвратит загрузку модулей для контейнеров при любых обстоятельствах. (Подам все еще будет позволено использовать модули, которые были загружены вручную или модули, которые были загружены ядром от имени более привилегированного процесса).
 
-### Compare and analyze different runtime activity in pods of the same deployments
+### Сравнение и анализ различной активности в подах одного развертывания
 
-When containerized applications are replicated for high availability, fault tolerance, or scale reasons, these replicas should behave nearly identically. If a replica has significant deviations from the others, defenders would want further investigation. Your Kubernetes security tool should be integrated with other external systems (email, PagerDuty, Slack, Google Cloud Security Command Center, SIEMs [security information and event management], etc.) and leverage deployment labels or annotations to alert the team responsible for a given application when a potential threat is detected. If you chose to use a commercial Kubernetes security vendor, they should support a wide array of integrations with external tools.
+Когда контейнеризированные приложения дублируются для обеспечения высокой доступности, отказоустойчивости или масштабируемости, эти реплики должны вести себя почти идентично. Если одна из реплик имеет значительные отклонения от остальных, защитники должны провести дополнительное расследование. Ваше средство безопасности Kubernetes должно быть интегрировано с другими внешними системами (электронная почта, PagerDuty, Slack, Google Cloud Security Command Center, SIEM [системы управления безопасностью и событиями] и т. д.) и использовать метки или аннотации развертывания для уведомления команды, ответственной за данное приложение, когда обнаруживается потенциальная угроза. Если вы выбрали коммерческого поставщика безопасности Kubernetes, он должен поддерживать широкий спектр интеграций с внешними инструментами.
 
-### Monitor network traffic to limit unnecessary or insecure communication
+### Мониторинг сетевого трафика для ограничения ненужного или небезопасного общения
 
-Containerized applications typically make extensive use of cluster networking, so observing active networking traffic is a good way to understand how applications interact with each other and identify unexpected communication. You should observe your active network traffic and compare that traffic to what is allowed based on your Kubernetes network policies.
+Контейнеризированные приложения обычно активно используют сетевые ресурсы кластера, поэтому наблюдение за активным сетевым трафиком — хороший способ понять, как приложения взаимодействуют друг с другом и выявить неожиданное общение. Вы должны наблюдать за своим активным сетевым трафиком и сравнивать этот трафик с тем, что разрешено на основе ваших сетевых политик Kubernetes.
 
-At the same time, comparing the active traffic with what’s allowed gives you valuable information about what isn’t happening but is allowed. With that information, you can further tighten your allowed network policies so that it removes superfluous connections and decreases your overall attack surface.
+В то же время, сравнение активного трафика с разрешенным предоставляет вам ценную информацию о том, что не происходит, но разрешено. Используя эту информацию, вы можете дополнительно ужесточить свои сетевые политики, чтобы убрать избыточные соединения и сократить общую поверхность атаки.
 
-Open source projects like <https://github.com/kinvolk/inspektor-gadget> or <https://github.com/deepfence/PacketStreamer> may help with this, and commercial security solutions provide varying degrees of container network traffic analysis.
+Открытые проекты, такие как <https://github.com/kinvolk/inspektor-gadget> или <https://github.com/deepfence/PacketStreamer>, могут помочь в этом, а коммерческие решения по безопасности предлагают различные степени анализа сетевого трафика контейнеров.
 
-### If breached, scale suspicious pods to zero
+### В случае компрометации масштабируйте подозрительные поды до нуля
 
-Contain a successful breach by using Kubernetes native controls to scale suspicious pods to zero or kill then restart instances of breached applications.
+Сдержите успешную атаку, используя родные средства Kubernetes для масштабирования подозрительных подов до нуля или завершения и последующего перезапуска экземпляров скомпрометированных приложений.
 
-### Rotate infrastructure credentials frequently
+### Часто изменяйте учетные данные инфраструктуры
 
-The shorter the lifetime of a secret or credential, the harder it is for an attacker to make use of that credential. Set short lifetimes on certificates and automate their rotation. Use an authentication provider that can control how long issued tokens are available and use short lifetimes where possible. If you use service account tokens in external integrations, plan to rotate those tokens frequently. For example, once the bootstrap phase is complete, a bootstrap token used for setting up nodes should be revoked or its authorization removed.
+Чем короче срок действия секрета или учетной записи, тем сложнее злоумышленнику использовать эти данные. Устанавливайте короткие сроки действия сертификатов и автоматизируйте их ротацию. Используйте провайдера аутентификации, который может контролировать, как долго выданы токены действительны, и используйте короткие сроки действия, если это возможно. Если вы используете токены сервисных аккаунтов во внешних интеграциях, планируйте часто изменять эти токены. Например, после завершения фазы начальной настройки токен начальной настройки, использованный для настройки узлов, должен быть аннулирован или его авторизация должна быть удалена.
 
-### Logging
+### Логирование
 
-Kubernetes supplies cluster-based logging, which allows you to log container activity into a central log hub. When a cluster is created, the standard output and standard error output of each container can be ingested using a Fluentd agent running on each node (into either Google Stackdriver Logging or into Elasticsearch) and viewed with Kibana.
+Kubernetes предоставляет кластерное логирование, которое позволяет записывать активность контейнеров в центральный лог-центр. Когда кластер создается, стандартный вывод и стандартный вывод ошибок каждого контейнера могут быть собраны с помощью агента Fluentd, работающего на каждом узле (в Google Stackdriver Logging или в Elasticsearch) и просматриваться с помощью Kibana.
 
-#### Enable audit logging
+#### Включение журналирования аудита
 
-The audit logger is a beta feature that records actions taken by the API for later analysis in the event of a compromise. It is recommended to enable audit logging and archive the audit file on a secure server
+Журнал аудита — это бета-функция, которая записывает действия, выполняемые через API, для последующего анализа в случае компрометации. Рекомендуется включить журналирование аудита и архивировать файл аудита на безопасном сервере.
 
-Ensure logs that are monitoring for anomalous or unwanted API calls, especially any authorization failures (these log entries will have a status message “Forbidden”). Authorization failures could mean that an attacker is trying to abuse stolen credentials.
+Убедитесь, что журналы мониторят аномальные или нежелательные вызовы API, особенно любые сбои авторизации (такие записи в журнале будут иметь сообщение о статусе "Forbidden"). Сбои авторизации могут означать, что злоумышленник пытается использовать украденные учетные данные.
 
-Managed Kubernetes providers, including GKE, provide access to this data in their cloud console and may allow you to set up alerts on authorization failures.
+Управляемые провайдеры Kubernetes, включая GKE, предоставляют доступ к этим данным в своей облачной консоли и могут позволить настроить оповещения о сбоях авторизации.
 
-##### Audit logs
+##### Журналы аудита
 
-Audit logs can be useful for compliance as they should help you answer the questions of what happened, who did what and when. Kubernetes provides flexible auditing of kube-apiserver requests based on policies. These help you track all activities in chronological order.
+Журналы аудита могут быть полезны для соблюдения нормативных требований, так как они помогают ответить на вопросы о том, что произошло, кто что сделал и когда. Kubernetes предоставляет гибкое аудирование запросов к kube-apiserver на основе политик. Это помогает отслеживать все действия в хронологическом порядке.
 
-Here is an example of an audit log:
+Вот пример журнала аудита:
 
 ```json
 {
@@ -722,28 +705,28 @@ Here is an example of an audit log:
 }
 ```
 
-#### Define Audit Policies
+#### Определение политик аудита
 
-Audit policy sets rules which define what events should be recorded and what data is stored when an event includes. The audit policy object structure is defined in the audit.k8s.io API group. When an event is processed, it is compared against the list of rules in order. The first matching rule sets the "audit level" of the event.
+Политика аудита задает правила, которые определяют, какие события должны быть записаны и какие данные хранятся при включении события. Структура объекта политики аудита определена в группе API audit.k8s.io. Когда событие обрабатывается, оно сравнивается со списком правил по порядку. Первое совпадающее правило устанавливает "уровень аудита" события.
 
-The known audit levels are:
+Известные уровни аудита:
 
-- None - don't log events that match this rule
-- Metadata - log request metadata (requesting user, timestamp, resource, verb, etc.) but not request or response body
-- Request - log event metadata and request body but not response body. This does not apply for non-resource requests
-- RequestResponse - log event metadata, request and response bodies. This does not apply for non-resource requests
+- **None** — не записывать события, соответствующие этому правилу
+- **Metadata** — записывать метаданные запроса (пользователь, запрос, ресурс, действие и т. д.), но не тело запроса или ответа
+- **Request** — записывать метаданные события и тело запроса, но не тело ответа. Это не применимо к запросам, не связанным с ресурсами
+- **RequestResponse** — записывать метаданные события, тело запроса и тело ответа. Это не применимо к запросам, не связанным с ресурсами
 
-You can pass a file with the policy to kube-apiserver using the --audit-policy-file flag. If the flag is omitted, no events are logged. Note that the rules field must be provided in the audit policy file. A policy with no (0) rules is treated as illegal.
+Вы можете передать файл с политикой в kube-apiserver с помощью флага `--audit-policy-file`. Если флаг опущен, события не записываются. Обратите внимание, что поле `rules` должно быть указано в файле политики аудита. Политика без (0) правил считается недопустимой.
 
-#### Understanding Logging
+#### Понимание логирования
 
-One main challenge with logging Kubernetes is understanding what logs are generated and how to use them. Let’s start by examining the overall picture of Kubernetes' logging architecture.
+Основная проблема с логированием в Kubernetes заключается в понимании того, какие логи генерируются и как их использовать. Начнем с общего обзора архитектуры логирования Kubernetes.
 
-##### Container logging
+##### Логирование контейнеров
 
-The first layer of logs that can be collected from a Kubernetes cluster are those being generated by your containerized applications. The easiest method for logging containers is to write to the standard output (stdout) and standard error (stderr) streams.
+Первый слой логов, который можно собирать из кластера Kubernetes, — это логи, генерируемые вашими контейнеризированными приложениями. Самый простой метод логирования контейнеров — писать в потоки стандартного вывода (stdout) и стандартной ошибки (stderr).
 
-Manifest is as follows.
+Пример манифеста:
 
 ```yaml
 apiVersion: v1
@@ -757,21 +740,21 @@ spec:
       args: [/bin/sh, -c, 'while true; do echo $(date); sleep 1; done']
 ```
 
-To apply the manifest, run:
+Чтобы применить манифест, выполните команду:
 
 ```bash
 kubectl apply -f example.yaml
 ```
 
-To take a look the logs for this container, run:
+Чтобы посмотреть логи этого контейнера, выполните команду:
 
 ```bash
-kubectl log <container-name> command.
+kubectl logs <container-name>
 ```
 
-For persisting container logs, the common approach is to write logs to a log file and then use a sidecar container. As shown below in the pod configuration above, a sidecar container will run in the same pod along with the application container, mounting the same volume and processing the logs separately.
+Для постоянного хранения логов контейнеров общепринятым подходом является запись логов в файл и использование контейнера sidecar. Как показано ниже в конфигурации пода, контейнер sidecar будет работать в том же поде, что и основной контейнер приложения, монтируя тот же том и отдельно обрабатывая логи.
 
-An example of a Pod Manifest is seen below:
+Пример манифеста пода:
 
 ```yaml
 apiVersion: v1
@@ -805,51 +788,53 @@ spec:
     emptyDir: {}
 ```
 
-##### Node logging
+##### Логирование на уровне узлов
 
-When a container running on Kubernetes writes its logs to stdout or stderr streams, the container engine streams them to the logging driver set by the Kubernetes configuration.
+Когда контейнер, работающий в Kubernetes, записывает свои логи в потоки stdout или stderr, контейнерный движок направляет их к драйверу логирования, установленному в конфигурации Kubernetes.
 
-In most cases, these logs will end up in the /var/log/containers directory on your host. Docker supports multiple logging drivers but unfortunately, driver configuration is not supported via the Kubernetes API.
+В большинстве случаев эти логи окажутся в директории `/var/log/containers` на вашем хосте. Docker поддерживает несколько драйверов логирования, но, к сожалению, настройка драйвера не поддерживается через API Kubernetes.
 
-Once a container is terminated or restarted, kubelet stores logs on the node. To prevent these files from consuming all of the host’s storage, the Kubernetes node implements a log rotation mechanism. When a container is evicted from the node, all containers with corresponding log files are evicted.
+После завершения работы или перезапуска контейнера kubelet сохраняет логи на узле. Чтобы предотвратить переполнение хранилища хоста этими файлами, узел Kubernetes реализует механизм ротации логов. Когда контейнер удаляется с узла, все контейнеры с соответствующими лог-файлами также удаляются.
 
-Depending on what operating system and additional services you’re running on your host machine, you might need to take a look at additional logs.
+В зависимости от используемой операционной системы и дополнительных служб на вашем хосте, вам может понадобиться просмотреть дополнительные логи.
 
-For example, systemd logs can be retrieved using the following command:
+Например, логи systemd можно получить с помощью следующей команды:
 
 ```bash
 journalctl -u
 ```
 
-##### Cluster logging
+##### Логирование на уровне кластера
 
-In the Kubernetes cluster itself, there is a long list of cluster components that can be logged as well as additional data types that can be used (events, audit logs). Together, these different types of data can give you visibility into how Kubernetes is performing as a system.
+В самом кластере Kubernetes существует длинный список компонентов кластера, которые могут быть записаны в логи, а также дополнительные типы данных, которые могут быть использованы (события, журналы аудита). Вместе эти различные типы данных могут предоставить вам представление о том, как Kubernetes работает как система.
 
-Some of these components run in a container, and some of them run on the operating system level (in most cases, a systemd service). The systemd services write to journald, and components running in containers write logs to the /var/log directory, unless the container engine has been configured to stream logs differently.
+Некоторые из этих компонентов работают в контейнерах, а некоторые — на уровне операционной системы (в большинстве случаев это служба systemd). Службы systemd записывают логи в journald, а компоненты, работающие в контейнерах, записывают логи в директорию `/var/log`, если только контейнерный движок не настроен для потоковой передачи логов другим способом.
 
-#### Events
+#### События
 
-Kubernetes events can indicate any Kubernetes resource state changes and errors, such as exceeded resource quota or pending pods, as well as any informational messages.
+События Kubernetes могут указывать на любые изменения состояния ресурсов Kubernetes и ошибки, такие как превышение квоты ресурсов или зависшие поды, а также любые информационные сообщения.
 
-The following command returns all events within a specific namespace:
+Следующая команда возвращает все события в указанном пространстве имен:
 
-```bash
-kubectl get events -n <namespace>
+`kubectl get events -n <namespace>`
 
-NAMESPACE LAST SEEN TYPE   REASON OBJECT MESSAGE
-kube-system  8m22s  Normal   Scheduled            pod/metrics-server-66dbbb67db-lh865                                       Successfully assigned kube-system/metrics-server-66dbbb67db-lh865 to aks-agentpool-42213468-1
-kube-system     8m14s               Normal    Pulling                   pod/metrics-server-66dbbb67db-lh865                                       Pulling image "aksrepos.azurecr.io/mirror/metrics-server-amd64:v0.2.1"
-kube-system     7m58s               Normal    Pulled                    pod/metrics-server-66dbbb67db-lh865                                       Successfully pulled image "aksrepos.azurecr.io/mirror/metrics-server-amd64:v0.2.1"
-kube-system     7m57s               Normal     Created                   pod/metrics-server-66dbbb67db-lh865                                       Created container metrics-server
-kube-system     7m57s               Normal    Started                   pod/metrics-server-66dbbb67db-lh865                                       Started container metrics-server
-kube-system     8m23s               Normal    SuccessfulCreate          replicaset/metrics-server-66dbbb67db             Created pod: metrics-server-66dbbb67db-lh865
+Пример вывода:
+
+```
+NAMESPACE   LAST SEEN   TYPE    REASON     OBJECT                                         MESSAGE
+kube-system  8m22s      Normal  Scheduled  pod/metrics-server-66dbbb67db-lh865            Successfully assigned kube-system/metrics-server-66dbbb67db-lh865 to aks-agentpool-42213468-1
+kube-system  8m14s      Normal  Pulling    pod/metrics-server-66dbbb67db-lh865            Pulling image "aksrepos.azurecr.io/mirror/metrics-server-amd64:v0.2.1"
+kube-system  7m58s      Normal  Pulled     pod/metrics-server-66dbbb67db-lh865            Successfully pulled image "aksrepos.azurecr.io/mirror/metrics-server-amd64:v0.2.1"
+kube-system  7m57s      Normal  Created    pod/metrics-server-66dbbb67db-lh865            Created container metrics-server
+kube-system  7m57s      Normal  Started    pod/metrics-server-66dbbb67db-lh865            Started container metrics-server
+kube-system  8m23s      Normal  SuccessfulCreate replicaset/metrics-server-66dbbb67db    Created pod: metrics-server-66dbbb67db-lh865
 ```
 
-The following command will show the latest events for this specific Kubernetes resource:
+Следующая команда покажет последние события для конкретного ресурса Kubernetes:
 
-```bash
-kubectl describe pod <pod-name>
+`kubectl describe pod <pod-name>`
 
+```
 Events:
   Type    Reason     Age   From                               Message
   ----    ------     ----  ----                               -------
@@ -859,47 +844,47 @@ Events:
   Normal  Started    13m   kubelet, aks-agentpool-42213468-1  Started container coredns
 ```
 
-## SECTION 5: Final Thoughts
+## Раздел 5: Итоговые мысли
 
-### Embed security into the container lifecycle as early as possible
+### Внедрите безопасность на как можно более ранних этапах жизненного цикла контейнера
 
-You must integrate security earlier into the container lifecycle and ensure alignment and shared goals between security and DevOps teams. Security can (and should) be an enabler that allows your developers and DevOps teams to confidently build and deploy applications that are production-ready for scale, stability and security.
+Необходимо интегрировать безопасность на ранних этапах жизненного цикла контейнера и обеспечить согласованность и общие цели между командами безопасности и DevOps. Безопасность может (и должна) быть активатором, позволяющим вашим разработчикам и DevOps-командам уверенно создавать и развертывать приложения, готовые к масштабированию, стабильности и безопасности.
 
-### Use Kubernetes-native security controls to reduce operational risk
+### Используйте встроенные средства безопасности Kubernetes для снижения операционных рисков
 
-Leverage the native controls built into Kubernetes whenever available in order to enforce security policies so that your security controls don’t collide with the orchestrator. Instead of using a third-party proxy or shim to enforce network segmentation, you could use Kubernetes network policies to ensure secure network communication.
+Используйте нативные средства безопасности, встроенные в Kubernetes, когда это возможно, чтобы применять политики безопасности, чтобы ваши средства безопасности не конфликтовали с оркестратором. Вместо использования стороннего прокси или промежуточного слоя для обеспечения сетевой сегментации, вы можете использовать сетевые политики Kubernetes для обеспечения безопасного сетевого взаимодействия.
 
-### Leverage the context that Kubernetes provides to prioritize remediation efforts
+### Используйте контекст, предоставляемый Kubernetes, для приоритизации усилий по устранению проблем
 
-Note that manually triaging security incidents and policy violations is time consuming in sprawling Kubernetes environments.
+Имейте в виду, что ручная оценка инцидентов безопасности и нарушений политики требует много времени в разветвленных средах Kubernetes.
 
-For example, a deployment containing a vulnerability with severity score of 7 or greater should be moved up in remediation priority if that deployment contains privileged containers and is open to the Internet but moved down if it’s in a test environment and supporting a non-critical app.
+Например, развертывание, содержащее уязвимость с уровнем тяжести 7 или выше, должно быть поднято в приоритете устранения, если это развертывание содержит привилегированные контейнеры и открыто в Интернет, но опущено, если оно находится в тестовой среде и поддерживает не критическое приложение.
 
 ---
 
-![Kubernetes Architecture](../assets/Kubernetes_Architecture.png)
+![Архитектура Kubernetes](../assets/Kubernetes_Architecture.png)
 
-## References
+## Источники
 
-Control plane documentation - <https://kubernetes.io>
+Документация управляющей плоскости - <https://kubernetes.io>
 
-1. Kubernetes Security Best Practices everyone must follow - <https://www.cncf.io/blog/2019/01/14/9-kubernetes-security-best-practices-everyone-must-follow>
-2. Securing a Cluster - <https://kubernetes.io/docs/tasks/administer-cluster/securing-a-cluster>
-3. Security Best Practices for Kubernetes Deployment - <https://kubernetes.io/blog/2016/08/security-best-practices-kubernetes-deployment>
-4. Kubernetes Security Best Practices - <https://phoenixnap.com/kb/kubernetes-security-best-practices>
-5. Kubernetes Security 101: Risks and 29 Best Practices - <https://www.stackrox.com/post/2020/05/kubernetes-security-101>
-6. 15 Kubernetes security best practice to secure your cluster - <https://www.mobilise.cloud/15-kubernetes-security-best-practice-to-secure-your-cluster>
-7. The Ultimate Guide to Kubernetes Security - <https://neuvector.com/container-security/kubernetes-security-guide>
-8. A hacker's guide to Kubernetes security - <https://techbeacon.com/enterprise-it/hackers-guide-kubernetes-security>
-9. 11 Ways (Not) to Get Hacked - <https://kubernetes.io/blog/2018/07/18/11-ways-not-to-get-hacked>
-10. 12 Kubernetes configuration best practices - <https://www.stackrox.com/post/2019/09/12-kubernetes-configuration-best-practices/#6-securely-configure-the-kubernetes-api-server>
-11. A Practical Guide to Kubernetes Logging - <https://logz.io/blog/a-practical-guide-to-kubernetes-logging>
-12. Kubernetes Web UI (Dashboard) - <https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard>
-13. Tesla cloud resources are hacked to run cryptocurrency-mining malware - <https://arstechnica.com/information-technology/2018/02/tesla-cloud-resources-are-hacked-to-run-cryptocurrency-mining-malware>
-14. OPEN POLICY AGENT: CLOUD-NATIVE AUTHORIZATION - <https://blog.styra.com/blog/open-policy-agent-authorization-for-the-cloud>
-15. Introducing Policy As Code: The Open Policy Agent (OPA) - <https://www.magalix.com/blog/introducing-policy-as-code-the-open-policy-agent-opa>
-16. What service mesh provides - <https://aspenmesh.io/wp-content/uploads/2019/10/AspenMesh_CompleteGuide.pdf>
-17. Three Technical Benefits of Service Meshes and their Operational Limitations, Part 1 - <https://glasnostic.com/blog/service-mesh-istio-limits-and-benefits-part-1>
-18. Open Policy Agent: What Is OPA and How It Works (Examples) - <https://spacelift.io/blog/what-is-open-policy-agent-and-how-it-works>
-19. Send Kubernetes Metrics To Kibana and Elasticsearch - <https://logit.io/sources/configure/kubernetes/>
-20. Kubernetes Security Checklist - <https://kubernetes.io/docs/concepts/security/security-checklist/>
+1. Лучшие практики безопасности Kubernetes, которые должен соблюдать каждый - <https://www.cncf.io/blog/2019/01/14/9-kubernetes-security-best-practices-everyone-must-follow>
+2. Обеспечение безопасности кластера - <https://kubernetes.io/docs/tasks/administer-cluster/securing-a-cluster>
+3. Лучшие практики безопасности для развертывания Kubernetes - <https://kubernetes.io/blog/2016/08/security-best-practices-kubernetes-deployment>
+4. Лучшие практики безопасности Kubernetes - <https://phoenixnap.com/kb/kubernetes-security-best-practices>
+5. Kubernetes Security 101: Риски и 29 лучших практик - <https://www.stackrox.com/post/2020/05/kubernetes-security-101>
+6. 15 лучших практик безопасности Kubernetes для защиты вашего кластера - <https://www.mobilise.cloud/15-kubernetes-security-best-practice-to-secure-your-cluster>
+7. Полное руководство по безопасности Kubernetes - <https://neuvector.com/container-security/kubernetes-security-guide>
+8. Руководство хакера по безопасности Kubernetes - <https://techbeacon.com/enterprise-it/hackers-guide-kubernetes-security>
+9. 11 способов (не) быть взломанным - <https://kubernetes.io/blog/2018/07/18/11-ways-not-to-get-hacked>
+10. 12 лучших практик конфигурации Kubernetes - <https://www.stackrox.com/post/2019/09/12-kubernetes-configuration-best-practices/#6-securely-configure-the-kubernetes-api-server>
+11. Практическое руководство по логированию Kubernetes - <https://logz.io/blog/a-practical-guide-to-kubernetes-logging>
+12. Веб-интерфейс Kubernetes (Dashboard) - <https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard>
+13. Облачные ресурсы Tesla взломаны для запуска вредоносного ПО для майнинга криптовалюты - <https://arstechnica.com/information-technology/2018/02/tesla-cloud-resources-are-hacked-to-run-cryptocurrency-mining-malware>
+14. OPEN POLICY AGENT: КЛАУД-НАТИВНОЕ АВТОРИЗАЦИЯ - <https://blog.styra.com/blog/open-policy-agent-authorization-for-the-cloud>
+15. Введение в политику как код: Open Policy Agent (OPA) - <https://www.magalix.com/blog/introducing-policy-as-code-the-open-policy-agent-opa>
+16. Что предоставляет сетевой сервис - <https://aspenmesh.io/wp-content/uploads/2019/10/AspenMesh_CompleteGuide.pdf>
+17. Три технических преимущества сетевых сервисов и их операционные ограничения, Часть 1 - <https://glasnostic.com/blog/service-mesh-istio-limits-and-benefits-part-1>
+18. Open Policy Agent: что такое OPA и как он работает (Примеры) - <https://spacelift.io/blog/what-is-open-policy-agent-and-how-it-works>
+19. Отправка метрик Kubernetes в Kibana и Elasticsearch - <https://logit.io/sources/configure/kubernetes/>
+20. Контрольный список безопасности Kubernetes - <https://kubernetes.io/docs/concepts/security/security-checklist/>

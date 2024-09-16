@@ -1,20 +1,20 @@
-# Django Security Cheat Sheet
+# Шпаргалка по безопасности для Django
 
-## Introduction
+## Введение
 
-The Django framework is a powerful Python web framework, and it comes with built-in security features that can be used out-of-the-box to prevent common web vulnerabilities. This cheat sheet lists actions and security tips developers can take to develop secure Django applications. It aims to cover common vulnerabilities to increase the security posture of your Django application. Each item has a brief explanation and relevant code samples that are specific to the Django environment.
+Фреймворк Django — это мощный веб-фреймворк на Python, который поставляется с встроенными функциями безопасности, которые можно использовать прямо из коробки для предотвращения распространенных веб-уязвимостей. Эта шпаргалка перечисляет действия и советы по безопасности, которые разработчики могут предпринять для разработки безопасных приложений на Django. Он направлен на покрытие распространенных уязвимостей, чтобы повысить уровень безопасности вашего приложения на Django. Каждый пункт содержит краткое объяснение и соответствующие примеры кода, специфичные для среды Django.
 
-The Django framework provides some built-in security features that aim to be secure-by-default. These features are also flexible to empower a developer to re-use components for complex use-cases. This opens up scenarios where developers unfamiliar with the inner workings of the components can configure them in an insecure way. This cheat sheet aims to enumerate some such use cases.
+Фреймворк Django предоставляет некоторые встроенные функции безопасности, которые нацелены на безопасность по умолчанию. Эти функции также гибкие, чтобы разработчик мог повторно использовать компоненты для сложных сценариев. Это открывает сценарии, где разработчики, не знакомые с внутренними workings компонентов, могут настраивать их небезопасным образом. Эта шпаргалка направлен на перечисление таких случаев.
 
-## General Recommendations
+## Общие рекомендации
 
-- Always keep Django and your application's dependencies up-to-date to keep up with security vulnerabilities.
-- Ensure that the application is never in `DEBUG` mode in a production environment. Never run `DEBUG = True` in production.
-- Use packages like [`django_ratelimit`](https://django-ratelimit.readthedocs.io/en/stable/) or [`django-axes`](https://django-axes.readthedocs.io/en/latest/index.html) to prevent brute-force attacks.
+- Всегда поддерживайте Django и зависимости вашего приложения в актуальном состоянии, чтобы справляться с уязвимостями безопасности.
+- Убедитесь, что приложение никогда не находится в режиме `DEBUG` в рабочей среде. Никогда не запускайте `DEBUG = True` в продакшн.
+- Используйте пакеты, такие как [`django_ratelimit`](https://django-ratelimit.readthedocs.io/en/stable/) или [`django-axes`](https://django-axes.readthedocs.io/en/latest/index.html), чтобы предотвратить атаки грубой силы.
 
-## Authentication
+## Аутентификация
 
-- Use `django.contrib.auth` app for views and forms for user authentication operations such as login, logout, password change, etc. Include the module and its dependencies `django.contrib.contenttypes` and `django.contrib.sessions` in the `INSTALLED_APPS` setting in the `settings.py` file.
+- Используйте приложение `django.contrib.auth` для представлений и форм для операций аутентификации пользователей, таких как вход, выход, смена пароля и т. д. Включите модуль и его зависимости `django.contrib.contenttypes` и `django.contrib.sessions` в настройку `INSTALLED_APPS` в файле `settings.py`.
 
   ```python
   INSTALLED_APPS = [
@@ -26,28 +26,28 @@ The Django framework provides some built-in security features that aim to be sec
   ]
   ```
 
-- Use the `@login_required` decorator to ensure that only authenticated users can access a view. The sample code below illustrates usage of `@login_required`.
+- Используйте декоратор `@login_required`, чтобы убедиться, что только аутентифицированные пользователи могут получить доступ к представлению. Пример кода ниже иллюстрирует использование `@login_required`.
 
   ```python
   from django.contrib.auth.decorators import login_required
 
-  # User is redirected to default login page if not authenticated.
+  # Пользователь перенаправляется на страницу входа по умолчанию, если не аутентифицирован.
   @login_required
   def my_view(request):
-    # Your view logic
+    # Логика представления
 
-  # User is redirected to custom '/login-page/' if not authenticated.
+  # Пользователь перенаправляется на пользовательскую '/login-page/', если не аутентифицирован.
   @login_required(login_url='/login-page/')
   def my_view(request):
-    # Your view logic
+    # Логика представления
   ```
 
-- Use password validators for enforcing password policies. Add or update the `AUTH_PASSWORD_VALIDATORS` setting in the `settings.py` file to include specific validators required by your application.
+- Используйте валидаторы паролей для соблюдения политик паролей. Добавьте или обновите настройку `AUTH_PASSWORD_VALIDATORS` в файле `settings.py`, чтобы включить специфические валидаторы, необходимые вашему приложению.
 
   ```python
   AUTH_PASSWORD_VALIDATORS = [
     {
-      # Checks the similarity between the password and a set of attributes of the user.
+      # Проверяет сходство между паролем и набором атрибутов пользователя.
       'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
       'OPTIONS': {
         'user_attributes': ('username', 'email', 'first_name', 'last_name'),
@@ -55,24 +55,24 @@ The Django framework provides some built-in security features that aim to be sec
       }
     },
     {
-      # Checks whether the password meets a minimum length.
+      # Проверяет, соответствует ли пароль минимальной длине.
       'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
       'OPTIONS': {
         'min_length': 8,
       }
     },
     {
-      # Checks whether the password occurs in a list of common passwords
+      # Проверяет, присутствует ли пароль в списке общих паролей.
       'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
     },
     {
-      # Checks whether the password isn’t entirely numeric
+      # Проверяет, не является ли пароль полностью числовым.
       'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     }
   ]
   ```
 
-- Store passwords using `make-password` utility function to hash a plain-text password.
+- Храните пароли, используя утилиту `make_password`, чтобы хешировать обычный текстовый пароль.
 
   ```python
   from django.contrib.auth.hashers import make_password
@@ -80,7 +80,7 @@ The Django framework provides some built-in security features that aim to be sec
   hashed_pwd = make_password('plaintext_password')
   ```
 
-- Check a plaintext password against a hashed password by using the  `check-password` utility function.
+- Проверьте текстовый пароль на соответствие хешированному паролю, используя утилиту `check_password`.
 
   ```python
   from django.contrib.auth.hashers import check_password
@@ -89,87 +89,89 @@ The Django framework provides some built-in security features that aim to be sec
   hashed_pwd = 'hashed_password_from_database'
 
   if check_password(plain_pwd, hashed_pwd):
-    print("The password is correct.")
+    print("Пароль верен.")
   else:
-    print("The password is incorrect.")
+    print("Пароль неверен.")
   ```
 
-## Key Management
+## Управление ключами
 
-The `SECRET_KEY` parameter in settings.py is used for cryptographic signing and should be kept confidential. Consider the following recommendations:
+Параметр `SECRET_KEY` в `settings.py` используется для криптографической подписи и должен быть конфиденциальным. Рассмотрите следующие рекомендации:
 
-- Generate a key at least 50 characters or more, containing a mix of letters, digits, and symbols.
-- Ensure that the `SECRET_KEY` is generated using a strong random generator, such as `get_random_secret_key()` function in Django.
-- Avoid hard coding the `SECRET_KEY` value in settings.py or any other location. Consider storing the key-value in environment variables or secrets managers.
+- Генерируйте ключ длиной не менее 50 символов, содержащий смесь букв, цифр и символов.
+- Убедитесь, что `SECRET_KEY` генерируется с использованием сильного генератора случайных чисел, такого как функция `get_random_secret_key()` в Django.
+- Избегайте жесткой кодировки значения `SECRET_KEY` в `settings.py` или любом другом месте. Рассмотрите возможность хранения ключа в переменных окружения или менеджерах секретов.
 
   ```python
   import os
   SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
   ```
 
-- Regularly rotate the key, keeping in mind that this action can invalidate sessions, password reset tokens, etc. Rotate the key immediatley it if it ever gets exposed.
+- Регулярно меняйте ключ, помня о том, что это действие может сделать недействительными сеансы, токены сброса пароля и т. д. Смените ключ немедленно, если он будет скомпрометирован.
 
-## Headers
+## Заголовки
 
-Include the `django.middleware.security.SecurityMiddleware` module in the `MIDDLEWARE` setting in your project's `settings.py` to add security-related headers to your responses. This module is used to set the following parameters:
+Включите модуль `django.middleware.security.SecurityMiddleware` в настройку `MIDDLEWARE` в `settings.py` вашего проекта, чтобы добавить заголовки, связанные с безопасностью, в ваши ответы. Этот модуль используется для установки следующих параметров:
 
-- `SECURE_CONTENT_TYPE_NOSNIFF`: Set this key to `True`. Protects against MIME type sniffing attacks by enabling the header `X-Content-Type-Options: nosniff`.
-- `SECURE_BROWSER_XSS_FILTER`: Set this key to `True`. Enables the browser’s XSS filter by setting the header `X-XSS-Protection: 1; mode=block`.
-- `SECURE_HSTS_SECONDS`: Ensures the site is only accessible via HTTPS.
+- `SECURE_CONTENT_TYPE_NOSNIFF`: Установите этот параметр в `True`. Защищает от атак по типу MIME, включая заголовок `X-Content-Type-Options: nosniff`.
+- `SECURE_BROWSER_XSS_FILTER`: Установите этот параметр в `True`. Включает фильтр XSS браузера, устанавливая заголовок `X-XSS-Protection: 1; mode=block`.
+- `SECURE_HSTS_SECONDS`: Обеспечивает доступ к сайту только через HTTPS.
 
-Include the `django.middleware.clickjacking.XFrameOptionsMiddleware` module in the `MIDDLEWARE` setting in your project's `settings.py` (This module should be listed after the `django.middleware.security.SecurityMiddleware` module as ordering is important). This module is used to set the following parameters:
+Включите модуль `django.middleware.clickjacking.XFrameOptionsMiddleware` в настройку `MIDDLEWARE` в `settings.py` вашего проекта (Этот модуль должен быть указан после модуля `django.middleware.security.SecurityMiddleware`, так как порядок имеет значение). Этот модуль используется для установки следующих параметров:
 
-- `X_FRAME_OPTIONS`: Set this key to to 'DENY' or 'SAMEORIGIN'. This setting adds the `X-Frame-Options` header to all HTTP responses. This protects against clickjacking attacks.
+- `X_FRAME_OPTIONS`: Установите этот параметр в 'DENY' или 'SAMEORIGIN'. Эта настройка добавляет заголовок `X-Frame-Options` ко всем HTTP-ответам. Это защищает от атак clickjacking.
 
 ## Cookies
 
-- `SESSION_COOKIE_SECURE`: Set this key to `True` in the `settings.py` file. This will send the session cookie over secure (HTTPS) connections only.
-- `CSRF_COOKIE_SECURE`: Set this key to `True` in the `settings.py` file. This will ensure that the CSRF cookie is sent over secure connections only.
-- Whenever you set a custom cookie in a view using the `HttpResponse.set_cookie()` method, make sure to set its secure parameter to `True`.
+- `SESSION_COOKIE_SECURE`: Установите этот параметр в `True` в файле `settings.py`. Это будет отправлять cookie сеанса только через защищенные (HTTPS) соединения.
+- `CSRF_COOKIE_SECURE`: Установите этот параметр в `True` в файле `settings.py`. Это обеспечит отправку CSRF cookie только через защищенные соединения.
+- Когда вы устанавливаете пользовательскую cookie в представлении, используя метод `HttpResponse.set_cookie()`, убедитесь, что параметр `secure` установлен в `True`.
 
   ```python
-  response = HttpResponse("Some response")
+  response = HttpResponse("Некоторый ответ")
   response.set_cookie('my_cookie', 'cookie_value', secure=True)
   ```
 
-## Cross Site Request Forgery (CSRF)
+## Межсайтовая подделка запросов (CSRF)
 
-- Include the `django.middleware.csrf.CsrfViewMiddleware` module in the `MIDDLEWARE` setting in your project's `settings.py` to add CSRF related headers to your responses.
-- In forms use the `{% csrf_token %}` template tag to include the CSRF token. A sample is shown below.
+- Включите модуль `django.middleware.csrf.CsrfViewMiddleware` в настройку `MIDDLEWARE` в `settings.py` вашего проекта, чтобы добавить заголовки, связанные с CSRF, в ваши ответы.
+- В формах используйте тег шаблона `{% csrf_token %}`, чтобы включить CSRF токен. Пример показан ниже.
 
   ```html
   <form method="post">
       {% csrf_token %}
-      <!-- Your form fields here -->
+      <!-- Ваши поля формы здесь -->
   </form>
   ```
 
-- For AJAX calls, the CSRF token for the request has to be extracted prior to being used in the the AJAX call.  
-- Additional recommendations and controls can be found at Django's [Cross Site Request Forgery protection](https://docs.djangoproject.com/en/3.2/ref/csrf/) documentation.
+- Для AJAX-запросов необходимо извлечь CSRF токен для запроса до использования в AJAX-запросе.
+- Дополнительные рекомендации и контрольные меры можно найти в документации Django по [защите от межсайтовой подделки запросов (CSRF)](https://docs.djangoproject.com/en/3.2/ref/csrf/).
 
-## Cross Site Scripting (XSS)
+## Межсайтовый скриптинг (XSS)
 
-The recommendations in this section are in addition to XSS recommendations already mentioned previously.
+Рекомендации в этом разделе дополняют рекомендации по XSS, уже упомянутые ранее.
 
-- Use the built-in template system to render templates in Django. Refer to Django's [Automatic HTML escaping](https://docs.djangoproject.com/en/3.2/ref/templates/language/#automatic-html-escaping) documentation to learn more.
-- Avoid using `safe`, `mark_safe`, or `json_script` filters for disabling Django's automatic template escaping. The equivalent function in Python is the `make_safe()` function. Refer to the [json_script](https://docs.djangoproject.com/en/3.2/ref/templates/builtins/#json-script0) template filter documentation to learn more.
-- Refer to Django's [Cross Site Scripting (XSS) protection](https://docs.djangoproject.com/en/3.2/topics/security/#cross-site-scripting-xss-protection) documentation to learn more.
+- Используйте встроенную систему шаблонов для рендеринга шаблонов в Django. Ознакомьтесь с документацией Django по [автоматическому экранированию HTML](https://docs.djangoproject.com/en/3.2/ref/templates/language/#automatic-html-escaping), чтобы узнать больше.
+- Избегайте использования фильтров `safe`, `mark_safe` или `json_script` для отключения автоматического экранирования шаблонов
+
+ Django. Эквивалентная функция в Python — это функция `make_safe()`. Ознакомьтесь с документацией фильтра шаблона [json_script](https://docs.djangoproject.com/en/3.2/ref/templates/builtins/#json-script0), чтобы узнать больше.
+- Ознакомьтесь с документацией Django по [защите от межсайтовых скриптов (XSS)](https://docs.djangoproject.com/en/3.2/topics/security/#cross-site-scripting-xss-protection), чтобы узнать больше.
 
 ## HTTPS
 
-- Include the `django.middleware.security.SecurityMiddleware` module in the `MIDDLEWARE` setting in your project's `settings.py` if not already added.
-- Set the `SECURE_SSL_REDIRECT = True` in the `settings.py` file to ensure that all communication is over HTTPS. This will redirect any HTTP requests automatically to HTTPS. This is also a 301 (permanent) redirect, so your browser will remember the redirect for subsequent requests.
-- If your Django application is behind a proxy or load balancer, set the `SECURE_PROXY_SSL_HEADER` setting to `TRUE` so that Django can detect the original request's protocol. For futher details refer to [SECURE_PROXY_SSL_HEADER documentation](https://docs.djangoproject.com/en/3.2/ref/settings/#secure-proxy-ssl-header).
+- Включите модуль `django.middleware.security.SecurityMiddleware` в настройку `MIDDLEWARE` в `settings.py` вашего проекта, если он еще не добавлен.
+- Установите `SECURE_SSL_REDIRECT = True` в файле `settings.py`, чтобы обеспечить, что вся связь осуществляется через HTTPS. Это автоматически перенаправит любые HTTP-запросы на HTTPS. Это также постоянное перенаправление 301, так что ваш браузер запомнит перенаправление для последующих запросов.
+- Если ваше приложение Django находится за прокси-сервером или балансировщиком нагрузки, установите настройку `SECURE_PROXY_SSL_HEADER` в `TRUE`, чтобы Django мог определить протокол оригинального запроса. Для получения дополнительной информации см. [документацию по SECURE_PROXY_SSL_HEADER](https://docs.djangoproject.com/en/3.2/ref/settings/#secure-proxy-ssl-header).
 
-## Admin panel URL
+## URL админ панели
 
-It is advisable to modify the default URL leading to the admin panel (example.com/admin/), in order to slightly increase the difficulty for automated attacks. Here’s how to do it:
+Рекомендуется изменить URL по умолчанию, ведущий к админ панели (example.com/admin/), чтобы немного усложнить автоматизированные атаки. Вот как это сделать:
 
-In the default app folder within your project, locate the `urls.py` file managing the top-level URLs. Within the file, modify the `urlpatterns` variable, a list, so that the URL leading to `admin.site.urls` is different from "admin/". This approach adds an extra layer of security by obscuring the common endpoint used for administrative access.
+В папке с приложением по умолчанию в вашем проекте найдите файл `urls.py`, управляющий верхнеуровневыми URL. В файле измените переменную `urlpatterns`, список, так что URL, ведущий к `admin.site.urls`, отличается от "admin/". Этот подход добавляет дополнительный уровень безопасности, скрывая общий конечный пункт для административного доступа.
 
-## References
+## Ссылки
 
-Additional documentation -
+Дополнительная документация -
 
-- [Clickjacking Protection](https://docs.djangoproject.com/en/3.2/topics/security/#clickjacking-protection)
-- [Security Middleware](https://docs.djangoproject.com/en/3.2/topics/security/#module-django.middleware.security)
+- [Защита от Clickjacking](https://docs.djangoproject.com/en/3.2/topics/security/#clickjacking-protection)
+- [Безопасность Middleware](https://docs.djangoproject.com/en/3.2/topics/security/#module-django.middleware.security)

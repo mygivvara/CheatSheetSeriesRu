@@ -1,48 +1,49 @@
-# Deserialization Cheat Sheet
+# Памятка по десериализации
 
-## Introduction
+## Введение
 
-This article is focused on providing clear, actionable guidance for safely deserializing untrusted data in your applications.
+Эта статья сосредоточена на предоставлении ясных, практических рекомендаций для безопасной десериализации ненадежных данных в ваших приложениях.
 
-## What is Deserialization
+## Что такое десериализация
 
-**Serialization** is the process of turning some object into a data format that can be restored later. People often serialize objects in order to save them for storage, or to send as part of communications.
+**Сериализация** - это процесс преобразования объекта в формат данных, который можно восстановить позже. Люди часто сериализуют объекты, чтобы сохранить их для хранения или отправить в рамках коммуникаций.
 
-**Deserialization** is the reverse of that process, taking data structured in some format, and rebuilding it into an object. Today, the most popular data format for serializing data is JSON. Before that, it was XML.
+**Десериализация** - это обратный процесс, который принимает данные, структурированные в некотором формате, и восстанавливает их в объект. Сегодня наиболее популярный формат данных для сериализации - это JSON. Ранее использовался XML.
 
-However, many programming languages have native ways to serialize objects. These native formats usually offer more features than JSON or XML, including customization of the serialization process.
+Однако многие языки программирования имеют нативные способы сериализации объектов. Эти нативные форматы обычно предлагают больше возможностей, чем JSON или XML, включая настройку процесса сериализации.
 
-Unfortunately, the features of these native deserialization mechanisms can sometimes be repurposed for malicious effect when operating on untrusted data. Attacks against deserializers have been found to allow denial-of-service, access control, or remote code execution (RCE) attacks.
+К сожалению, возможности этих нативных механизмов десериализации иногда могут быть использованы в злонамеренных целях при работе с ненадежными данными. Атаки на десериализаторы могут позволять атаки типа отказ в обслуживании, нарушения контроля доступа или удаленного выполнения кода (RCE).
 
-## Guidance on Deserializing Objects Safely
+## Рекомендации по безопасной десериализации объектов
 
-The following language-specific guidance attempts to enumerate safe methodologies for deserializing data that can't be trusted.
+Следующие рекомендации, специфичные для языков программирования, пытаются перечислить безопасные методологии для десериализации данных, которым нельзя доверять.
 
 ### PHP
 
-#### Clear-box Review
+#### Открытое исследование
 
-Check the use of [`unserialize()`](https://www.php.net/manual/en/function.unserialize.php) function and review how the external parameters are accepted. Use a safe, standard data interchange format such as JSON (via `json_decode()` and `json_encode()`) if you need to pass serialized data to the user.
+Проверьте использование функции [`unserialize()`](https://www.php.net/manual/en/function.unserialize.php) и проанализируйте, как принимаются внешние параметры. Используйте безопасный, стандартный формат обмена данными, такой как JSON (через `json_decode()` и `json_encode()`), если вам нужно передать сериализованные данные пользователю.
 
 ### Python
 
-#### Opaque-box Review
+#### Непрозрачное исследование
 
-If the traffic data contains the symbol dot `.` at the end, it's very likely that the data was sent in serialization. It will be only true if the data is not being encoded using Base64 or Hexadecimal schemas. If the data is being encoded, then it's best to check if the serialization is likely happening or not by looking at the starting characters of the parameter value. For example if data is Base64 encoded, then it will most likely start with `gASV`.
+Если в данных трафика есть символ точка `.` в конце, это очень вероятно указывает на то, что данные были отправлены в сериализованном виде. Это будет верно только если данные не закодированы с использованием схем Base64 или шестнадцатеричной системы. Если данные кодируются, лучше проверить, происходит ли сериализация, посмотрев на начальные символы значения параметра. Например, если данные закодированы в Base64, они, скорее всего, начнутся с `gASV`.
 
-#### Clear-box Review
+#### Открытое исследование
 
-The following API in Python will be vulnerable to serialization attack. Search code for the pattern below.
+Следующие API в Python будут уязвимы к атакам через сериализацию. Поиск в коде по следующему шаблону.
 
-1. The uses of `pickle/c_pickle/_pickle` with `load/loads`:
+1. Использование `pickle/c_pickle/_pickle` с `load/loads`:
 
 ```python
 import pickle
 data = """ cos.system(S'dir')tR. """
 pickle.loads(data)
+
 ```
 
-2. Uses of `PyYAML` with `load`:
+2. Использование `PyYAML` с`load`:
 
 ```python
 import yaml
@@ -50,61 +51,62 @@ document = "!!python/object/apply:os.system ['ipconfig']"
 print(yaml.load(document))
 ```
 
-3. Uses of `jsonpickle` with `encode` or `store` methods.
+3. Использование `jsonpickle` с `encode` или `store`.
 
 ### Java
 
-The following techniques are all good for preventing attacks against deserialization against [Java's Serializable format](https://docs.oracle.com/javase/7/docs/api/java/io/Serializable.html).
+Следующие методы являются хорошими для предотвращения атак на десериализацию для [формата Serializable Java](https://docs.oracle.com/javase/7/docs/api/java/io/Serializable.html).
 
-Implementation advices:
+Рекомендации по реализации:
 
-- In your code, override the `ObjectInputStream#resolveClass()` method to prevent arbitrary classes from being deserialized. This safe behavior can be wrapped in a library like [SerialKiller](https://github.com/ikkisoft/SerialKiller).
-- Use a safe replacement for the generic `readObject()` method as seen here. Note that this addresses "[billion laughs](https://en.wikipedia.org/wiki/Billion_laughs_attack)" type attacks by checking input length and number of objects deserialized.
+- В вашем коде переопределите метод `ObjectInputStream#resolveClass()`, чтобы предотвратить десериализацию произвольных классов. Это безопасное поведение можно обернуть в библиотеку, такую как [SerialKiller](https://github.com/ikkisoft/SerialKiller).
+- Используйте безопасную замену для метода `readObject()`, как показано здесь. Обратите внимание, что это защищает от атак типа "[биллион смехов](https://en.wikipedia.org/wiki/Billion_laughs_attack)" путем проверки длины входных данных и количества десериализованных объектов.
 
-#### Clear-box Review
+#### Открытое исследование
 
-Be aware of the following Java API uses for potential serialization vulnerability.
+Будьте внимательны к следующим использованиям Java API, которые могут указывать на потенциальную уязвимость сериализации.
 
-1. `XMLdecoder` with external user defined parameters
+1. `XMLdecoder` с внешними пользовательскими параметрами
 
-2. `XStream` with `fromXML` method (xstream version <= v1.4.6 is vulnerable to the serialization issue)
+2. `XStream` с методом `fromXML` (версия xstream <= v1.4.6 уязвима к проблеме сериализации)
 
-3. `ObjectInputStream` with `readObject`
+3. `ObjectInputStream` с `readObject`
 
-4. Uses of `readObject`, `readObjectNoData`, `readResolve` or `readExternal`
+4. Использование `readObject`, `readObjectNoData`, `readResolve` или `readExternal`
 
-5. `ObjectInputStream.readUnshared`
+5. `ObjectInputStream.readUnshared`
 
-6. `Serializable`
+6. `Serializable`
 
-#### Opaque-box Review
+#### Непрозрачное исследование
 
-If the captured traffic data includes the following patterns, it may suggest that the data was sent in Java serialization streams:
+Если захваченные данные трафика включают следующие шаблоны, это может указывать на то, что данные были отправлены в потоках сериализации Java:
 
-- `AC ED 00 05` in Hex
-- `rO0` in Base64
-- `Content-type` header of an HTTP response set to `application/x-java-serialized-object`
+- `AC ED 00 05` в шестнадцатеричном виде
+- `rO0` в Base64
+- Заголовок `Content-type` HTTP-ответа установлен на `application/x-java-serialized-object`
 
-#### Prevent Data Leakage and Trusted Field Clobbering
+#### Предотвращение утечки данных и перезаписи доверенных полей
 
-If there are data members of an object that should never be controlled by end users during deserialization or exposed to users during serialization, they should be declared as [the `transient` keyword](https://docs.oracle.com/javase/7/docs/platform/serialization/spec/serial-arch.html#7231) (section *Protecting Sensitive Information*).
+Если в объекте есть члены данных, которые никогда не должны контролироваться пользователями во время десериализации или быть открытыми для пользователей во время сериализации, они должны быть объявлены с помощью [ключевого слова `transient`](https://docs.oracle.com/javase/7/docs/platform/serialization/spec/serial-arch.html#7231) (раздел *Защита конфиденциальной информации*).
 
-For a class that defined as Serializable, the sensitive information variable should be declared as `private transient`.
+Для класса, определенного как Serializable, переменная с конфиденциальной информацией должна быть объявлена как `private transient`.
 
-For example, the class `myAccount`, the variables 'profit' and 'margin' were declared as transient to prevent them from being serialized.
+Например, для класса `myAccount`, переменные 'profit' и 'margin' были объявлены как transient, чтобы предотвратить их сериализацию.
 
 ```java
 public class myAccount implements Serializable
 {
-    private transient double profit; // declared transient
+    private transient double profit; // объявлено как transient
 
-    private transient double margin; // declared transient
-    ....
+    private transient double margin; // объявлено как transient
+    ...
+...
 ```
 
-#### Prevent Deserialization of Domain Objects
+#### Предотвращение десериализации доменных объектов
 
-Some of your application objects may be forced to implement `Serializable` due to their hierarchy. To guarantee that your application objects can't be deserialized, a `readObject()` method should be declared (with a `final` modifier) which always throws an exception:
+Некоторые объекты вашего приложения могут быть вынуждены реализовывать `Serializable` из-за их иерархии. Чтобы гарантировать, что объекты вашего приложения не могут быть десериализованы, следует объявить метод `readObject()` (с модификатором `final`), который всегда выбрасывает исключение:
 
 ```java
 private final void readObject(ObjectInputStream in) throws java.io.IOException {
@@ -112,18 +114,18 @@ private final void readObject(ObjectInputStream in) throws java.io.IOException {
 }
 ```
 
-#### Harden Your Own java.io.ObjectInputStream
+#### Укрепление собственного java.io.ObjectInputStream
 
-The `java.io.ObjectInputStream` class is used to deserialize objects. It's possible to harden its behavior by subclassing it. This is the best solution if:
+Класс `java.io.ObjectInputStream` используется для десериализации объектов. Его поведение можно усилить, создав подкласс. Это лучшее решение, если:
 
-- you can change the code that does the deserialization;
-- you know what classes you expect to deserialize.
+- вы можете изменить код, который выполняет десериализацию;
+- вы знаете, какие классы вы ожидаете десериализовать.
 
-The general idea is to override [`ObjectInputStream.html#resolveClass()`](http://docs.oracle.com/javase/7/docs/api/java/io/ObjectInputStream.html#resolveClass(java.io.ObjectStreamClass)) in order to restrict which classes are allowed to be deserialized.
+Общая идея заключается в переопределении [`ObjectInputStream.html#resolveClass()`](http://docs.oracle.com/javase/7/docs/api/java/io/ObjectInputStream.html#resolveClass(java.io.ObjectStreamClass)) для ограничения того, какие классы могут быть десериализованы.
 
-Because this call happens before a `readObject()` is called, you can be sure that no deserialization activity will occur unless the type is one that you allow.
+Поскольку этот вызов происходит до вызова `readObject()`, вы можете быть уверены, что никакая активность десериализации не произойдет, если тип не является разрешенным.
 
-A simple example is shown here, where the `LookAheadObjectInputStream` class is guaranteed to **not** deserialize any other type besides the `Bicycle` class:
+Простой пример показан здесь: класс `LookAheadObjectInputStream` гарантирует, что он **не** десериализует никакой другой тип, кроме класса `Bicycle`:
 
 ```java
 public class LookAheadObjectInputStream extends ObjectInputStream {
@@ -133,7 +135,7 @@ public class LookAheadObjectInputStream extends ObjectInputStream {
     }
 
     /**
-    * Only deserialize instances of our expected Bicycle class
+    * Десериализовать только экземпляры ожидаемого класса Bicycle
     */
     @Override
     protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {
@@ -145,143 +147,122 @@ public class LookAheadObjectInputStream extends ObjectInputStream {
 }
 ```
 
-More complete implementations of this approach have been proposed by various community members:
+Более полные реализации этого подхода были предложены различными участниками сообщества:
 
-- [NibbleSec](https://github.com/ikkisoft/SerialKiller) - a library that allows creating lists of classes that are allowed to be deserialized
-- [IBM](https://www.ibm.com/developerworks/library/se-lookahead/) - the seminal protection, written years before the most devastating exploitation scenarios were envisioned.
+- [NibbleSec](https://github.com/ikkisoft/SerialKiller) - библиотека, которая позволяет создавать списки классов, которые можно десериализовать
+- [IBM](https://www.ibm.com/developerworks/library/se-lookahead/) - первичное средство защиты, написанное за много лет до того, как были предсказаны наиболее разрушительные сценарии эксплуатации.
 - [Apache Commons IO classes](https://commons.apache.org/proper/commons-io/javadocs/api-2.5/org/apache/commons/io/serialization/ValidatingObjectInputStream.html)
 
-#### Harden All java.io.ObjectInputStream Usage with an Agent
+#### Укрепление использования всех java.io.ObjectInputStream с помощью агента
 
-As mentioned above, the `java.io.ObjectInputStream` class is used to deserialize objects. It's possible to harden its behavior by subclassing it. However, if you don't own the code or can't wait for a patch, using an agent to weave in hardening to `java.io.ObjectInputStream` is the best solution.
+Как упоминалось выше, класс `java.io.ObjectInputStream` используется для десериализации объектов. Его поведение можно усилить, создав подкласс. Однако, если вы не владеете кодом или не можете дождаться патча, использование агента для внедрения защиты в `java.io.ObjectInputStream` является лучшим решением.
 
-Globally changing `ObjectInputStream` is only safe for block-listing known malicious types, because it's not possible to know for all applications what the expected classes to be deserialized are. Fortunately, there are very few classes needed in the denylist to be safe from all the known attack vectors, today.
+Глобальное изменение `ObjectInputStream` безопасно только для блокировки известных вредоносных типов, поскольку невозможно знать, какие классы ожидаются для десериализации во всех приложениях. К счастью, в настоящее время существует очень мало классов, которые нужно включить в список отказов, чтобы быть защищенным от всех известных векторов атак.
 
-It's inevitable that more "gadget" classes will be discovered that can be abused. However, there is an incredible amount of vulnerable software exposed today, in need of a fix. In some cases, "fixing" the vulnerability may involve re-architecting messaging systems and breaking backwards compatibility as developers move towards not accepting serialized objects.
+Неизбежно, что будут обнаружены новые "гаджеты", которые могут быть злоупотреблены. Тем не менее, существует огромное количество уязвимого программного обеспечения, которое требует исправления. В некоторых случаях "исправление" уязвимости может включать переработку систем обмена сообщениями и нарушение обратной совместимости, поскольку разработчики переходят к отказу от принятия сериализованных объектов.
 
-To enable these agents, simply add a new JVM parameter:
+Чтобы включить эти агенты, просто добавьте новый параметр JVM:
 
 ```text
 -javaagent:name-of-agent.jar
 ```
 
-Agents taking this approach have been released by various community members:
+Агенты, использующие этот подход, были выпущены различными участниками сообщества:
 
-- [rO0 by Contrast Security](https://github.com/Contrast-Security-OSS/contrast-rO0)
+- [rO0 от Contrast Security](https://github.com/Contrast-Security-OSS/contrast-rO0)
 
-A similar, but less scalable approach would be to manually patch and bootstrap your JVM's ObjectInputStream. Guidance on this approach is available [here](https://github.com/wsargent/paranoid-java-serialization).
+Похожие, но менее масштабируемые подходы включают ручное исправление и загрузку `ObjectInputStream` вашего JVM. Руководство по этому подходу доступно [здесь](https://github.com/wsargent/paranoid-java-serialization).
 
-#### Other Deserialization Libraries and Formats
+#### Другие библиотеки и форматы десериализации
 
-While the advice above is focused on [Java's Serializable format](https://docs.oracle.com/javase/7/docs/api/java/io/Serializable.html), there are a number of other libraries
-that use other formats for deserialization. Many of these libraries may have similar security
-issues if not configured correctly. This section lists some of these libraries and
-recommended configuration options to avoid security issues when deserializing untrusted data:
+Хотя приведенные выше советы сосредоточены на формате [Serializable Java](https://docs.oracle.com/javase/7/docs/api/java/io/Serializable.html), существует множество других библиотек, использующих другие форматы для десериализации. Многие из этих библиотек могут иметь аналогичные проблемы безопасности, если не настроены правильно. В этом разделе перечислены некоторые из этих библиотек и рекомендуемые параметры конфигурации для избежания проблем безопасности при десериализации непроверенных данных:
 
-**Can be used safely with default configuration:**
+**Может использоваться безопасно с настройками по умолчанию:**
 
-The following libraries can be used safely with default configuration:
+Следующие библиотеки могут использоваться безопасно с настройками по умолчанию:
 
-- **[fastjson2](https://github.com/alibaba/fastjson2)** (JSON) - can be used safely as long as
-the [**autotype**](https://github.com/alibaba/fastjson2/wiki/fastjson2_autotype_cn) option is not turned on
-- **[jackson-databind](https://github.com/FasterXML/jackson-databind)** (JSON) - can be used safely as long
-as polymorphism is not used ([see blog post](https://cowtowncoder.medium.com/on-jackson-cves-dont-panic-here-is-what-you-need-to-know-54cd0d6e8062))
-- **[Kryo v5.0.0+](https://github.com/EsotericSoftware/kryo)** (custom format) - can be used safely
-as long as class registration is not turned **off** ([see documentation](https://github.com/EsotericSoftware/kryo#optional-registration)
-and [this issue](https://github.com/EsotericSoftware/kryo/issues/929))
-- **[YamlBeans v1.16+](https://github.com/EsotericSoftware/yamlbeans)** (YAML) - can be used safely
-as long as the **UnsafeYamlConfig** class isn't used (see [this commit](https://github.com/EsotericSoftware/yamlbeans/commit/b1122588e7610ae4e0d516c50d08c94ee87946e6))
-    - _NOTE: because these versions are not available in Maven Central,
-[a fork exists](https://github.com/Contrast-Security-OSS/yamlbeans) that can be used instead._
-- **[XStream v1.4.17+](https://x-stream.github.io/)** (JSON and XML) - can be used safely
-as long as the allowlist and other security controls are not relaxed ([see documentation](https://x-stream.github.io/security.html))
+- **[fastjson2](https://github.com/alibaba/fastjson2)** (JSON) - может использоваться безопасно, если опция [**autotype**](https://github.com/alibaba/fastjson2/wiki/fastjson2_autotype_cn) не включена
+- **[jackson-databind](https://github.com/FasterXML/jackson-databind)** (JSON) - может использоваться безопасно, если не используется полиморфизм ([см. блог](https://cowtowncoder.medium.com/on-jackson-cves-dont-panic-here-is-what-you-need-to-know-54cd0d6e8062))
+- **[Kryo v5.0.0+](https://github.com/EsotericSoftware/kryo)** (пользовательский формат) - может использоваться безопасно, если регистрация классов не отключена ([см. документацию](https://github.com/EsotericSoftware/kryo#optional-registration) и [эту проблему](https://github.com/EsotericSoftware/kryo/issues/929))
+- **[YamlBeans v1.16+](https://github.com/EsotericSoftware/yamlbeans)** (YAML) - может использоваться безопасно, если класс **UnsafeYamlConfig** не используется (см. [этот коммит](https://github.com/EsotericSoftware/yamlbeans/commit/b1122588e7610ae4e0d516c50d08c94ee87946e6))
+    - _ПРИМЕЧАНИЕ: поскольку эти версии недоступны в Maven Central, существует [форк](https://github.com/Contrast-Security-OSS/yamlbeans), который можно использовать вместо этого._
+- **[XStream v1.4.17+](https://x-stream.github.io/)** (JSON и XML) - может использоваться безопасно, если список разрешенных и другие средства защиты не ослаблены ([см. документацию](https://x-stream.github.io/security.html))
 
-**Requires configuration before can be used safely:**
+**Требует настройки перед безопасным использованием:**
 
-The following libraries require configuration options to be set before they can be used safely:
+Следующие библиотеки требуют настройки параметров перед тем, как их можно будет использовать безопасно:
 
-- **[fastjson v1.2.68+](https://github.com/alibaba/fastjson)** (JSON) - cannot be used safely unless
-the [**safemode**](https://github.com/alibaba/fastjson/wiki/fastjson_safemode_en) option is turned on, which disables
-deserialization of any class ([see documentation](https://github.com/alibaba/fastjson/wiki/enable_autotype)).
-Previous versions are not safe.
-- **[json-io](https://github.com/jdereg/json-io)** (JSON) - cannot be used safely since the use of **@type** property in
-JSON allows deserialization of any class. Can only be used safely in following situations:
-    - In [non-typed mode](https://github.com/jdereg/json-io/blob/master/user-guide.md#non-typed-usage) using the **JsonReader.USE_MAPS** setting which turns off generic object deserialization
-    - [With a custom deserializer](https://github.com/jdereg/json-io/blob/master/user-guide.md#customization-technique-4-custom-serializer) controlling which classes get deserialized
-- **[Kryo < v5.0.0](https://github.com/EsotericSoftware/kryo)** (custom format) - cannot be used safely unless class registration is turned **on**,
-which disables deserialization of any class ([see documentation](https://github.com/EsotericSoftware/kryo#optional-registration)
-and [this issue](https://github.com/EsotericSoftware/kryo/issues/929))
-    - _NOTE: other wrappers exist around Kryo such as [Chill](https://github.com/twitter/chill), which may also have class registration
-not required by default regardless of the underlying version of Kryo being used_
-- **[SnakeYAML](https://bitbucket.org/snakeyaml/snakeyaml/src)** (YAML) - cannot be used safely unless
-the **org.yaml.snakeyaml.constructor.SafeConstructor** class is used, which disables
-deserialization of any class ([see docs](https://bitbucket.org/snakeyaml/snakeyaml/wiki/CVE-2022-1471))
+- **[fastjson v1.2.68+](https://github.com/alibaba/fastjson)** (JSON) - не может использоваться безопасно, если опция [**safemode**](https://github.com/alibaba/fastjson/wiki/fastjson_safemode_en) не включена, что отключает десериализацию любого класса ([см. документацию](https://github.com/alibaba/fastjson/wiki/enable_autotype)). Более ранние версии небезопасны.
+- **[json-io](https://github.com/jdereg/json-io)** (JSON) - не может использоваться безопасно, поскольку использование свойства **@type** в JSON позволяет десериализовать любой класс. Можно использовать безопасно только в следующих ситуациях:
+    - В [не типизированном режиме](https://github.com/jdereg/json-io/blob/master/user-guide.md#non-typed-usage) с использованием настройки **JsonReader.USE_MAPS**, которая отключает десериализацию обобщенных объектов.
+    - [С использованием пользовательского десериализатора](https://github.com/jdereg/json-io/blob/master/user-guide.md#customization-technique-4-custom-serializer), контролирующего, какие классы будут десериализованы.
+- **[Kryo < v5.0.0](https://github.com/EsotericSoftware/kryo)** (пользовательский формат) - не может использоваться безопасно, если регистрация классов не включена, что отключает десериализацию любого класса ([см. документацию](https://github.com/EsotericSoftware/kryo#optional-registration) и [эту проблему](https://github.com/EsotericSoftware/kryo/issues/929))
+    - _ПРИМЕЧАНИЕ: существуют другие обертки вокруг Kryo, такие как [Chill](https://github.com/twitter/chill), которые также могут иметь регистрацию классов, не требуемую по умолчанию, независимо от используемой версии Kryo._
+- **[SnakeYAML](https://bitbucket.org/snakeyaml/snakeyaml/src)** (YAML) - не может использоваться безопасно, если не используется класс **org.yaml.snakeyaml.constructor.SafeConstructor**, который отключает десериализацию любого класса ([см. документацию](https://bitbucket.org/snakeyaml/snakeyaml/wiki/CVE-2022-1471))
 
-**Cannot be used safely:**
+**Не может использоваться безопасно:**
 
-The following libraries are either no longer maintained or cannot be used safely with untrusted input:
+Следующие библиотеки больше не поддерживаются или не могут использоваться безопасно с непроверенными входными данными:
 
-- **[Castor](https://github.com/castor-data-binding/castor)** (XML) - appears to be abandoned with no commits since 2016
-- **[fastjson < v1.2.68](https://github.com/alibaba/fastjson)** (JSON) - these versions allows deserialization of any class
-([see documentation](https://github.com/alibaba/fastjson/wiki/enable_autotype))
-- **[XMLDecoder in the JDK](https://docs.oracle.com/javase/8/docs/api/java/beans/XMLDecoder.html)** (XML) - _"close to impossible to securely deserialize Java objects in this format from untrusted inputs"_
-("Red Hat Defensive Coding Guide", [end of section 2.6.5](https://redhat-crypto.gitlab.io/defensive-coding-guide/#sect-Defensive_Coding-Tasks-Serialization-XML))
-- **[XStream < v1.4.17](https://x-stream.github.io/)** (JSON and XML) - these versions allows deserialization of any class (see [documentation](https://x-stream.github.io/security.html#explicit))
-- **[YamlBeans < v1.16](https://github.com/EsotericSoftware/yamlbeans)** (YAML) - these versions allows deserialization of any class
-(see [this document](https://github.com/Contrast-Security-OSS/yamlbeans/blob/main/SECURITY.md))
+- **[Castor](https://github.com/castor-data-binding/castor)** (XML) - похоже, что она заброшена, нет коммитов с 2016 года
+- **[fastjson < v1.2.68](https://github.com/alibaba/fastjson)** (JSON) - эти версии позволяют десериализовать любой класс ([см. документацию](https://github.com/alibaba/fastjson/wiki/enable_autotype))
+- **[XMLDecoder в JDK](https://docs.oracle.com/javase/8/docs/api/java/beans/XMLDecoder.html)** (XML) - _"почти невозможно безопасно десериализовать объекты Java в этом формате из непроверенных входных данных"_
+("Руководство по защищенному программированию от Red Hat", [конец раздела 2.6.5](https://redhat-crypto.gitlab.io/defensive-coding-guide/#sect-Defensive_Coding-Tasks-Serialization-XML))
+- **[XStream < v1.4.17](https://x-stream.github.io/)** (JSON и XML) - эти версии позволяют десериализовать любой класс (см. [документацию](https://x-stream.github.io/security.html#explicit))
+- **[YamlBeans < v1.16](https://github.com/EsotericSoftware/yamlbeans)** (YAML) - эти версии позволяют десериализовать любой класс (см. [этот документ](https://github.com/Contrast-Security-OSS/yamlbeans/blob/main/SECURITY.md))
 
 ### .Net CSharp
 
-#### Clear-box Review
+#### Проверка исходного кода
 
-Search the source code for the following terms:
+Поиск в исходном коде следующих терминов:
 
 1. `TypeNameHandling`
 2. `JavaScriptTypeResolver`
 
-Look for any serializers where the type is set by a user controlled variable.
+Ищите сериализаторы, где тип устанавливается переменной, контролируемой пользователем.
 
-#### Opaque-box Review
+#### Проверка в закрытом ящике
 
-Search for the following base64 encoded content that starts with:
+Ищите закодированный в base64 контент, начинающийся с:
 
 ```text
 AAEAAAD/////
 ```
 
-Search for content with the following text:
+Ищите контент со следующим текстом:
 
 1. `TypeObject`
 2. `$type:`
 
-#### General Precautions
+#### Общие меры предосторожности
 
-Microsoft has stated that the `BinaryFormatter` type is dangerous and cannot be secured. As such, it should not be used. Full details are in the [BinaryFormatter security guide](https://docs.microsoft.com/en-us/dotnet/standard/serialization/binaryformatter-security-guide).
+Microsoft заявила, что тип `BinaryFormatter` опасен и не может быть защищен. Поэтому его не следует использовать. Полные детали приведены в [руководстве по безопасности BinaryFormatter](https://docs.microsoft.com/en-us/dotnet/standard/serialization/binaryformatter-security-guide).
 
-Don't allow the datastream to define the type of object that the stream will be deserialized to. You can prevent this by for example using the `DataContractSerializer` or `XmlSerializer` if at all possible.
+Не позволяйте потоку данных определять тип объекта, который будет десериализован. Вы можете предотвратить это, например, используя `DataContractSerializer` или `XmlSerializer`, если это возможно.
 
-Where `JSON.Net` is being used make sure the `TypeNameHandling` is only set to `None`.
+Если используется `JSON.Net`, убедитесь, что `TypeNameHandling` установлен только в `None`.
 
 ```csharp
 TypeNameHandling = TypeNameHandling.None
 ```
 
-If `JavaScriptSerializer` is to be used then do not use it with a `JavaScriptTypeResolver`.
+Если используется `JavaScriptSerializer`, не используйте его с `JavaScriptTypeResolver`.
 
-If you must deserialize data streams that define their own type, then restrict the types that are allowed to be deserialized. One should be aware that this is still risky as many native .Net types potentially dangerous in themselves. e.g.
+Если вам необходимо десериализовать потоки данных, которые определяют свой тип, ограничьте типы, которые могут быть десериализованы. Необходимо учитывать, что это все равно рискованно, поскольку многие встроенные типы .Net потенциально опасны сами по себе. Например:
 
 ```csharp
 System.IO.FileInfo
 ```
 
-`FileInfo` objects that reference files actually on the server can when deserialized, change the properties of those files e.g. to read-only, creating a potential denial of service attack.
+Объекты `FileInfo`, которые ссылаются на файлы, фактически находящиеся на сервере, могут изменить свойства этих файлов, например, сделать их доступными только для чтения, что создаёт потенциальную атаку типа отказ в обслуживании.
 
-Even if you have limited the types that can be deserialized remember that some types have properties that are risky. `System.ComponentModel.DataAnnotations.ValidationException`, for example has a property `Value` of type `Object`. if this type is the type allowed for deserialization then an attacker can set the `Value` property to any object type they choose.
+Даже если вы ограничили типы, которые можно десериализовать, помните, что некоторые типы имеют свойства, которые могут быть рискованными. Например, `System.ComponentModel.DataAnnotations.ValidationException` имеет свойство `Value` типа `Object`. Если этот тип разрешен для десериализации, злоумышленник может установить свойство `Value` на любой выбранный им тип объекта.
 
-Attackers should be prevented from steering the type that will be instantiated. If this is possible then even `DataContractSerializer` or `XmlSerializer` can be subverted e.g.
+Не позволяйте злоумышленникам управлять типом, который будет создан. Если это возможно, даже `DataContractSerializer` или `XmlSerializer` могут быть использованы злоумышленниками, например:
 
 ```csharp
-// Action below is dangerous if the attacker can change the data in the database
+// Действие ниже опасно, если злоумышленник может изменить данные в базе данных
 var typename = GetTransactionTypeFromDatabase();
 
 var serializer = new DataContractJsonSerializer(Type.GetType(typename));
@@ -289,25 +270,25 @@ var serializer = new DataContractJsonSerializer(Type.GetType(typename));
 var obj = serializer.ReadObject(ms);
 ```
 
-Execution can occur within certain .Net types during deserialization. Creating a control such as the one shown below is ineffective.
+Исполнение может произойти в некоторых типах .Net во время десериализации. Создание контроля, как показано ниже, неэффективно.
 
 ```csharp
 var suspectObject = myBinaryFormatter.Deserialize(untrustedData);
 
-//Check below is too late! Execution may have already occurred.
+// Проверка ниже слишком поздно! Исполнение могло уже произойти.
 if (suspectObject is SomeDangerousObjectType)
 {
-    //generate warnings and dispose of suspectObject
+    // Генерировать предупреждения и удалить suspectObject
 }
 ```
 
-For `JSON.Net` it is possible to create a safer form of allow-list control using a custom `SerializationBinder`.
+Для `JSON.Net` возможно создать более безопасную форму контроля с использованием пользовательского `SerializationBinder`.
 
-Try to keep up-to-date on known .Net insecure deserialization gadgets and pay special attention where such types can be created by your deserialization processes. **A deserializer can only instantiate types that it knows about**.
+Старайтесь быть в курсе известных уязвимостей десериализации .NET и обращайте особое внимание на места, где такие типы могут быть созданы вашими процессами десериализации. **Десериализатор может создавать только те типы, о которых он знает**.
 
-Try to keep any code that might create potential gadgets separate from any code that has internet connectivity. As an example `System.Windows.Data.ObjectDataProvider` used in WPF applications is a known gadget that allows arbitrary method invocation. It would be risky to have this a reference to this assembly in a REST service project that deserializes untrusted data.
+Старайтесь держать любой код, который может создавать потенциальные гаджеты, отдельно от кода, имеющего подключение к интернету. Например, `System.Windows.Data.ObjectDataProvider`, используемый в приложениях WPF, является известным гаджетом, который позволяет произвольное выполнение методов. Рискованно иметь ссылку на эту сборку в проекте REST-сервиса, который десериализует непроверенные данные.
 
-#### Known .NET RCE Gadgets
+#### Известные гаджеты RCE для .NET
 
 - `System.Configuration.Install.AssemblyInstaller`
 - `System.Activities.Presentation.WorkflowDesigner`
@@ -318,60 +299,60 @@ Try to keep any code that might create potential gadgets separate from any code 
 - `System.Data.DataViewManager, System.Xml.XmlDocument/XmlDataDocument`
 - `System.Management.Automation.PSObject`
 
-## Language-Agnostic Methods for Deserializing Safely
+## Универсальные методы безопасной десериализации
 
-### Using Alternative Data Formats
+### Использование альтернативных форматов данных
 
-A great reduction of risk is achieved by avoiding native (de)serialization formats. By switching to a pure data format like JSON or XML, you lessen the chance of custom deserialization logic being repurposed towards malicious ends.
+Значительное снижение риска достигается путем избегания родных (де)сериализационных форматов. Переключившись на чистый формат данных, такой как JSON или XML, вы снижаете вероятность того, что логика кастомной десериализации будет использована в злонамеренных целях.
 
-Many applications rely on a [data-transfer object pattern](https://en.wikipedia.org/wiki/Data_transfer_object) that involves creating a separate domain of objects for the explicit purpose data transfer. Of course, it's still possible that the application will make security mistakes after a pure data object is parsed.
+Многие приложения полагаются на [паттерн передачи данных](https://en.wikipedia.org/wiki/Data_transfer_object), который включает создание отдельной области объектов для явной передачи данных. Конечно, всё ещё возможно, что приложение сделает ошибки безопасности после того, как чистый объект данных будет разобран.
 
-### Only Deserialize Signed Data
+### Десериализация только подписанных данных
 
-If the application knows before deserialization which messages will need to be processed, they could sign them as part of the serialization process. The application could then to choose not to deserialize any message which didn't have an authenticated signature.
+Если приложение знает заранее, какие сообщения будут обработаны, оно может подписать их как часть процесса сериализации. Тогда приложение может выбрать не десериализовать ни одно сообщение, которое не имеет аутентифицированной подписи.
 
-## Mitigation Tools/Libraries
+## Инструменты/библиотеки для предотвращения
 
-- [Java secure deserialization library](https://github.com/ikkisoft/SerialKiller)
-- [SWAT - tool for creating allowlists](https://github.com/cschneider4711/SWAT)
+- [Библиотека безопасности десериализации Java](https://github.com/ikkisoft/SerialKiller)
+- [SWAT - инструмент для создания разрешенных списков](https://github.com/cschneider4711/SWAT)
 - [NotSoSerial](https://github.com/kantega/notsoserial)
 
-## Detection Tools
+## Инструменты для обнаружения
 
-- [Java deserialization cheat sheet aimed at pen testers](https://github.com/GrrrDog/Java-Deserialization-Cheat-Sheet)
-- [A proof-of-concept tool for generating payloads that exploit unsafe Java object deserialization.](https://github.com/frohoff/ysoserial)
-- [Java De-serialization toolkits](https://github.com/brianwrf/hackUtils)
-- [Java de-serialization tool](https://github.com/frohoff/ysoserial)
-- [.Net payload generator](https://github.com/pwntester/ysoserial.net)
-- [Burp Suite extension](https://github.com/federicodotta/Java-Deserialization-Scanner/releases)
-- [Java secure deserialization library](https://github.com/ikkisoft/SerialKiller)
-- [Serianalyzer is a static bytecode analyzer for deserialization](https://github.com/mbechler/serianalyzer)
-- [Payload generator](https://github.com/mbechler/marshalsec)
-- [Android Java Deserialization Vulnerability Tester](https://github.com/modzero/modjoda)
-- Burp Suite Extension
+- [Чек-лист десериализации Java, ориентированный на тестеров](https://github.com/GrrrDog/Java-Deserialization-Cheat-Sheet)
+- [Инструмент демонстрационного примера для генерации полезных нагрузок, которые используют небезопасную десериализацию объектов Java.](https://github.com/frohoff/ysoserial)
+- [Наборы инструментов для десериализации Java](https://github.com/brianwrf/hackUtils)
+- [Инструмент десериализации Java](https://github.com/frohoff/ysoserial)
+- [Генератор полезных нагрузок .Net](https://github.com/pwntester/ysoserial.net)
+- [Расширение Burp Suite](https://github.com/federicodotta/Java-Deserialization-Scanner/releases)
+- [Библиотека безопасности десериализации Java](https://github.com/ikkisoft/SerialKiller)
+- [Serianalyzer - статический анализатор байт-кода для десериализации](https://github.com/mbechler/serianalyzer)
+- [Генератор полезных нагрузок](https://github.com/mbechler/marshalsec)
+- [Тестировщик уязвимостей десериализации Android Java](https://github.com/modzero/modjoda)
+- Расширения Burp Suite
     - [JavaSerialKiller](https://github.com/NetSPI/JavaSerialKiller)
     - [Java Deserialization Scanner](https://github.com/federicodotta/Java-Deserialization-Scanner)
     - [Burp-ysoserial](https://github.com/summitt/burp-ysoserial)
     - [SuperSerial](https://github.com/DirectDefense/SuperSerial)
     - [SuperSerial-Active](https://github.com/DirectDefense/SuperSerial-Active)
 
-## References
+## Ссылки
 
-- [Java-Deserialization-Cheat-Sheet](https://github.com/GrrrDog/Java-Deserialization-Cheat-Sheet)
-- [Deserialization of untrusted data](https://owasp.org/www-community/vulnerabilities/Deserialization_of_untrusted_data)
-- [Java Deserialization Attacks - German OWASP Day 2016](../assets/Deserialization_Cheat_Sheet_GOD16Deserialization.pdf)
+- [Чек-лист по десериализации Java](https://github.com/GrrrDog/Java-Deserialization-Cheat-Sheet)
+- [Десериализация непроверенных данных](https://owasp.org/www-community/vulnerabilities/Deserialization_of_untrusted_data)
+- [Атаки на десериализацию Java - German OWASP Day 2016](../assets/Deserialization_Cheat_Sheet_GOD16Deserialization.pdf)
 - [AppSecCali 2015 - Marshalling Pickles](http://www.slideshare.net/frohoff1/appseccali-2015-marshalling-pickles)
-- [FoxGlove Security - Vulnerability Announcement](http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/#websphere)
-- [Java deserialization cheat sheet aimed at pen testers](https://github.com/GrrrDog/Java-Deserialization-Cheat-Sheet)
-- [A proof-of-concept tool for generating payloads that exploit unsafe Java object deserialization.](https://github.com/frohoff/ysoserial)
-- [Java De-serialization toolkits](https://github.com/brianwrf/hackUtils)
-- [Java de-serialization tool](https://github.com/frohoff/ysoserial)
-- [Burp Suite extension](https://github.com/federicodotta/Java-Deserialization-Scanner/releases)
-- [Java secure deserialization library](https://github.com/ikkisoft/SerialKiller)
-- [Serianalyzer is a static bytecode analyzer for deserialization](https://github.com/mbechler/serianalyzer)
-- [Payload generator](https://github.com/mbechler/marshalsec)
-- [Android Java Deserialization Vulnerability Tester](https://github.com/modzero/modjoda)
-- Burp Suite Extension
+- [FoxGlove Security - Объявление о уязвимости](http://foxglovesecurity.com/2015/11/06/what-do-weblogic-websphere-jboss-jenkins-opennms-and-your-application-have-in-common-this-vulnerability/#websphere)
+- [Чек-лист по десериализации Java, ориентированный на тестеров](https://github.com/GrrrDog/Java-Deserialization-Cheat-Sheet)
+- [Инструмент демонстрационного примера для генерации полезных нагрузок, которые используют небезопасную десериализацию объектов Java.](https://github.com/frohoff/ysoserial)
+- [Наборы инструментов для десериализации Java](https://github.com/brianwrf/hackUtils)
+- [Инструмент десериализации Java](https://github.com/frohoff/ysoserial)
+- [Расширение Burp Suite](https://github.com/federicodotta/Java-Deserialization-Scanner/releases)
+- [Библиотека безопасности десериализации Java](https://github.com/ikkisoft/SerialKiller)
+- [Serianalyzer - статический анализатор байт-кода для десериализации](https://github.com/mbechler/serianalyzer)
+- [Генератор полезных нагрузок](https://github.com/mbechler/marshalsec)
+- [Тестировщик уязвимостей десериализации Android Java](https://github.com/modzero/modjoda)
+- Расширения Burp Suite
     - [JavaSerialKiller](https://github.com/NetSPI/JavaSerialKiller)
     - [Java Deserialization Scanner](https://github.com/federicodotta/Java-Deserialization-Scanner)
     - [Burp-ysoserial](https://github.com/summitt/burp-ysoserial)
@@ -383,4 +364,4 @@ If the application knows before deserialization which messages will need to be p
     - [Jonathan Birch BlueHat v17 - Dangerous Contents - Securing .Net Deserialization](https://www.youtube.com/watch?v=oxlD8VWWHE8)
     - [Alvaro Muñoz & Oleksandr Mirosh - Friday the 13th: Attacking JSON - AppSecUSA 2017](https://www.youtube.com/watch?v=NqHsaVhlxAQ)
 - Python
-    - [Exploiting Insecure Deserialization bugs found in the Wild (Python Pickles)](https://macrosec.tech/index.php/2021/06/29/exploiting-insecuredeserialization-bugs-found-in-the-wild-python-pickles.)
+    - [Эксплуатация уязвимостей небезопасной десериализации, обнаруженных в дикой природе (Python Pickles)](https://macrosec.tech/index.php/2021/06/29/exploiting-insecuredeserialization-bugs-found-in-the-wild-python-pickles.)

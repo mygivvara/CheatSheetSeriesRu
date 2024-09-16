@@ -1,106 +1,106 @@
-# C-Based Toolchain Hardening Cheat Sheet
+# Шпаргалка по ужесточению цепочки инструментов C
 
-## Introduction
+## Введение
 
-C-Based Toolchain Hardening is a treatment of project settings that will help you deliver reliable and secure code when using C, C++ and Objective C languages in a number of development environments. This article will examine Microsoft and GCC toolchains for the C, C++ and Objective C languages. It will guide you through the steps you should take to create executables with firmer defensive postures and increased integration with the available platform security. Effectively configuring the toolchain also means your project will enjoy a number of benefits during development, including enhanced warnings and static analysis, and self-debugging code.
+Ужесточение цепочки инструментов на основе C — это настройка параметров проекта, которая поможет вам создать надежный и безопасный код при использовании языков C, C++ и Objective C в различных средах разработки. Эта статья рассматривает цепочки инструментов Microsoft и GCC для языков C, C++ и Objective C. Мы проведем вас через шаги, которые необходимо предпринять для создания исполняемых файлов с более устойчивой защитой и повышенной интеграцией с доступными средствами безопасности платформы. Эффективная настройка цепочки инструментов также означает, что ваш проект будет иметь ряд преимуществ в процессе разработки, включая улучшенные предупреждения, статический анализ и самодиагностику кода.
 
-There are four areas to be examined when hardening the toolchain: configuration, preprocessor, compiler, and linker. Nearly all areas are overlooked or neglected when setting up a project. The neglect appears to be pandemic, and it applies to nearly all projects including Auto-configured projects, makefile-based, Eclipse-based, Visual Studio-based, and Xcode-based. It's important to address the gaps at configuration and build time because it's difficult to impossible to [add hardening on a distributed executable after the fact](https://sourceware.org/ml/binutils/2012-03/msg00309.html) on some platforms.
+Есть четыре области, которые нужно рассмотреть при ужесточении цепочки инструментов: конфигурация, препроцессор, компилятор и компоновщик. Почти все эти области часто упускаются или игнорируются при настройке проекта. Эта проблема широко распространена и касается практически всех проектов, включая проекты, настроенные автоматически, на основе makefile, Eclipse, Visual Studio и Xcode. Важно устранить пробелы на этапе конфигурации и сборки, потому что на некоторых платформах трудно или невозможно [обавить защиту к уже распространенному исполняемому файлу](https://sourceware.org/ml/binutils/2012-03/msg00309.html) on some platforms.
 
-This is a prescriptive article, and it will not debate semantics or speculate on behavior. Some information, such as the C/C++ committee's motivation and pedigree for [`program diagnostics`, `NDEBUG`, `assert`, and `abort()`](https://groups.google.com/a/isocpp.org/forum/?fromgroups=#!topic/std-discussion/ak8e1mzBhGs), appears to be lost like a tale in the Lord of the Rings. As such, the article will specify semantics (for example, the philosophy of 'debug' and 'release' build configurations), assign behaviors (for example, what an assert should do in 'debug' and 'release' build configurations), and present a position. If you find the posture is too aggressive, then you should back off as required to suit your taste.
+Эта статья носит предписывающий характер и не будет спорить о семантике или предполагать поведение. Некоторые сведения, такие как мотивация и происхождение комитета C/C++ для [`program diagnostics`, `NDEBUG`, `assert`, и `abort()`](https://groups.google.com/a/isocpp.org/forum/?fromgroups=#!topic/std-discussion/ak8e1mzBhGs), кажутся утраченными, как сказание из "Властелина колец". Таким образом, статья определит семантику (например, философию конфигураций сборки "отладка" и "релиз"), назначит поведение (например, что должно делать утверждение в конфигурациях сборки "отладка" и "релиз") и представит позицию. Если вы считаете, что позиция слишком агрессивна, вы можете ослабить её в соответствии с вашими предпочтениями.
 
-A secure toolchain is not a silver bullet. It is one piece of an overall strategy in the engineering process to help ensure success. It will complement existing processes such as static analysis, dynamic analysis, secure coding, negative test suites, and the like. Tools such as Valgrind and Helgrind will still be needed, and a project will still require solid designs and architectures.
+Безопасная цепочка инструментов не является универсальным решением. Это всего лишь один элемент общей стратегии в процессе разработки, который поможет обеспечить успех. Она будет дополнять существующие процессы, такие как статический анализ, динамический анализ, безопасное кодирование, негативные тестовые наборы и т. д. Инструменты, такие как Valgrind и Helgrind, все равно будут нужны, и проект по-прежнему будет требовать прочных проектных решений и архитектур.
 
-The OWASP [ESAPI C++](https://code.google.com/p/owasp-esapi-cplusplus/source) project eats its own dog food. Many of the examples you will see in this article come directly from the ESAPI C++ project.
+Проект OWASP [ESAPI C++](https://code.google.com/p/owasp-esapi-cplusplus/source) pиспользует свой собственный опыт. Многие примеры, которые вы увидите в этой статье, взяты непосредственно из проекта ESAPI C++.
 
-Finally, a Cheat Sheet is available for those who desire a terse treatment of the material. Please visit [C-Based Toolchain Hardening Cheat Sheet](C-Based_Toolchain_Hardening_Cheat_Sheet.md) for the abbreviated version.
+Наконец, для тех, кто предпочитает краткое изложение материала, доступна шпаргалка. Пожалуйста, посетите [Шпаргалку по ужесточению цепочки инструментов C](C-Based_Toolchain_Hardening_Cheat_Sheet.md) для сокращенной версии.
 
-## Wisdom
+## Мудрость
 
-Code **must** be correct. It **should** be secure. It **can** be efficient.
+Код **должен** быть правильным. Он **должен** быть безопасным. Он **может** быть эффективным.
 
-[Dr. Jon Bentley](https://en.wikipedia.org/wiki/Jon_Bentley): _"If it doesn't have to be correct, I can make it as fast as you'd like it to be"_.
+[Доктор Джон Бентли](https://en.wikipedia.org/wiki/Jon_Bentley): _"Если код не обязательно должен быть правильным, я могу сделать его настолько быстрым, насколько вы хотите"_.
 
-[Dr. Gary McGraw](https://en.wikipedia.org/wiki/Gary_McGraw): _"Thou shalt not rely solely on security features and functions to build secure software as security is an emergent property of the entire system and thus relies on building and integrating all parts properly"_.
+[Dr. Гэри МакГроу](https://en.wikipedia.org/wiki/Gary_McGraw): _"Не полагайтесь исключительно на функции и средства безопасности для создания безопасного программного обеспечения, поскольку безопасность является свойством всей системы в целом и, следовательно, зависит от правильного построения и интеграции всех ее частей"_.
 
-## Configuration
+## Конфигурация
 
-Configuration is the first opportunity to configure your project for success. Not only do you have to configure your project to meet reliability and security goals, you must also configure integrated libraries properly. You typically have three choices. First, you can use auto-configuration utilities if on Linux or Unix. Second, you can write a makefile by hand. This is predominant on Linux, macOS, and Unix, but it applies to Windows, as well. Finally, you can use an integrated development environment or IDE.
+Конфигурация — это первая возможность настроить ваш проект на успех. Вам нужно не только настроить проект для достижения целей надежности и безопасности, но и правильно настроить интегрируемые библиотеки. Обычно у вас есть три варианта. Во-первых, вы можете использовать утилиты автоматической конфигурации, если работаете в Linux или Unix. Во-вторых, вы можете написать makefile вручную. Это преимущественно используется в Linux, macOS и Unix, но применяется и к Windows. Наконец, вы можете использовать интегрированную среду разработки (IDE).
 
-### Build Configurations
+### Конфигурации сборки
 
-At this stage in the process, you should concentrate on configuring for two builds: Debug and Release. Debug will be used for development and include full instrumentation. Release will be configured for production. The difference between the two settings is usually _optimization level_ and _debug level_. A third build configuration is Test, and it's usually a special case of Release.
+На этом этапе процесса следует сосредоточиться на настройке двух сборок: отладочной и релизной. Отладка будет использоваться для разработки и включать полную инструментализацию. Релиз будет настроен для производства. Разница между двумя настройками обычно заключается в _уровне оптимизации_ и _уровне отладки_. A third build configuration is Test, and it's usually a special case of Release.
 
-For debug and release builds, the settings are typically diametrically opposed. Debug configurations have no optimizations and full debug information, while Release builds have optimizations and minimal to moderate debug information. In addition, debug code has full assertions and additional library integration, such as mudflaps and malloc guards such as `dmalloc`.
+Для отладочных и релизных сборок настройки обычно диаметрально противоположны. Отладочные конфигурации не имеют оптимизаций и содержат полную отладочную информацию, в то время как релизные сборки включают оптимизации и минимальную или умеренную отладочную информацию. Кроме того, отладочный код имеет полные утверждения (assertions) и дополнительную интеграцию библиотек, таких как mudflaps и malloc-защитники, такие как `dmalloc`.
 
-The Test configuration is often a Release configuration that makes everything public for testing and builds a test harness. For example, all member functions that are public (C++ class) and all interfaces (library or shared object) should be made available for testing. Many Object Oriented purists oppose testing private interfaces, but this is not about object oriented-ness. This (_q.v._) is about building reliable and secure software.
+Тестовая конфигурация часто является релизной конфигурацией, которая делает всё публичным для тестирования и создает тестовую оболочку. Например, все функции-члены, которые являются публичными (в классе C++), и все интерфейсы (библиотеки или общие объекты) должны быть доступны для тестирования. Многие сторонники объектно-ориентированного подхода выступают против тестирования приватных интерфейсов, но здесь речь идет не об объектно-ориентированности. Это касается создания надежного и безопасного программного обеспечения.
 
-[GCC 4.8](https://gcc.gnu.org/gcc-4.8/changes.html) introduced an optimization of `-Og`. Note that it is only an optimization, and still requires a customary debug level via `-g`.
+[GCC 4.8](https://gcc.gnu.org/gcc-4.8/changes.html) представил оптимизацию `-Og`. Учтите, что это всего лишь оптимизация, и все равно требуется обычный уровень отладки через `-g`.
 
-#### Debug Builds
+#### Отладочные сборки
 
-Debug builds are where developers spend most of their time when vetting problems, so this build should concentrate forces and tools or be a 'force multiplier'. Though many do not realize, debug code is more highly valued than release code because it's adorned with additional instrumentation. The debug instrumentation will cause a program to become nearly "self-debugging", and help you catch mistakes such as bad parameters, failed API calls, and memory problems.
+Отладочные сборки - это то, где разработчики проводят большую часть своего времени при проверке проблем, поэтому такая сборка должна концентрировать силы и инструменты или быть "мультипликатором силы". Хотя многие этого не осознают, отладочный код ценится выше, чем релизный, потому что он дополнен дополнительной инструментализацией. Отладочная инструментализация позволяет программе практически "самоотлаживаться" и помогает ловить ошибки, такие как неверные параметры, неудачные вызовы API и проблемы с памятью.
 
-Self-debugging code reduces your time during troubleshooting and debugging. Reducing time under the debugger means you have more time for development and feature requests. If code is checked in without debug instrumentation, it should be fixed by adding instrumentation or rejected.
+Самоотлаживающийся код сокращает время на устранение неполадок и отладку. Сокращение времени под отладчиком означает, что у вас остается больше времени для разработки и реализации новых функций. Если код проверен без отладочной инструментализации, его следует исправить, добавив инструментализацию, или отклонить.
 
-For GCC, optimizations and debug symbolication are controlled through two switches: `-O` and `-g`. You should use the following as part of your `CFLAGS` and `CXXFLAGS` for a minimal debug session:
+В GCC оптимизации и символизация отладки управляются с помощью двух переключателей: `-O` и `-g`. Вы должны использовать следующие параметры как часть `CFLAGS` и `CXXFLAGS`  для минимальной отладочной сессии:
 
 ```text
 -O0 -g3 -ggdb
 ```
 
-`-O0` turns off optimizations and `-g3` ensures maximum debug information is available. You may need to use `-O1` so some analysis is performed. Otherwise, your debug build will be missing a number of warnings not present in release builds. `-g3` ensures maximum debugging information is available for the debug session, including symbolic constants and `#defines`. `-ggdb` includes extensions to help with a debug session under GDB. For completeness, Jan Krachtovil stated `-ggdb` currently has no effect in a private email.
+`-O0` отключает оптимизации, а `-g3` обеспечивает максимальную доступность отладочной информации. Возможно, вам придется использовать `-O1` чтобы была выполнена некоторая анализирующая обработка. В противном случае в вашей отладочной сборке будет отсутствовать ряд предупреждений, которых нет в релизных сборках. `-g3` обеспечивает максимальное количество отладочной информации для отладочной сессии, включая символические константы и  `#defines`. `-ggdb` включает расширения для помощи в отладочной сессии под GDB. Для полноты информации Ян Крахтовил заявил, что `-ggdb` в настоящее время не имеет эффекта в личной переписке.
 
-Release builds should also consider the configuration pair of `-mfunction-return=thunk` and `-mindirect-branch=thunk`. These are the "Reptoline" fix which is an indirect branch used to thwart speculative execution CPU vulnerabilities such as Spectre and Meltdown. The CPU cannot tell what code to `speculatively` execute because it is an indirect (as opposed to a direct) branch. This is an extra layer of indirection, like calling a pointer through a pointer.
+Релизные сборки также должны рассмотреть пару конфигураций `-mfunction-return=thunk` и `-mindirect-branch=thunk`. Это так называемая фиксация "Reptoline", которая представляет собой косвенный переход, используемый для предотвращения уязвимостей спекулятивного выполнения ЦП, таких как Spectre и Meltdown. ЦП не может определить, какой код выполнять `спекулятивно`, так как это косвенный (в отличие от прямого) переход. Это дополнительный уровень косвенности, как вызов указателя через указатель.
 
-Debug build should also define `DEBUG`, and ensure `NDEBUG` is not defined. `NDEBUG` removes "program diagnostics" and has undesirable behavior and side effects which are discussed below in more detail. The defines should be present for all code, and not just the program. You use it for all code (your program and included libraries) because you need to know how they fail, too (remember, you take the bug report - not the third party library).
+Отладочная сборка также должна определить `DEBUG`и убедиться, что `NDEBUG` не определен. `NDEBUG` удаляет "программные диагностические данные" и имеет нежелательное поведение и побочные эффекты, которые обсуждаются ниже более подробно. Определения должны присутствовать для всего кода, а не только для программы. Вы используете их для всего кода (вашей программы и включенных библиотек), потому что вам нужно знать, как они также выходят из строя (помните, вы принимаете отчет об ошибке, а не сторонняя библиотека).
 
-In addition, you should use other relevant flags, such as `-fno-omit-frame-pointer`. Ensuring a frame pointer exists makes it easier to decode stack traces. Since debug builds are not shipped, it's OK to leave symbols in the executable. Programs with debug information do not suffer performance hits. See, for example, [How does the gcc -g option affect performance?](https://gcc.gnu.org/ml/gcc-help/2005-03/msg00032.html)
+Кроме того, вы должны использовать другие соответствующие флаги, такие как `-fno-omit-frame-pointer`. Обеспечение наличия указателя фрейма облегчает декодирование трассировок стека. Поскольку отладочные сборки не поставляются, можно оставить символы в исполняемом файле. Программы с отладочной информацией не страдают от ухудшения производительности. См., например, [Как влияет опция gcc -g на производительность?](https://gcc.gnu.org/ml/gcc-help/2005-03/msg00032.html)
 
-Finally, you should ensure your project includes additional diagnostic libraries, such as `dmalloc` and [Address Sanitizer](https://github.com/google/sanitizers/tree/master/hwaddress-sanitizer). A comparison of some memory checking tools can be found at [Comparison Of Memory Tools](https://github.com/google/sanitizers/wiki/AddressSanitizerComparisonOfMemoryTools). If you don't include additional diagnostics in debug builds, then you should start using them since it's OK to find errors you are not looking for.
+Наконец, убедитесь, что ваш проект включает дополнительные диагностические библиотеки, такие как `dmalloc` и [Address Sanitizer](https://github.com/google/sanitizers/tree/master/hwaddress-sanitizer). Сравнение некоторых инструментов для проверки памяти можно найти в [Сравнении инструментов проверки памяти](https://github.com/google/sanitizers/wiki/AddressSanitizerComparisonOfMemoryTools). Если вы не включаете дополнительные диагностические средства в отладочные сборки, вам следует начать их использовать, так как нет ничего плохого в обнаружении ошибок, которые вы не ищете.
 
-#### Release Builds
+#### Релизные сборки
 
-Release builds are what your customer receives. They are meant to be run on production hardware and servers, and they should be reliable, secure, and efficient. A stable release build is the product of the hard work and effort during development.
+Релизные сборки — это то, что получает ваш клиент. Они предназначены для работы на производительном оборудовании и серверах, и они должны быть надежными, безопасными и эффективными. Стабильная релизная сборка — это результат упорной работы и усилий в процессе разработки.
 
-For release builds, you should use the following as part of `CFLAGS` and `CXXFLAGS` for release builds:
+Для релизных сборок следует использовать следующие параметры в `CFLAGS` и `CXXFLAGS`:
 
 ```text
 -On -g2
 ```
 
-`-O`_`n`_ sets optimizations for speed or size (for example, `-Os` or `-O2`), and `-g2` ensure debugging information is created.
+`-O`_`n`_ устанавливает оптимизации по скорости или размеру (например, `-Os` или `-O2`), а `-g2` обеспечивает создание отладочной информации.
 
-Debugging information should be stripped and retained in case of symbolication for a crash report from the field. While not desired, debug information can be left in place without a performance penalty. See _[How does the gcc -g option affect performance?](https://gcc.gnu.org/ml/gcc-help/2005-03/msg00032.html)_ for details.
+Отладочная информация должна быть удалена и сохранена для символизации в случае отчета о сбое с места эксплуатации. Хотя это не желательно, отладочная информация может быть оставлена без потери производительности. Подробнее см. в статье _[Как влияет опция gcc -g на производительность?](https://gcc.gnu.org/ml/gcc-help/2005-03/msg00032.html)_.
 
-Release builds should also define `NDEBUG`, and ensure `DEBUG` is not defined. The time for debugging and diagnostics is over, so users get production code with full optimizations, no "programming diagnostics", and other efficiencies. If you can't optimize or you are performing excessive logging, it usually means the program is not ready for production.
+Релизные сборки также должны определить `NDEBUG` и убедиться, что `DEBUG` не определен. Время для отладки и диагностики прошло, поэтому пользователи получают производственный код с полной оптимизацией, без "программной диагностики" и других улучшений. Если вы не можете оптимизировать или проводите чрезмерное логирование, это обычно означает, что программа не готова к производству.
 
-If you have been relying on an `assert` and then a subsequent `abort()`, you have been abusing "program diagnostics" since it has no place in production code. If you want a memory dump, create one so users don't have to worry about secrets and other sensitive information being written to the filesystem and emailed in plain text.
+Если вы полагались на `assert`, а затем на последующий `abort()`, вы злоупотребляли "программной диагностикой", поскольку она не имеет места в производственном коде. Если вам нужно создать дамп памяти, создайте его так, чтобы пользователи не беспокоились о секретах и другой конфиденциальной информации, записанной в файловую систему и отправленной по электронной почте в открытом виде.
 
-For Windows, you would use `/Od` for debug builds and `/Ox`, `/O2` or `/Os` for release builds. See Microsoft's [/O Options (Optimize Code)](https://docs.microsoft.com/en-us/cpp/build/reference/o-options-optimize-code) for details.
+Для Windows используйте `/Od` для отладочных сборок и `/Ox`, `/O2` или `/Os` для релизных сборок. Подробности смотрите в документации Microsoft по [Опциям /O (Оптимизация кода)](https://docs.microsoft.com/en-us/cpp/build/reference/o-options-optimize-code).
 
-#### Test Builds
+#### Тестовые сборки
 
-Test builds are used to provide heuristic validation by way of positive and negative test suites. Under a test configuration, all interfaces are tested to ensure they perform to specification and satisfaction. "Satisfaction" is subjective, but it should include no crashing and no trashing of your memory arena, even when faced with negative tests.
+Тестовые сборки используются для эвристической валидации с помощью положительных и отрицательных тестов. В рамках тестовой конфигурации все интерфейсы тестируются, чтобы убедиться, что они работают в соответствии со спецификацией и удовлетворяют требованиям. "Удовлетворение" субъективно, но оно должно включать отсутствие сбоев и отсутствие порчи памяти, даже при отрицательных тестах.
 
-Because all interfaces are tested (and not just the public ones), your `CFLAGS` and `CXXFLAGS` should include:
+Поскольку все интерфейсы тестируются (а не только публичные), ваши `CFLAGS` и `CXXFLAGS` должны включать:
 
 ```text
 -Dprotected=public -Dprivate=public
 ```
 
-You should also change `__attribute__` `((visibility` `("hidden")))` to `__attribute__` `((visibility` `("default")))`.
+Также следует изменить `__attribute__` `((visibility` `("hidden")))` to `__attribute__` `((visibility` `("default")))`.
 
-Nearly everyone gets a positive test right, so no more needs to be said. The negative self tests are much more interesting, and you should concentrate on trying to make your program fail so you can verify it fails gracefully. Remember, a bad actor is not going to be courteous when they attempt to cause your program to fail, and it's your project that takes egg on the face by way of a bug report or guest appearance on [Full Disclosure](https://nmap.org/mailman/listinfo/fulldisclosure) or [Bugtraq](https://www.securityfocus.com/archive) - not `<some library>` you included.
+Почти каждый проходит положительный тест, поэтому здесь больше нечего сказать. Отрицательные тесты гораздо более интересны, и вы должны сосредоточиться на том, чтобы попытаться заставить вашу программу выйти из строя, чтобы вы могли проверить, что она выходит из строя плавно. Помните, что злоумышленник не будет вежлив, когда попытается вызвать сбой вашей программы, и ваш проект окажется в затруднительном положении из-за отчета об ошибке или неожиданного появления на [Full Disclosure](https://nmap.org/mailman/listinfo/fulldisclosure) или [Bugtraq](https://www.securityfocus.com/archive) - а не `<некоторой библиотеки>`, которую вы включили.
 
-### Autotools
+### Автоинструменты
 
-Auto configuration tools are popular on many Linux and Unix based systems, and the tools include _Autoconf_, _Automake_, _config_, and _Configure_. The tools work together to produce project files from scripts and template files. After the process completes, your project should be set up and ready to be made with `make`.
+Инструменты автонастройки популярны на многих Linux и Unix системах, и они включают в себя _Autoconf_, _Automake_, _config_, и _Configure_. Инструменты работают вместе, чтобы создать проектные файлы из скриптов и шаблонных файлов. После завершения процесса ваш проект должен быть настроен и готов к сборке с помощью `make`.
 
-When using auto configuration tools, there are a few files of interest worth mentioning. The files are part of the Autotools chain and include `m4` and the various `*.in`, `*.ac` (Autoconf), and `*.am` (Automake) files. At times, you will have to open them, or the resulting makefiles, to tune the "stock" configuration.
+При использовании инструментов автонастройки стоит упомянуть несколько интересных файлов. Эти файлы являются частью цепочки Autotools и включают `m4` и различные `*.in`, `*.ac` (Autoconf), и `*.am` (Automake) файлы. Иногда вам придется открывать их или полученные makefile'ы, чтобы настроить "стандартную" конфигурацию.
 
-There are three downsides to the command-line configuration tools in the toolchain: (1) they often ignore user requests, (2) they cannot create configurations, and (3) security is often not a goal.
+У командных инструментов настройки в цепочке есть три недостатка: (1) они часто игнорируют запросы пользователя, (2) они не могут создавать конфигурации и (3) безопасность часто не является целью.
 
-To demonstrate the first issue, configure your project with the following: `configure` `CFLAGS="-Wall` `-fPIE"` `CXXFLAGS="-Wall` `-fPIE"` `LDFLAGS="-pie"`. You will probably find that Autotools ignored your request, which means the command below will not produce expected results. As a workaround, you will have to open an `m4` script, `makefile.in` or `makefile.am`, and fix the configuration.
+Чтобы продемонстрировать первую проблему, настройте проект следующим образом: `configure` `CFLAGS="-Wall` `-fPIE"` `CXXFLAGS="-Wall` `-fPIE"` `LDFLAGS="-pie"`. Вы, вероятно, обнаружите, что Autotools проигнорировал ваш запрос, что означает, что приведенная ниже команда не даст ожидаемых результатов. В качестве обходного пути вам придется открыть сценарий `m4`, `makefile.in` или `makefile.am` и исправить конфигурацию.
 
 ```bash
 $ configure CFLAGS="-Wall -Wextra -Wconversion -fPIE -Wno-unused-parameter
@@ -108,17 +108,17 @@ $ configure CFLAGS="-Wall -Wextra -Wconversion -fPIE -Wno-unused-parameter
     LDFLAGS="-pie -z,noexecstack -z,noexecheap -z,relro -z,now"
 ```
 
-For the second point, you will probably be disappointed to learn [Automake does not support the concept of configurations](https://lists.gnu.org/archive/html/automake/2012-12/msg00019.html). It's not entirely Autoconf's or Automake's fault - _Make_ and its inability to detect changes is the underlying problem. Specifically, _Make_ only [checks modification times of prerequisites and targets](https://pubs.opengroup.org/onlinepubs/9699919799/utilities/make.html), and does not check things like `CFLAGS` and `CXXFLAGS`. The net effect is you will not receive expected results when you issue `make` `debug` and then `make` `test` or `make` `release`.
+По второму пункту вы, вероятно, будете разочарованы, узнав, что [Automake не поддерживает концепцию конфигураций](https://lists.gnu.org/archive/html/automake/2012-12/msg00019.html). Это не полностью вина Autoconf или Automake - *Make* и его неспособность обнаруживать изменения являются основной проблемой. В частности, *Make* [проверяет только время изменения предпосылок и целей](https://pubs.opengroup.org/onlinepubs/9699919799/utilities/make.html) и не проверяет такие вещи, как `CFLAGS` и `CXXFLAGS`. В итоге вы не получите ожидаемых результатов, когда выполните `make` `debug`, а затем `make` `test` или `make` `release`.
 
-Finally, you will probably be disappointed to learn tools such as Autoconf and Automake miss many security related opportunities and ship insecure out of the box. There are a number of compiler switches and linker flags that improve the defensive posture of a program, but they are not 'on' by default. Tools like Autoconf - which are supposed to handle this situation - often provide settings to serve the lowest of all denominators.
+Наконец, вы, вероятно, будете разочарованы, узнав, что такие инструменты, как Autoconf и Automake, упускают многие возможности, связанные с безопасностью, и изначально поставляются с небезопасными настройками. Существуют различные переключатели компилятора и флаги линкера, которые улучшают защитную позицию программы, но они не включены по умолчанию. Такие инструменты, как Autoconf, которые должны обрабатывать эту ситуацию, часто предоставляют настройки для минимально общего знаменателя.
 
-A recent discussion on the Automake mailing list illuminates the issue: _[Enabling compiler warning flags](https://lists.gnu.org/archive/html/autoconf/2012-12/msg00038.html)_. Attempts to improve default configurations were met with resistance and no action was taken. The resistance is often of the form, "`<some useful warning> also produces false positives`" or "`<some obscure platform> does not support <established security feature>`". It's noteworthy that David Wheeler, the author of _[Secure Programming for Linux and Unix HOWTO](https://dwheeler.com/secure-programs/)_, was one of the folks trying to improve the posture.
+Недавнее обсуждение в списке рассылки Automake проясняет проблему: _[Включение флагов предупреждения компилятора](https://lists.gnu.org/archive/html/autoconf/2012-12/msg00038.html)_. Попытки улучшить стандартные конфигурации встретили сопротивление, и никаких действий предпринято не было. Сопротивление часто имеет форму "`<какое-то полезное предупреждение> также вызывает ложные срабатывания`" или "`<некоторая неясная платформа> не поддерживает <утвержденную функцию безопасности>`". Примечательно, что Дэвид Уилер, автор _[Secure Programming for Linux and Unix HOWTO](https://dwheeler.com/secure-programs/)_, был одним из тех, кто пытался улучшить настройки безопасности.
 
 ### Makefiles
 
-Make is one of the earliest build tools dating back to the 1970s. It's available on Linux, macOS and Unix, so you will frequently encounter projects using it. Unfortunately, Make has a number of shortcomings (_[Recursive Make Considered Harmful](https://embeddedartistry.com/blog/2017/04/10/recursive-make-considered-harmful/)_ and _[What's Wrong With GNU make?](https://www.conifersystems.com/whitepapers/gnu-make/)_), and can cause some discomfort. Despite issues with Make, ESAPI C++ uses Make primarily for three reasons: first, it's omnipresent; second, it's easier to manage than the Autotools family; and third, `libtool` was out of the question.
+Make — один из первых инструментов сборки, появившийся в 1970-х годах. Он доступен в Linux, macOS и Unix, поэтому вы часто будете сталкиваться с проектами, использующими его. К сожалению, у Make есть ряд недостатков (_[Recursive Make Considered Harmful](https://embeddedartistry.com/blog/2017/04/10/recursive-make-considered-harmful/)_ и _[What's Wrong With GNU make?](https://www.conifersystems.com/whitepapers/gnu-make/)_) и может вызвать некоторые неудобства. Несмотря на проблемы с Make, ESAPI C++ использует его по трем основным причинам: во-первых, он повсеместно распространен; во-вторых, он проще в управлении, чем семейство Autotools; и в-третьих, использование `libtool` было исключено.
 
-Consider what happens when you: (1) type `make` `debug`, and then type `make` `release`. Each build would require different `CFLAGS` due to optimizations and level of debug support. In your makefile, you would extract the relevant target and set `CFLAGS` and `CXXFLAGS` similar to below (taken from [ESAPI C++ makefile](https://code.google.com/archive/p/owasp-esapi-cplusplus/source/default/source)):
+Рассмотрим, что происходит, когда вы: (1) вводите `make` `debug`, а затем вводите `make` `release`. Каждая сборка потребует разных `CFLAGS` из-за оптимизаций и уровня поддержки отладки. В вашем makefile вы извлекаете соответствующую цель и устанавливаете `CFLAGS` и `CXXFLAGS`, как показано ниже (взято из [ESAPI C++ makefile](https://code.google.com/archive/p/owasp-esapi-cplusplus/source/default/source)):
 
 ```text
 ## makefile
@@ -156,47 +156,47 @@ override LDFLAGS := $(ESAPI_LDFLAGS) $(LDFLAGS)
 …
 ```
 
-Make will first build the program in a debug configuration for a session under the debugger using a rule similar to:
+Make сначала соберет программу в отладочной конфигурации для сессии под отладчиком с помощью правила, похожего на:
 
 ```text
 %.cpp:%.o:
         $(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 ```
 
-When you want the release build, Make will do nothing because it considers everything up to date despite the fact `CFLAGS` and `CXXFLAGS` have changed. Hence, your program will actually be in a debug configuration and risk a `SIGABRT` at runtime because debug instrumentation is present (recall `assert` calls `abort()` when `NDEBUG` is **not** defined). In essence, you have DoS'd yourself due to `make`.
+Когда вам нужна релизная сборка, Make ничего не сделает, потому что считает, что все актуально, несмотря на то, что `CFLAGS` и `CXXFLAGS` изменились. В результате ваша программа фактически будет находиться в отладочной конфигурации и рискует завершиться с `SIGABRT` во время выполнения, потому что присутствует отладочная инструментализация (помните, `assert` вызывает `abort()`, когда `NDEBUG` **не** определен). По сути, вы создали себе DoS из-за `make`.
 
-In addition, many projects do not honor the user's command-line. ESAPI C++ does its best to ensure a user's flags are honored via `override` as shown above, but other projects do not. For example, consider a project that should be built with Position Independent Executable (PIE or ASLR) enabled and data execution prevention (DEP) enabled. Dismissing user settings combined with insecure out of the box settings (and not picking them up during auto-setup or auto-configure) means a program built with the following will likely have neither defense:
+Кроме того, многие проекты не учитывают параметры командной строки пользователя. ESAPI C++ делает все возможное, чтобы гарантировать, что флаги пользователя будут учтены с помощью `override`, как показано выше, но другие проекты этого не делают. Например, рассмотрим проект, который должен быть собран с включенной поддержкой Position Independent Executable (PIE или ASLR) и предотвращением выполнения данных (DEP). Игнорирование пользовательских настроек в сочетании с небезопасными настройками по умолчанию (и не учтенными при автонастройке или авто-конфигурации) означает, что программа, собранная следующим образом, вероятно, не будет иметь ни одной защиты:
 
 ```bash
 make CFLAGS="-fPIE" CXXFLAGS="-fPIE" LDFLAGS="-pie -z,noexecstack, -z,noexecheap"
 ```
 
-Defenses such as ASLR and DEP are especially important on Linux because [Data Execution - not Prevention - is the norm](https://linux.die.net/man/5/elf).
+Такие защиты, как ASLR и DEP, особенно важны в Linux, потому что [исполнение данных — а не их предотвращение — является нормой](https://linux.die.net/man/5/elf).
 
-### Integration
+### Интеграция
 
-Project level integration presents opportunities to harden your program or library with domain specific knowledge. For example, if the platform supports Position Independent Executables (PIE or ASLR) and data execution prevention (DEP), then you should integrate with it. The consequences of not doing so could result in exploitation. As a case in point, see KingCope's 0-days for MySQL in December, 2012 (CVE-2012-5579 and CVE-2012-5612, among others). Integration with platform security would have neutered a number of the 0-days.
+Интеграция на уровне проекта предоставляет возможности для укрепления вашей программы или библиотеки с учетом знаний специфики домена. Например, если платформа поддерживает Position Independent Executables (PIE или ASLR) и предотвращение выполнения данных (DEP), то вам следует интегрироваться с ними. Последствия невыполнения этого требования могут привести к эксплуатации уязвимостей. В качестве примера можно привести 0-day уязвимости KingCope для MySQL в декабре 2012 года (CVE-2012-5579 и CVE-2012-5612, среди прочих). Интеграция с механизмами безопасности платформы могла бы предотвратить ряд этих уязвимостей.
 
-You also have the opportunity to include helpful libraries that are not needed for business logic support. For example, if you are working on a platform with [DMalloc](http://dmalloc.com) or [Address Sanitizer](https://github.com/google/sanitizers/tree/master/hwaddress-sanitizer), you should probably use it in your debug builds. For Ubuntu, DMalloc is available from the package manager and can be installed with `sudo apt install libdmalloc5`. For Apple platforms, it's available as a scheme option. Address Sanitizer is available in [GCC 4.8 and above](https://gcc.gnu.org/gcc-4.8/changes.html) for many platforms.
+Также у вас есть возможность включить полезные библиотеки, которые не требуются для поддержки бизнес-логики. Например, если вы работаете на платформе с [DMalloc](http://dmalloc.com) или [Address Sanitizer](https://github.com/google/sanitizers/tree/master/hwaddress-sanitizer), вам, вероятно, стоит использовать их в ваших отладочных сборках. Для Ubuntu DMalloc доступен в менеджере пакетов и может быть установлен с помощью команды `sudo apt install libdmalloc5`. На платформах Apple он доступен как опция схемы. Address Sanitizer доступен в [GCC 4.8 и выше](https://gcc.gnu.org/gcc-4.8/changes.html) для многих платформ.
 
-In addition, project level integration is an opportunity to harden third party libraries you chose to include. Because you chose to include them, you and your users are responsible for them. If you or your users endure a `SP800-53` audit, third party libraries will be in scope because the supply chain is included (specifically, item SA-12, Supply Chain Protection). The audits are not limited to those in the US Federal arena - financial institutions perform reviews, too. A perfect example of violating this guidance is [CVE-2012-1525](https://nvd.nist.gov/vuln/detail/CVE-2012-1525), which was due to [Adobe's inclusion of a defective Sablotron library](https://www.agarri.fr/blog/index.html).
+Кроме того, интеграция на уровне проекта предоставляет возможность усилить сторонние библиотеки, которые вы решили включить. Так как вы включили их в проект, вы и ваши пользователи несете ответственность за них. Если вы или ваши пользователи проходят аудит по `SP800-53`, сторонние библиотеки будут в области аудита, потому что включена цепочка поставок (в частности, пункт SA-12, Защита цепочки поставок). Аудиты не ограничиваются только федеральной ареной США — финансовые учреждения также проводят проверки. Прекрасным примером нарушения этого руководства является [CVE-2012-1525](https://nvd.nist.gov/vuln/detail/CVE-2012-1525), причиной которого стало [включение компанией Adobe дефектной библиотеки Sablotron](https://www.agarri.fr/blog/index.html).
 
-Another example is including OpenSSL. You know (1) [SSLv2 is insecure](https://www.schneier.com/academic/paperfiles/paper-ssl-revised.pdf), (2) [SSLv3 is insecure](https://blog.qualys.com/ssllabs/2014/10/15/ssl-3-is-dead-killed-by-the-poodle-attack), and (3) [compression is insecure](https://arstechnica.com/security/2012/09/crime-hijacks-https-sessions/) (among others). In addition, suppose you don't use hardware and engines, and only allow static linking. Given the knowledge and specifications, you would configure the OpenSSL library as follows:
+Другим примером является включение OpenSSL. Вы знаете, что (1) [SSLv2 небезопасен](https://www.schneier.com/academic/paperfiles/paper-ssl-revised.pdf), (2) [SSLv3 небезопасен](https://blog.qualys.com/ssllabs/2014/10/15/ssl-3-is-dead-killed-by-the-poodle-attack), и (3) [сжатие небезопасно](https://arstechnica.com/security/2012/09/crime-hijacks-https-sessions/) (среди прочих). Кроме того, предположим, что вы не используете аппаратное обеспечение и механизмы, и допускаете только статическую компоновку. С учетом этих знаний и спецификаций вы бы настроили библиотеку OpenSSL следующим образом:
 
 ```bash
 $ Configure darwin64-x86_64-cc -no-hw -no-engine -no-comp -no-shared
     -no-dso -no-ssl2 -no-ssl3 --openssldir=…
 ```
 
-_Note Well_: you might want engines, especially on Ivy Bridge microarchitectures (3rd generation Intel Core i5 and i7 processors). To have OpenSSL use the processor's random number generator (via the `rdrand` instruction), you will need to call OpenSSL's `ENGINE_load_rdrand()` function and then `ENGINE_set_default` with `ENGINE_METHOD_RAND`. See [OpenSSL's Random Numbers](https://wiki.openssl.org/index.php/Random_Numbers) for details.
+_Примечание_: возможно, вам нужны механизмы, особенно на микроархитектурах Ivy Bridge (3-е поколение процессоров Intel Core i5 и i7). Чтобы OpenSSL использовал генератор случайных чисел процессора (через инструкцию `rdrand`), вам нужно вызвать функцию `ENGINE_load_rdrand()` OpenSSL, а затем `ENGINE_set_default` с `ENGINE_METHOD_RAND`. См. [Случайные числа в OpenSSL](https://wiki.openssl.org/index.php/Random_Numbers).
 
-If you configure without the switches, then you will likely have vulnerable code/libraries and risk failing an audit. If the program is a remote server, then the following command will reveal if compression is active on the channel:
+Конфигурация без переключателей скорее всего приведет к уязвимому коду/библиотекам и риску провала аудита. Если программа является удаленным сервером, то следующая команда покажет, активна ли компрессия на канале:
 
 ```bash
 echo "GET / HTTP1.0" | openssl s_client -connect <nowiki>example.com:443</nowiki>
 ```
 
-`nm` or `openssl` `s_client` will show that compression is enabled in the client. In fact, any symbol within the `OPENSSL_NO_COMP` preprocessor macro will bear witness since `-no-comp` is translated into a `CFLAGS` define.
+Команды `nm` или `openssl` `s_client` покажут, что компрессия включена в клиенте. На самом деле, любой символ в предопределенном макросе `OPENSSL_NO_COMP` будет свидетельствовать о том, что `-no-comp` переводится в определение `CFLAGS`.
 
 ```bash
 $ nm /usr/local/ssl/iphoneos/lib/libcrypto.a 2>/dev/null | egrep -i "(COMP_CTX_new|COMP_CTX_free)"
@@ -204,30 +204,30 @@ $ nm /usr/local/ssl/iphoneos/lib/libcrypto.a 2>/dev/null | egrep -i "(COMP_CTX_n
 0000000000000000 T COMP_CTX_new
 ```
 
-Even more egregious is the answer given to auditors who specifically ask about configurations and protocols: "we don't use weak/wounded/broken ciphers" or "we follow best practices." The use of compression tells the auditor that you are using wounded protocols in an insecure configuration and you don't follow best practices. That will likely set off alarm bells, and ensure the auditor dives deeper on more items.
+Еще более вопиющим является ответ, данный аудиторам, которые специально спрашивают о конфигурациях и протоколах: "мы не используем слабые/поврежденные/сломанные шифры" или "мы следуем лучшим практикам". Использование компрессии говорит аудитору о том, что вы используете поврежденные протоколы в небезопасной конфигурации и не следуете лучшим практикам. Это, вероятно, вызовет тревогу и заставит аудитора более тщательно изучить другие аспекты.
 
-## Preprocessor
+## Предпроцессор
 
-The preprocessor is crucial to setting up a project for success. The C committee provided one macro - `NDEBUG` - and the macro can be used to derive a number of configurations and drive engineering processes. Unfortunately, the committee also left many related items to chance, which has resulted in programmers abusing built-in facilities. This section will help you set up your projects to integrate well with other projects and ensure reliability and security.
+Предпроцессор имеет решающее значение для успешной настройки проекта. Комитет по языку C предоставил один макрос - `NDEBUG` - и этот макрос можно использовать для создания множества конфигураций и управления инженерными процессами. К сожалению, комитет также оставил многие сопутствующие элементы на волю случая, что привело к тому, что программисты злоупотребляют встроенными функциями. Этот раздел поможет вам настроить ваши проекты для интеграции с другими проектами и обеспечить надежность и безопасность.
 
-There are three topics to discuss when hardening the preprocessor. The first is well defined configurations which produce well-defined behaviors, the second is useful behavior from assert, and the third is proper use of macros when integrating vendor code and third party libraries.
+Есть три темы для обсуждения при усилении препроцессора. Первая — это хорошо определенные конфигурации, которые приводят к четко определенному поведению. Вторая — полезное поведение функции assert, и третья — правильное использование макросов при интеграции кода поставщиков и сторонних библиотек.
 
-### Configurations
+### Конфигурации
 
-To remove ambiguity, you should recognize two configurations: Release and Debug. Release is for production code on live servers, and its behavior is requested via the C/C++ `NDEBUG` macro. It's also the only macro observed by the C and C++ Committees and Posix. Diametrically opposed to release is Debug. While there is a compelling argument for `!defined(NDEBUG)`, you should have an explicit macro for the configuration and that macro should be `DEBUG`. This is because vendors and outside libraries use the `DEBUG` (or similar) macro for their configuration. For example, Carnegie Mellon's Mach kernel uses `DEBUG`, Microsoft's CRT uses [`_DEBUG`](https://www.microsoft.com/en-us/download/details.aspx?id=55979), and Wind River Workbench uses `DEBUG_MODE`.
+Чтобы исключить двусмысленность, следует учитывать две конфигурации: Release и Debug. Release предназначена для рабочего кода на продуктивных серверах, и её поведение задается макросом C/C++ `NDEBUG`. Это также единственный макрос, используемый комитетами по стандартам C и C++ и Posix. Противоположностью Release является Debug. Хотя аргумент в пользу `!defined(NDEBUG)` выглядит убедительно, следует использовать явный макрос для конфигурации, и этим макросом должен быть `DEBUG`. Это связано с тем, что поставщики и сторонние библиотеки используют макрос  `DEBUG` (или аналогичный) для своей конфигурации. Например, ядро Mach от Carnegie Mellon использует `DEBUG`, CRT от Microsoft использует [`_DEBUG`](https://www.microsoft.com/en-us/download/details.aspx?id=55979), а Workbench от Wind River использует `DEBUG_MODE`.
 
-In addition to `NDEBUG` (Release) and `DEBUG` (Debug), you have two additional cross products: both are defined or neither are defined. Defining both should be an error, and defining neither should default to a release configuration. Below is from [ESAPI C++ EsapiCommon.h](https://code.google.com/archive/p/owasp-esapi-cplusplus/source/default/source), which is the configuration file used by all source files:
+В дополнение к `NDEBUG` (Release) и `DEBUG` (Debug) имеются еще два перекрестных продукта: оба макроса определены или ни один не определен. Определение обоих должно быть ошибкой, а неопределение ни одного должно приводить к конфигурации release. Пример ниже взят из [ESAPI C++ EsapiCommon.h](https://code.google.com/archive/p/owasp-esapi-cplusplus/source/default/source), который является конфигурационным файлом, используемым всеми исходными файлами:
 
 ```c
-// Only one or the other, but not both
+// Только один или другой, но не оба
 ##if (defined(DEBUG) || defined(_DEBUG)) && (defined(NDEBUG)
                                            || defined(_NDEBUG))
 ## error Both DEBUG and NDEBUG are defined.
 ##endif
 
-// The only time we switch to debug is when asked.
-// NDEBUG or {nothing} results
-// in release build (fewer surprises at runtime).
+// Переключаемся на debug только по запросу.
+// NDEBUG или {ничего} приводят
+// к сборке release (меньше сюрпризов во время выполнения).
 ##if defined(DEBUG) || defined(_DEBUG)
 ## define ESAPI_BUILD_DEBUG 1
 ##else
@@ -235,27 +235,27 @@ In addition to `NDEBUG` (Release) and `DEBUG` (Debug), you have two additional c
 ##endif
 ```
 
-When `DEBUG` is in effect, your code should receive full debug instrumentation, including the full force of assertions.
+Когда `DEBUG` активен, ваш код должен получать полную инструментализацию для отладки, включая всю мощь утверждений.
 
 ### ASSERT
 
-Asserts will help you create self-debugging code by helping you find the point of first failure quickly and easily. Asserts should be used throughout your program, including parameter validation, return value checking and program state. The `assert` will silently guard your code through its lifetime. It will always be there, even when not debugging a specific component of a module. If you have thorough code coverage, you will spend less time debugging and more time developing because programs will debug themselves.
+Утверждения (assert) помогут вам создавать самопроверяющийся код, быстро и легко находя точку первого сбоя. Утверждения должны использоваться на протяжении всей программы, включая проверку параметров, проверку возвращаемых значений и состояния программы. `assert` будет безмолвно защищать ваш код на протяжении его жизни. Он всегда будет там, даже если вы не отлаживаете конкретный компонент модуля. Если у вас полное покрытие кода, вы будете тратить меньше времени на отладку и больше времени на разработку, так как программы будут отлаживаться сами.
 
-To use asserts effectively, you should assert everything. That includes parameters upon entering a function, return values from function calls, and any program state. Everywhere you place an `if` statement for validation or checking, you should have an assert. Everywhere you have an `assert` for validation or checking, you should have an `if` statement. They go hand-in-hand.
+Чтобы эффективно использовать утверждения, вы должны проверять все. Это включает параметры при входе в функцию, возвращаемые значения вызовов функций и любое состояние программы. Везде, где вы размещаете оператор `if` для проверки или валидации, вы должны использовать assert. Везде, где у вас есть `assert` для проверки или валидации, вы должны иметь оператор `if`. Они идут рука об руку.
 
-If you are still using `printf`'s, then you have an opportunity for improvement. In the time it takes for you to write a `printf` or `NSLog` statement, you could have written an `assert`. Unlike the `printf` or `NSLog` which are often removed when no longer needed, the `assert` stays active forever. Remember, this is all about finding the point of first failure quickly so you can spend your time doing other things.
+Если вы все еще используете `printf`, у вас есть возможность для улучшения. На то время, которое требуется, чтобы написать оператор `printf` или `NSLog`, вы могли бы написать утверждение `assert`. В отличие от `printf` или `NSLog`, которые часто удаляются, когда больше не нужны, утверждение `assert` остается активным всегда. Помните, что все это направлено на быстрое нахождение точки первого сбоя, чтобы вы могли заниматься другими вещами.
 
-There is one problem with using asserts - [Posix states `assert` should call `abort()`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/assert.html) if `NDEBUG` is **not** defined. When debugging, `NDEBUG` will never be defined since you want the "program diagnostics" (quote from the Posix description). The behavior makes `assert` and its accompanying `abort()` completely useless for development. The result of "program diagnostics" calling `abort()` due to standard C/C++ behavior is disuse - developers simply don't use them. It's incredibly bad for the development community because self-debugging programs can help eradicate so many stability problems.
+Существует одна проблема с использованием утверждений - [стандарт Posix предписывает, что `assert` должен вызывать `abort()`](https://pubs.opengroup.org/onlinepubs/9699919799/functions/assert.html) если `NDEBUG` **не** определен. При отладке `NDEBUG` никогда не будет определен, так как вам нужны "диагностика программы" (цитата из описания Posix). Такое поведение делает `assert` и его сопровождающий `abort()` совершенно бесполезными для разработки. Результат "диагностики программы", вызывающий `abort()` из-за стандартного поведения C/C++, приводит к отказу от их использования - разработчики просто их не используют. Это чрезвычайно плохо для сообщества разработчиков, так как программы, которые могут проверять сами себя, могут помочь устранить множество проблем со стабильностью.
 
-Since self-debugging programs are so powerful, you will have to supply your own assert and signal handler with improved behavior. Your assert will exchange auto-aborting behavior for auto-debugging behavior. The auto-debugging facility will ensure the debugger snaps when a problem is detected, and you will find the point of first failure quickly and easily.
+Поскольку самопроверяющие программы настолько мощны, вам придется предоставить свой собственный assert и обработчик сигналов с улучшенным поведением. Ваш assert заменит автоматическое поведение прерывания на автоматическое поведение отладки. Функция автоматической отладки обеспечит срабатывание отладчика при обнаружении проблемы, и вы быстро и легко найдете точку первого сбоя.
 
-ESAPI C++ supplies its own assert with the behavior described above. In the code below, `ASSERT` raises `SIGTRAP` when in effect or it evaluates to `void` in other cases.
+ESAPI C++ предоставляет собственный assert с поведением, описанным выше. В коде ниже `ASSERT` вызывает `SIGTRAP`, когда он активен, или оценивается в `void` в других случаях.
 
 ```c
-// A debug assert which should be sprinkled liberally.
-// This assert fires and then continues rather
-// than calling abort(). Useful when examining negative
-// test cases from the command-line.
+// Отладочное утверждение, которое следует использовать щедро.
+// Это утверждение срабатывает и продолжает выполнение, 
+// а не вызывает abort(). Полезно при проверке негативных 
+// тестовых случаев с командной строки.
 ##if (defined(ESAPI_BUILD_DEBUG) && defined(ESAPI_OS_STARNIX))
 ##  define ESAPI_ASSERT1(exp) {                                    \
     if(!(exp)) {                                                  \
@@ -290,7 +290,7 @@ ESAPI C++ supplies its own assert with the behavior described above. In the code
 ##endif
 ```
 
-At program startup, a `SIGTRAP` handler will be installed if one is not provided by another component:
+При запуске программы обработчик `SIGTRAP` будет установлен, если его не предоставил другой компонент:
 
 ```c
     struct DebugTrapHandler
@@ -304,75 +304,76 @@ At program startup, a `SIGTRAP` handler will be installed if one is not provided
             int ret = 0;
 
             ret = sigaction (SIGTRAP, NULL, &old_handler);
-            if (ret != 0) break; // Failed
+            if (ret != 0) break; // Ошибка
 
-            // Don't step on another's handler
+            // Не перезаписываем обработчик другого
             if (old_handler.sa_handler != NULL) break;
 
             new_handler.sa_handler = &DebugTrapHandler::NullHandler;
             new_handler.sa_flags = 0;
 
             ret = sigemptyset (&new_handler.sa_mask);
-            if (ret != 0) break; // Failed
+            if (ret != 0) break; // Ошибка
 
             ret = sigaction (SIGTRAP, &new_handler, NULL);
-            if (ret != 0) break; // Failed
+            if (ret != 0) break; // Ошибка
 
           } while(0);
       }
 
-      static void NullHandler(int /*unused*/) { }
+      static void NullHandler(int /*не используется*/) { }
 
     };
 
-    // We specify a relatively low priority, to make sure we run before other CTORs
+    // Мы указываем относительно низкий приоритет, чтобы убедиться, что
+    // обработчик запустится до других конструкторов
     // http://gcc.gnu.org/onlinedocs/gcc/C_002b_002b-Attributes.html#C_002b_002b-Attributes
     static const DebugTrapHandler g_dummyHandler __attribute__ ((init_priority (110)));
 ```
 
-On a Windows platform, you would call `_set_invalid_parameter_handler` (and possibly `set_unexpected` or `set_terminate`) to install a new handler.
+На платформе Windows следует вызвать `_set_invalid_parameter_handler` (и, возможно, `set_unexpected` или `set_terminate`) для установки нового обработчика.
 
-Live hosts running production code should always define `NDEBUG` (i.e., release configuration), which means they do not assert or auto-abort. Auto-abortion is not acceptable behavior, and anyone who asks for the behavior is completely abusing the functionality of "program diagnostics". If a program wants a core dump, then it should create the dump rather than crashing.
+Рабочие узлы, на которых выполняется продуктивный код, всегда должны определять `NDEBUG` (то есть конфигурацию release), что означает, что они не выполняют утверждения и не завершают выполнение автоматически. Автоматическое завершение работы недопустимо, и любой, кто просит об этом, злоупотребляет функциональностью "диагностики программы". Если программе нужен дамп памяти, она должна создать его самостоятельно, а не завершаться аварийно.
 
-For more reading on asserting effectively, please see one of John Robbin's books, such as _[Debugging Applications](https://www.amazon.com/dp/0735608865)_. John is a legendary bug slayer in Windows circles, and he will show you how to do nearly everything, from debugging a simple program to bug slaying in multithreaded programs.
+Для более подробного чтения о том, как эффективно использовать утверждения, пожалуйста, обратитесь к одной из книг Джона Роббинса, например, _[Debugging Applications](https://www.amazon.com/dp/0735608865)_. Джон — легендарный охотник за ошибками в мире Windows, и он покажет вам, как делать почти все: от отладки простой программы до охоты за ошибками в многопоточных программах.
 
-### Additional Macros
+### Дополнительные макросы
 
-Additional macros include any macros needed to integrate properly and securely. It includes integrating the program with the platform (for example MFC or Cocoa/CocoaTouch) and libraries (for example, Crypto++ or OpenSSL). It can be a challenge because you have to have proficiency with your platform and all included libraries and frameworks. The list below illustrates the level of detail you will need when integrating.
+Дополнительные макросы включают любые макросы, необходимые для правильной и безопасной интеграции. Это включает интеграцию программы с платформой (например, MFC или Cocoa/CocoaTouch) и библиотеками (например, Crypto++ или OpenSSL). Это может быть проблемой, так как вы должны обладать навыками работы с вашей платформой и всеми включенными библиотеками и фреймворками. Приведенный ниже список иллюстрирует уровень детализации, который вам понадобится при интеграции.
 
-Though Boost is missing from the list, it appears to lack recommendations, additional debug diagnostics, and a hardening guide. See _[BOOST Hardening Guide (Preprocessor Macros)](https://stackoverflow.com/questions/14927033/boost-hardening-guide-preprocessor-macros)_ for details. In addition, Tim Day points to _[\[boost.build\] should we not define \_SECURE_SCL=0 by default for all msvc toolsets](https://lists.boost.org/Archives/boost/2008/12/145749.php)_ for a recent discussion related to hardening (or lack thereof).
+Хотя Boost отсутствует в списке, похоже, что ему не хватает рекомендаций, дополнительных средств диагностики и руководства по усилению. Подробнее см. в _[BOOST Hardening Guide (Preprocessor Macros)](https://stackoverflow.com/questions/14927033/boost-hardening-guide-preprocessor-macros)_. Кроме того, Тим Дэй указывает на _[\[boost.build\] should we not define \_SECURE_SCL=0 by default for all msvc toolsets](https://lists.boost.org/Archives/boost/2008/12/145749.php)_ для обсуждения, связанного с усилением (или его отсутствием).
 
-In addition to what you should define, defining some macros and undefining others should trigger a security related defect. For example, `-U_FORTIFY_SOURCES` on Linux and `_CRT_SECURE_NO_WARNINGS=1`, `_SCL_SECURE_NO_WARNINGS`, `_ATL_SECURE_NO_WARNINGS` or `STRSAFE_NO_DEPRECATE` on Windows.
+В дополнение к тому, что следует определить, определение некоторых макросов и удаление других должны вызывать дефект, связанный с безопасностью. Например, `-U_FORTIFY_SOURCES` на Linux и `_CRT_SECURE_NO_WARNINGS=1`, `_SCL_SECURE_NO_WARNINGS`, `_ATL_SECURE_NO_WARNINGS` или `STRSAFE_NO_DEPRECATE` на Windows.
 
 ![AdditionalPlatformLibraryMacrosTable](../assets/C-Based_Toolchain_Hardening_AdditionalPlatformLibraryMacrosTable.png)
 
-a) Be careful with `_GLIBCXX_DEBUG` when using pre-compiled libraries such as Boost from a distribution. There are ABI incompatibilities, and the result will likely be a crash. You will have to compile Boost with `_GLIBCXX_DEBUG` or omit `_GLIBCXX_DEBUG`.
+a) Будьте осторожны с `_GLIBCXX_DEBUG` при использовании предварительно скомпилированных библиотек, таких как Boost из дистрибутива. Существуют несовместимости ABI, и результатом, скорее всего, будет сбой. Вам придется компилировать Boost с `_GLIBCXX_DEBUG` или пропустить `_GLIBCXX_DEBUG`.
 
-b) See [Chapter 5, Diagnostics](https://gcc.gnu.org/onlinedocs/libstdc++/manual/concept_checking.html) of the libstdc++ manual for details.
+b) См. [Chapter 5, Diagnostics](https://gcc.gnu.org/onlinedocs/libstdc++/manual/concept_checking.html) руководства по libstdc++ для получения подробной информации.
 
-c) SQLite secure deletion zeroizes memory on destruction. Define as required, and always define in US Federal since zeroization is required for FIPS 140-2, Level 1.
+c) Безопасное удаление в SQLite обнуляет память при уничтожении. Определите по необходимости и всегда определяйте в соответствии с требованиями федеральных стандартов США, так как обнуление необходимо для FIPS 140-2, Уровень 1.
 
-d) _N_ is 0644 by default, which means everyone has some access.
+d) *N** по умолчанию равно 0644, что означает, что у всех есть некоторый доступ.
 
-e) Force temporary tables into memory (no unencrypted data to disk).
+e) Принудительное помещение временных таблиц в память (никаких незашифрованных данных на диск).
 
-## Compiler and Linker
+## Компилятор и компоновщик
 
-Compiler writers provide a rich set of warnings from the analysis of code during compilation. Both GCC and Visual Studio have static analysis capabilities to help find mistakes early in the development process. The built-in static analysis capabilities of GCC and Visual Studio are usually sufficient to ensure proper API usage and catch a number of mistakes such as using an uninitialized variable or comparing a negative signed int and a positive unsigned int.
+Разработчики компиляторов предоставляют богатый набор предупреждений на основе анализа кода во время компиляции. Как GCC, так и Visual Studio имеют возможности статического анализа, которые помогают находить ошибки на ранних этапах разработки. Встроенные возможности статического анализа GCC и Visual Studio обычно достаточны для обеспечения правильного использования API и нахождения ряда ошибок, таких как использование неинициализированной переменной или сравнение отрицательного знакового int и положительного беззнакового int.
 
-As a concrete example, (and for those not familiar with C/C++ promotion rules), a warning will be issued if a signed integer is promoted to an unsigned integer and then compared because a side effect is `-1 > 1` after promotion! GCC and Visual Studio will not currently catch, for example, SQL injections and other tainted data usage. For that, you will need a tool designed to perform data flow analysis or taint analysis.
+В качестве конкретного примера (и для тех, кто не знаком с правилами продвижения C/C++), будет выдано предупреждение, если знаковый целочисленный тип будет продвинут до беззнакового и затем сравнен, поскольку побочный эффект будет `-1 > 1`  после продвижения! В настоящее время GCC и Visual Studio не могут обнаруживать, например, SQL-инъекции и другое использование загрязненных данных. Для этого вам понадобится инструмент, предназначенный для анализа потока данных или анализа загрязнений.
 
-Some in the development community resist static analysis or refute its results. For example, when static analysis warned the Linux kernel's `sys_prctl` was comparing an unsigned value against less than zero, Jesper Juhl offered a patch to clean up the code. Linus Torvalds howled "No, you don't do this… GCC is crap" (referring to compiling with warnings). For the full discussion, see _[\[PATCH\] Don't compare unsigned variable for &lt;0 in sys_prctl()](https://groups.google.com/g/fa.linux.kernel/c/jjk_K4HOemQ/)_ from the Linux Kernel mailing list.
+Некоторые в сообществе разработчиков сопротивляются статическому анализу или опровергают его результаты. Например, когда статический анализ предупредил, что в `sys_prctl` ядра Linux сравнивается беззнаковое значение с числом меньше нуля, Йеспер Юль предложил патч для очистки кода. Линус Торвальдс воскликнул: "Нет, вы не должны этого делать… GCC — это ерунда" (имеется в виду компиляция с предупреждениями). Полное обсуждение смотрите в _[\[PATCH\] Don't compare unsigned variable for &lt;0 in sys_prctl()](https://groups.google.com/g/fa.linux.kernel/c/jjk_K4HOemQ/)_ из рассылки ядра Linux.
 
-The following sections will detail steps for three platforms. First is a typical GNU Linux based distribution offering GCC and Binutils, second is Clang and Xcode, and third is modern Windows platforms.
+Следующие разделы подробно опишут шаги для трех платформ. Во-первых, это типичный дистрибутив на основе GNU Linux, предлагающий GCC и Binutils; во-вторых, Clang и Xcode; и в-третьих, современные платформы Windows.
 
-### Distribution Hardening
+### Укрепление дистрибутива
 
-Before discussing GCC and Binutils, it would be a good time to point out some of the defenses discussed below are already present in a distribution. Unfortunately, it's design by committee, so what is present is usually only a mild variation of what is available (this way, everyone is mildly offended). For those who are purely worried about performance, you might be surprised to learn you have already taken the small performance hint without even knowing.
+Перед обсуждением GCC и Binutils стоит отметить, что некоторые из защит, описанных ниже, уже присутствуют в дистрибутивах. К сожалению, они разрабатываются комитетом, поэтому то, что присутствует, обычно представляет собой лишь мягкий вариант доступного (так, чтобы каждый был немного недоволен). Те, кто беспокоится исключительно о производительности, могут быть удивлены, узнав, что уже использовали небольшую оптимизацию производительности, не осознавая этого.
 
-Linux and BSD distributions often apply some hardening without intervention via _[GCC Spec Files](https://gcc.gnu.org/onlinedocs/gcc/Spec-Files.html)_. If you are using Debian, Ubuntu, Linux Mint and family, see _[Debian Hardening](https://wiki.debian.org/Hardening)_. For Red Hat and Fedora systems, see _[New hardened build support (coming) in F16](https://lists.fedoraproject.org/pipermail/devel-announce/2011-August/000821.html)_. Gentoo users should visit _[Hardened Gentoo](https://wiki.gentoo.org/wiki/Project:Hardened)_.
+Linux и BSD дистрибутивы часто применяют некоторую защиту без вмешательства через _[спецификации GCC](https://gcc.gnu.org/onlinedocs/gcc/Spec-Files.html)_. Если вы используете Debian, Ubuntu, Linux Mint и семейство, см. _[Debian Hardening](https://wiki.debian.org/Hardening)_. Для систем Red Hat и Fedora см. _[Поддержка нового усиленного сборочного процесса (в разработке) в F16](https://lists.fedoraproject.org/pipermail/devel-announce/2011-August/000821.html)_. Пользователи Gentoo могут посетить _[Hardened Gentoo](https://wiki.gentoo.org/wiki/Project:Hardened)_.
 
-You can see the settings being used by a distribution via `gcc` `-dumpspecs`. From Linux Mint 12 below, `-fstack-protector` (but not -fstack-protector-all) is used by default.
+Вы можете увидеть настройки, используемые в дистрибутиве, с помощью `gcc` `-dumpspecs`. В Linux Mint 12, например, `-fstack-protector` (но не `-fstack-protector-all`) используется по умолчанию.
 
 ```bash
 $ gcc -dumpspecs
@@ -384,49 +385,49 @@ $ gcc -dumpspecs
 …
 ```
 
-The "SSP" above stands for Stack Smashing Protector. SSP is a reimplementation of Hiroaki Etoh's work on IBM Pro Police Stack Detector. See Hiroaki Etoh's patch _[gcc stack-smashing protector](https://gcc.gnu.org/ml/gcc-patches/2001-06/msg01753.html)_ and IBM's _[GCC extension for protecting applications from stack-smashing attacks](https://pdfs.semanticscholar.org/9d92/fa9eaa6ca12888d303deffe8bc392b85c09f.pdf)_ for details.
+"SSP" выше означает Stack Smashing Protector. SSP — это повторная реализация работы Хироаки Это на IBM Pro Police Stack Detector. См. патч Хироаки _[gcc stack-smashing protector](https://gcc.gnu.org/ml/gcc-patches/2001-06/msg01753.html)_ и статью IBM _[GCC extension for protecting applications from stack-smashing attacks](https://pdfs.semanticscholar.org/9d92/fa9eaa6ca12888d303deffe8bc392b85c09f.pdf)_ для получения подробностей.
 
 ### GCC/Binutils
 
-GCC (the compiler collection) and Binutils (the assemblers, linkers, and other tools) are separate projects that work together to produce a final executable. Both the compiler and linker offer options to help you write safer and more secure code. The linker will produce code which takes advantage of platform security features offered by the kernel and PaX, such as no-exec stacks and heaps (NX) and Position Independent Executable (PIE).
+GCC (коллекция компиляторов) и Binutils (ассемблеры, компоновщики и другие инструменты) — это отдельные проекты, которые работают вместе для создания исполняемого файла. Как компилятор, так и компоновщик предлагают опции, которые помогут вам написать более безопасный код. Компоновщик создаст код, который использует преимущества функций безопасности платформы, предлагаемых ядром и PaX, таких как non-executable стеки и кучи (NX) и Position Independent Executable (PIE).
 
-The table below offers a set of compiler options to build your program. Static analysis warnings help catch mistakes early, while the linker options harden the executable at runtime. In the table below, "GCC" should be loosely taken as "non-ancient distributions." While the GCC team considers 4.2 ancient, you will still encounter it on Apple and BSD platforms due to changes in GPL licensing around 2007. Refer to _[GCC Option Summary](https://gcc.gnu.org/onlinedocs/gcc/Option-Summary.html)_, _[Options to Request or Suppress Warnings](https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html)_ and _[Binutils (LD) Command Line Options](https://sourceware.org/binutils/docs-2.21/ld/Options.html)_ for usage details.
+Таблица ниже предлагает набор опций компилятора для сборки вашей программы. Статические анализаторы предупреждений помогают обнаружить ошибки на ранней стадии, в то время как опции компоновщика усиливают исполняемый файл во время выполнения. В таблице ниже "GCC" следует воспринимать в широком смысле как "не древние дистрибутивы". В то время как команда GCC считает 4.2 древней, вы все еще можете столкнуться с ней на платформах Apple и BSD из-за изменений в лицензировании GPL около 2007 года. Смотрите _[GCC Option Summary](https://gcc.gnu.org/onlinedocs/gcc/Option-Summary.html)_, _[Options to Request or Suppress Warnings](https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html)_ и _[Binutils (LD) Command Line Options](https://sourceware.org/binutils/docs-2.21/ld/Options.html)_ для получения деталей использования.
 
-Noteworthy of special mention are `-fno-strict-overflow` and `-fwrapv`ₐ. The flags ensure the compiler does not remove statements that result in overflow or wrap. If your program only runs correctly using the flags, it is likely violating C/C++ rules on overflow and illegal. If the program is illegal due to overflow or wrap checking, you should consider using [safe-iop](https://code.google.com/archive/p/safe-iop/) for C or David LeBlanc's [SafeInt](https://archive.codeplex.com/?p=safeint) in C++.
+Стоит отметить специальные флаги `-fno-strict-overflow` и `-fwrapv`. Эти флаги обеспечивают, что компилятор не удаляет инструкции, приводящие к переполнению или обёртыванию. Если ваша программа работает корректно только с использованием этих флагов, вероятно, она нарушает правила C/C++ относительно переполнения и является недопустимой. Если программа является недопустимой из-за проверки переполнения или обёртывания, вам следует рассмотреть использование [safe-iop](https://code.google.com/archive/p/safe-iop/) для C или [SafeInt](https://archive.codeplex.com/?p=safeint) Дэвида Лебланка для C++.
 
-For a project compiled and linked with hardened settings, some of those settings can be verified with the [Checksec](https://www.trapkit.de/tools/checksec.html) tool written by Tobias Klein. The `checksec.sh` script is designed to test standard Linux OS and PaX security features being used by an application. See the [Trapkit](https://www.trapkit.de/tools/checksec.html) web page for details.
+Для проекта, собранного и связанного с усиленными настройками, некоторые из этих настроек могут быть проверены с помощью инструмента [Checksec](https://www.trapkit.de/tools/checksec.html) , написанного Тобиасом Кляйном. Скрипт `checksec.sh` предназначен для тестирования стандартных функций безопасности Linux OS и PaX, используемых приложением. Подробности смотрите на веб-странице [Trapkit](https://www.trapkit.de/tools/checksec.html).
 
-GCC C Warning Options table:
+Таблица опций предупреждений GCC для C:
 
 ![GCCCWarningOptionsTable](../assets/C-Based_Toolchain_Hardening_GCCCWarningOptionsTable.png)
 
 - [AddressSanitizer](https://github.com/google/sanitizers)
 - [ThreadSanitizer](https://github.com/google/sanitizers/wiki/ThreadSanitizerCppManual)
 
-a) Unlike Clang and -Weverything, GCC does not provide a switch to truly enable all warnings.
-b) -fstack-protector guards functions with high risk objects such as C strings, while -fstack-protector-all guards all objects.
+a) В отличие от Clang и -Weverything, GCC не предоставляет переключателя для включения всех предупреждений.
+b) `-fstack-protector` защищает функции с объектами высокого риска, такими как строки C, в то время как `-fstack-protector-all` защищает все объекты.
 
-Additional C++ warnings which can be used include the following in Table 3. See _[GCC's Options Controlling C++ Dialect](https://gcc.gnu.org/onlinedocs/gcc/C_002b_002b-Dialect-Options.html)_ for additional options and details.
+Дополнительные предупреждения для C++, которые можно использовать, приведены в Таблице 3. См. _[Опции GCC для управления диалектом C++](https://gcc.gnu.org/onlinedocs/gcc/C_002b_002b-Dialect-Options.html)_ для дополнительных опций и деталей.
 
-GCC C++ Warning Options table:
+Таблица опций предупреждений GCC для C++
 
 ![GCCCPPWarningOptionsTable](../assets/C-Based_Toolchain_Hardening_GCCCPPWarningOptionsTable.png)
 
-[Effective C++, Second Edition book](https://www.aristeia.com/books.html).
+[Книга "Эффективный C++", второе издание](https://www.aristeia.com/books.html).
 
-And additional Objective C warnings which are often useful include the following. See _[Options Controlling Objective-C and Objective-C++ Dialects](https://gcc.gnu.org/onlinedocs/gcc-4.6.0/gcc/Objective_002dC-and-Objective_002dC_002b_002b-Dialect-Options.html)_ for additional options and details.
+А дополнительные предупреждения для Objective C, которые часто полезны, включены ниже. См. _[Опции управления диалектами Objective-C и Objective-C++](https://gcc.gnu.org/onlinedocs/gcc-4.6.0/gcc/Objective_002dC-and-Objective_002dC_002b_002b-Dialect-Options.html)_ для получения дополнительных опций и деталей.
 
-GCC Objective C Warning Options table:
+Таблица опций предупреждений GCC для Objective C
 
 ![GCCObjectiveCWarningOptionsTable](../assets/C-Based_Toolchain_Hardening_GCCObjectiveCWarningOptionsTable.png)
 
-The use of aggressive warnings will produce spurious noise. The noise is a tradeoff - you can learn of potential problems at the cost of wading through some chaff. The following will help reduce spurious noise from the warning system:
+Использование агрессивных предупреждений вызовет избыточный шум. Этот шум — компромисс: вы можете узнать о потенциальных проблемах ценой пропуска некоторого «мусора». Следующее поможет уменьшить избыточный шум от системы предупреждений:
 
 - `-Wno-unused-parameter` (GCC)
 - `-Wno-type-limits` (GCC 4.3)
 - `-Wno-tautological-compare` (Clang)
 
-Finally, a simple version based makefile example is shown below. This is different than a feature based makefile produced by Autotools (which will test for a particular feature and then define a symbol or configure a template file). Not all platforms use all options and flags. To address the issue you can pursue one of two strategies. First, you can ship with a weakened posture by servicing the lowest common denominator or, second, you can ship with everything in force. In the latter case, those who don't have a feature available will edit the makefile to accommodate their installation.
+Ниже приведен простой пример makefile, основанный на версиях. Это отличается от makefile на основе функций, созданного с помощью Autotools (который будет тестировать конкретную функцию, а затем определять символ или настраивать шаблонный файл). Не все платформы используют все опции и флаги. Чтобы решить эту проблему, вы можете выбрать одну из двух стратегий. Во-первых, можно поставлять продукт с ослабленной защитой, обслуживая наименьший общий знаменатель, или, во-вторых, можно поставлять его с полной защитой. Во втором случае те, у кого нет доступной функции, отредактируют makefile, чтобы он соответствовал их установке.
 
 ```bash
 CXX=g++
@@ -476,7 +477,7 @@ ifeq ($(GNU_LD216_OR_LATER),1)
     MY_LD_FLAGS += -pie
 endif
 
-## Use 'override' to honor the user's command line
+## Используйте 'override', чтобы учитывать командную строку пользователя
 override CFLAGS := $(MY_CC_FLAGS) $(CFLAGS)
 override CXXFLAGS := $(MY_CC_FLAGS) $(CXXFLAGS)
 override LDFLAGS := $(MY_LD_FLAGS) $(LDFLAGS)
@@ -485,37 +486,37 @@ override LDFLAGS := $(MY_LD_FLAGS) $(LDFLAGS)
 
 ### Clang/Xcode
 
-[Clang](https://clang.llvm.org) and [LLVM](https://llvm.org) have been aggressively developed since Apple lost its GPL compiler back in 2007 (due to Tivoization which resulted in GPLv3). Since that time, a number of developers and Google have joined the effort. While Clang will consume most (all?) GCC/Binutil flags and switches, the project supports a number of its own options, including a static analyzer. In addition, Clang is relatively easy to build with additional diagnostics, such as Dr. John Regher and Peng Li's [Integer Overflow Checker (IOC)](https://embed.cs.utah.edu/ioc/).
+[Clang](https://clang.llvm.org) и [LLVM](https://llvm.org) активно разрабатываются с тех пор, как Apple потеряла свой компилятор с лицензией GPL в 2007 году (из-за Tivoization, что привело к появлению GPLv3). С тех пор к усилиям присоединились несколько разработчиков и Google. Хотя Clang поддерживает большинство (все?) флагов и переключателей GCC/Binutils, проект поддерживает ряд собственных опций, включая статический анализатор. Кроме того, Clang относительно легко собрать с дополнительными средствами диагностики, такими как [Integer Overflow Checker (IOC)](https://embed.cs.utah.edu/ioc/) доктора Джона Регера и Пэн Ли.
 
-IOC is incredibly useful, and has found bugs in a number of projects, from the Linux Kernel (`include/linux/bitops.h`, still unfixed), SQLite, PHP, Firefox (many still unfixed), LLVM, and Python. Future versions of Clang (Clang 3.3 and above) will allow you to enable the checks out of the box with `-fsanitize=integer` and `-fsanitize=shift`.
+IOC чрезвычайно полезен и обнаружил ошибки в ряде проектов, начиная с ядра Linux (`include/linux/bitops.h`, все еще не исправлено), SQLite, PHP, Firefox (многие все еще не исправлены), LLVM и Python. В будущих версиях Clang (Clang 3.3 и выше) вы сможете включить проверки из коробки с помощью `-fsanitize=integer` и `-fsanitize=shift`.
 
-Clang options can be found at [Clang Compiler User's Manual](https://clang.llvm.org/docs/UsersManual.html). Clang does include an option to turn on all warnings - `-Weverything`. Use it with care but use it regularly since you will get back a lot of noise and issues you missed. For example, add `-Weverything` for production builds and make non-spurious issues a quality gate. Under Xcode, simply add `-Weverything` to `CFLAGS` and `CXXFLAGS`.
+Опции Clang можно найти в [руководстве пользователя компилятора Clang](https://clang.llvm.org/docs/UsersManual.html). Clang включает опцию для включения всех предупреждений — `-Weverything`. Используйте ее с осторожностью, но регулярно, так как она выдаст много шума и проблем, которые вы могли пропустить. Например, добавьте `-Weverything` для производственных сборок и сделайте отсутствующие ложные проблемы критерием качества. В Xcode просто добавьте `-Weverything` к `CFLAGS` и `CXXFLAGS`.
 
-In addition to compiler warnings, both static analysis and additional security checks can be performed. Readings on Clang's static analysis capabilities can be found at [Clang Static Analyzer](https://clang-analyzer.llvm.org). Figure 1 below shows some of the security checks utilized by Xcode.
+В дополнение к предупреждениям компилятора могут выполняться как статический анализ, так и дополнительные проверки безопасности. Информацию о возможностях статического анализа Clang можно найти в [Clang Static Analyzer](https://clang-analyzer.llvm.org). Ниже на Рисунке 1 показаны некоторые из проверок безопасности, используемых Xcode.
 
 ![XCode1](../assets/C-Based_Toolchain_Hardening_XCode1.png)
 
 ### Visual Studio
 
-Visual Studio offers a convenient Integrated Development Environment (IDE) for managing solutions and their settings. The section called "Visual Studio Options" discusses options which should be used with Visual Studio, and the section called "Project Properties" demonstrates incorporating those options into a solution's project.
+Visual Studio предлагает удобную интегрированную среду разработки (IDE) для управления решениями и их настройками. Раздел "Параметры Visual Studio" обсуждает параметры, которые следует использовать с Visual Studio, а раздел "Свойства проекта" демонстрирует включение этих параметров в проект решения.
 
-The table below lists the compiler and linker switches which should be used under Visual Studio. Refer to Howard and LeBlanc's Writing Secure Code (Microsoft Press) for a detailed discussion or _[Protecting Your Code with Visual C++ Defenses](https://docs.microsoft.com/en-us/archive/msdn-magazine/2008/march/security-briefs-protecting-your-code-with-visual-c-defenses)_ in Security Briefs by Michael Howard. In the table below, "Visual Studio" refers to nearly all versions of the development environment, including Visual Studio 5.0 and 6.0.
+Таблица ниже перечисляет переключатели компилятора и компоновщика, которые следует использовать в Visual Studio. Подробное обсуждение можно найти в книге Говарда и Лебланка "Writing Secure Code" (Microsoft Press) или в разделе _[Protecting Your Code with Visual C++ Defenses](https://docs.microsoft.com/en-us/archive/msdn-magazine/2008/march/security-briefs-protecting-your-code-with-visual-c-defenses)_ в Security Briefs Майкла Ховарда. В таблице ниже "Visual Studio" относится к почти всем версиям среды разработки, включая Visual Studio 5.0 и 6.0.
 
-For a project compiled and linked with hardened settings, those settings can be verified with BinScope. BinScope is a verification tool from Microsoft that analyzes binaries to ensure that they have been built-in compliance with Microsoft's Security Development Lifecycle (SDLC) requirements and recommendations. See the _[BinScope Binary Analyzer](https://www.microsoft.com/en-us/download/details.aspx?id=44995)_ download page for details.
+Для проекта, собранного и связанного с усиленными настройками, эти настройки можно проверить с помощью BinScope. BinScope — это инструмент верификации от Microsoft, который анализирует бинарные файлы, чтобы убедиться, что они были собраны в соответствии с требованиями и рекомендациями Microsoft Security Development Lifecycle (SDLC). См. страницу загрузки _[BinScope Binary Analyzer](https://www.microsoft.com/en-us/download/details.aspx?id=44995)_ для получения подробностей.
 
 ![VStudioWarningOptionsTable](../assets/C-Based_Toolchain_Hardening_VStudioWarningOptionsTable.png)
 
-a) See Jon Sturgeon's discussion of the switch at _[Off By Default Compiler Warnings in Visual C++](https://devblogs.microsoft.com/cppblog/off-by-default-compiler-warnings-in-visual-c/)_.
+a) См. обсуждение переключателя Джоном Стёрдженом в _[Off By Default Compiler Warnings in Visual C++](https://devblogs.microsoft.com/cppblog/off-by-default-compiler-warnings-in-visual-c/)_.
 
-a) When using /GS, there are a number of circumstances which affect the inclusion of a security cookie. For example, the guard is not used if there is no buffer in the stack frame, optimizations are disabled, or the function is declared naked or contains inline assembly.
+b) При использовании /GS существует ряд обстоятельств, которые влияют на включение защитного кода. Например, защита не используется, если в стеке нет буфера, отключены оптимизации или функция объявлена как "голая" или содержит встроенную ассемблерную вставку.
 
-b) `#pragma` `strict_gs_check(on)` should be used sparingly, but is recommended in high risk situations, such as when a source file parses input from the internet.
+c) Директиву `#pragma` `strict_gs_check(on)` следует использовать с осторожностью, но она рекомендуется в ситуациях высокого риска, таких как обработка входных данных из Интернета.
 
-### Warning Suppression
+### Подавление предупреждений
 
-From the tables above, a lot of warnings have been enabled to help detect possible programming mistakes. The potential mistakes are detected via a compiler which carries around a lot of contextual information during its code analysis phase. At times, you will receive spurious warnings because the compiler is not _that_ smart. It's understandable and even a good thing (how would you like to be out of a job because a program writes its own programs?). At times you will have to learn how to work with the compiler's warning system to suppress warnings. Notice what was not said: turn off the warnings.
+Из приведенных выше таблиц видно, что было включено множество предупреждений для помощи в обнаружении возможных ошибок программирования. Потенциальные ошибки обнаруживаются компилятором, который во время фазы анализа кода переносит много контекстной информации. Иногда вы получите ложные предупреждения, потому что компилятор не настолько "умен". Это понятно и даже хорошо (как бы вам понравилось остаться без работы, потому что программа пишет свои собственные программы?). Иногда вам придется научиться работать с системой предупреждений компилятора для подавления предупреждений. Обратите внимание, что не было сказано "выключить предупреждения".
 
-Suppressing warnings placates the compiler for spurious noise so you can get to the issues that matter (you are separating the wheat from the chaff). This section will offer some hints and point out some potential minefields. First is an unused parameter (for example, `argc` or `argv`). Suppressing unused parameter warnings is especially helpful for C++ and interface programming, where parameters are often unused. For this warning, simply define an "UNUSED" macro and warp the parameter:
+Подавление предупреждений успокаивает компилятор для избыточного шума, чтобы вы могли перейти к важным проблемам (вы отделяете зерна от плевел). Этот раздел предложит несколько советов и укажет на потенциальные минные поля. Во-первых, это неиспользуемый параметр (например, `argc` или `argv`). Подавление предупреждений о неиспользуемом параметре особенно полезно для программирования на C++ и интерфейсов, где параметры часто не используются. Для этого предупреждения просто определите макрос "UNUSED" и оберните параметр:
 
 ```c
 ##define UNUSED_PARAMETER(x) ((void)x)
@@ -529,7 +530,7 @@ int main(int argc, char* argv[])
 }
 ```
 
-A potential minefield lies near "comparing unsigned and signed" values, and `-Wconversion` will catch it for you. This is because C/C++ promotion rules state the signed value will be promoted to an unsigned value and then compared. That means `-1` `>` `1` after promotion! To fix this, you cannot blindly cast - you must first range test the value:
+Потенциальное минное поле лежит рядом с "сравнением знаковых и беззнаковых" значений, и `-Wconversion` поймает это за вас. Это связано с тем, что правила повышения типов C/C++ устанавливают, что знаковое значение будет повышено до беззнакового, а затем сравнивается. Это означает, что `-1` `>` `1` после повышения! Чтобы исправить это, нельзя слепо преобразовывать — сначала необходимо протестировать диапазон значения:
 
 ```c
 int x = GetX();
@@ -545,9 +546,9 @@ else
     cout << "x is not greater than y" << endl;
 ```
 
-Notice the code above will debug itself - you don't need to set a breakpoint to see if there is a problem with `x`. Just run the program and wait for it to tell you there is a problem. If there is a problem, the program will snap the debugger (and more importantly, not call a useless `abort()` as specified by Posix). It beats the snot out of `printf`s that are removed when no longer needed or that pollute outputs.
+Обратите внимание, что приведенный выше код будет сам себя отлаживать — вам не нужно ставить точку останова, чтобы увидеть, есть ли проблема с `x`. Просто запустите программу и подождите, пока она не сообщит вам о проблеме. Если есть проблема, программа остановит отладчик (и что более важно, не вызовет бесполезную функцию `abort()`, как это указано в Posix). Это гораздо лучше, чем удаленные `printf`, которые больше не нужны или засоряют выходные данные.
 
-Another conversion problem you will encounter is conversion between types, and `-Wconversion` will also catch it for you. The following will always have an opportunity to fail, and should light up like a Christmas tree:
+Еще одна проблема преобразования, с которой вы столкнетесь, — это преобразование между типами, и `-Wconversion` также поймает это за вас. Следующее всегда будет иметь возможность потерпеть неудачу и должно светиться, как рождественская елка:
 
 ```c
 struct sockaddr_in addr;
@@ -556,7 +557,7 @@ struct sockaddr_in addr;
 addr.sin_port = htons(atoi(argv[2]));
 ```
 
-The following would probably serve you much better. Notice `atoi` and friends are not used because they can silently fail. In addition, the code is instrumented so you don't need to waste a lot of time debugging potential problems:
+Следующее, вероятно, послужит вам гораздо лучше. Обратите внимание, что `atoi` и его аналоги не используются, потому что они могут молча завершиться неудачно. Кроме того, код инструментирован, поэтому вам не нужно тратить много времени на отладку потенциальных проблем:
 
 ```c
 const char* cstr = GetPortString();
@@ -573,7 +574,7 @@ ASSERT(!(iss.fail()));
 if(iss.fail())
     throw runtime_error("WTF??? Failed to read port.");
 
-// Should this be a port above the reserved range ([0-1024] on Unix)?
+// Должен ли это быть порт выше зарезервированного диапазона ([0-1024] на Unix)?
 ASSERT(t > 0);
 if(!(t > 0))
     throw runtime_error("WTF??? Port is too small");
@@ -582,14 +583,14 @@ ASSERT(t < static_cast<long long>(numeric_limits<unsigned int>::max()));
 if(!(t < static_cast<long long>(numeric_limits<unsigned int>::max())))
     throw runtime_error("WTF??? Port is too large");
 
-// OK to use port
+// Можно использовать порт
 unsigned short port = static_cast<unsigned short>(t);
 …
 ```
 
-Again, notice the code above will debug itself - you don't need to set a breakpoint to see if there is a problem with `port`. This code will continue checking conditions, years after being instrumented (assuming to write code to read a config file early in the project). There's no need to remove the `ASSERT`s as with `printf` since they are silent guardians.
+Еще раз обратите внимание, что приведенный выше код будет сам себя отлаживать — вам не нужно ставить точку останова, чтобы увидеть, есть ли проблема с `port`. Этот код будет продолжать проверять условия в течение многих лет после его создания (при условии, что код для чтения конфигурационного файла был написан на ранних этапах проекта). Нет необходимости удалять `ASSERT`, в отличие от `printf`, так как они являются молчаливыми защитниками.
 
-Another useful suppression trick is to avoid ignoring return values. Not only is it useful to suppress the warning, it's required for correct code. For example, `snprint` will alert you to truncations through its return value. You should not make them silent truncations by ignoring the warning or casting to `void`:
+Еще один полезный прием подавления предупреждений — избегать игнорирования возвращаемых значений. Это полезно не только для подавления предупреждений, но и для корректности кода. Например, `snprint` предупредит вас о обрезке строки через возвращаемое значение. Не делайте их молча обрезанными, игнорируя предупреждение или приводя его к `void`:
 
 ```c
 char path[PATH_MAX];
@@ -602,11 +603,11 @@ ASSERT(!(ret >= sizeof(path)));
 if(ret == -1 || ret >= sizeof(path))
     throw runtime_error("WTF??? Unable to build full object name");
 
-// OK to use path
+// Путь можно использовать
 …
 ```
 
-The problem is pandemic, and not just boring user-land programs. Projects which offer high integrity code, such as SELinux, suffer silent truncations. The following is from an approved SELinux patch even though a comment was made that it suffered silent truncations in its `security_compute_create_name` function from `compute_create.c`.
+Проблема является повсеместной и не ограничивается только скучными пользовательскими программами. Проекты, предоставляющие высокоинтеграционный код, такие как SELinux, страдают от тихих обрезок строк. Пример ниже взят из утвержденного патча SELinux, несмотря на то, что было замечено, что он страдает от тихих обрезок в своей функции `security_compute_create_name` из `compute_create.c`.
 
 ```c
 12  int security_compute_create_raw(security_context_t scon,
@@ -628,26 +629,26 @@ The problem is pandemic, and not just boring user-land programs. Projects which 
 28    fd = open(path, O_RDWR);
 ```
 
-Unlike other examples, the above code will not debug itself, and you will have to set breakpoints and trace calls to determine the point of first failure. (And the code above gambles that the truncated file does not exist or is not under an adversary's control by blindly performing the `open`).
+В отличие от других примеров, приведенный выше код не будет отлаживать сам себя, и вам придется установить точки останова и отслеживать вызовы, чтобы определить точку первой ошибки. (Кроме того, приведенный выше код полагается, что обрезанный файл не существует или не находится под контролем злоумышленника, выполняя `open` вслепую).
 
-## Runtime
+## Время выполнения
 
-The previous sections concentrated on setting up your project for success. This section will examine additional hints for running with increased diagnostics and defenses. Not all platforms are created equal - GNU Linux is difficult to impossible to [add hardening to a program after compiling and static linking](https://sourceware.org/ml/binutils/2012-03/msg00309.html), while Windows allows post-build hardening through a download. Remember, the goal is to find the point of first failure quickly so you can improve the reliability and security of the code.
+Предыдущие разделы сосредоточены на настройке вашего проекта для успеха. Этот раздел рассмотрит дополнительные советы по выполнению программы с повышенной диагностикой и защитой. Не все платформы равны — в GNU Linux сложно, а порой невозможно [добавить защиту программе после компиляции и статической компоновки](https://sourceware.org/ml/binutils/2012-03/msg00309.html), тогда как в Windows можно добавить защиту после сборки через загрузку. Помните, цель состоит в том, чтобы быстро найти точку первой ошибки, чтобы улучшить надежность и безопасность кода.
 
 ### Xcode
 
-Xcode offers additional [Code Diagnostics](https://developer.apple.com/documentation/code_diagnostics) that can help find memory errors and object use problems. Schemes can be managed through _Products_ menu item, _Scheme_ submenu item, and then _Edit_. From the editor, navigate to the _Diagnostics_ tab. In the figure below, four additional instruments are enabled for the debugging cycle: Scribble guards, Edge guards, Malloc guards, and Zombies.
+Xcode предоставляет дополнительные [диагностики кода](https://developer.apple.com/documentation/code_diagnostics), оторые могут помочь найти ошибки памяти и проблемы использования объектов. Схемы можно управлять через пункт меню _Products_, подменю _Scheme_, а затем _Edit_. В редакторе перейдите на вкладку _Diagnostics_. На рисунке ниже четыре дополнительных инструмента включены для цикла отладки: Scribble guards, Edge guards, Malloc guards и Zombies.
 
 ![XCode2](../assets/C-Based_Toolchain_Hardening_XCode2.png)
 
-There is one caveat with using some of the guards: Apple only provides them for the simulator, and not a device. In the past, the guards were available for both devices and simulators.
+Есть одна оговорка при использовании некоторых защит: Apple предоставляет их только для симулятора, а не для устройства. В прошлом защитные механизмы были доступны как для устройств, так и для симуляторов.
 
 #### Windows
 
-Visual Studio offers a number of debugging aids for use during development. The aids are called [Managed Debugging Assistants (MDAs)](https://docs.microsoft.com/en-us/dotnet/framework/debug-trace-profile/diagnosing-errors-with-managed-debugging-assistants). You can find the MDAs on the _Debug_ menu, then _Exceptions_ submenu. MDAs allow you to tune your debugging experience by, for example, filtering exceptions for which the debugger should snap. For more details, see Stephen Toub's _[Let The CLR Find Bugs For You With Managed Debugging Assistants](https://docs.microsoft.com/en-us/archive/msdn-magazine/2006/may/let-the-clr-find-bugs-for-you-with-managed-debugging-assistants)_.
+Visual Studio предлагает ряд инструментов для отладки, которые можно использовать во время разработки. Эти инструменты называются [Managed Debugging Assistants (MDAs)](https://docs.microsoft.com/en-us/dotnet/framework/debug-trace-profile/diagnosing-errors-with-managed-debugging-assistants). Вы можете найти MDA в меню _Debug_, затем подменю _Exceptions_. MDA позволяют настроить ваш опыт отладки, например, фильтруя исключения, для которых отладчик должен останавливаться. Дополнительные сведения см. в статье Стивена Туба _[Пусть CLR находит ошибки за вас с помощью помощников по управляемой отладке](https://docs.microsoft.com/en-us/archive/msdn-magazine/2006/may/let-the-clr-find-bugs-for-you-with-managed-debugging-assistants)_.
 
 ![Windows1](../assets/C-Based_Toolchain_Hardening_Windows1.png)
 
-Finally, for runtime hardening, Microsoft has a helpful tool called EMET. EMET is the [Enhanced Mitigation Experience Toolkit](https://en.wikipedia.org/wiki/Enhanced_Mitigation_Experience_Toolkit), and allows you to apply runtime hardening to an executable which was built without it. It's very useful for utilities and other programs that were built without an SDLC.
+Наконец, для усиления защиты во время выполнения Microsoft предлагает полезный инструмент под названием EMET. EMET — это [Enhanced Mitigation Experience Toolkit](https://en.wikipedia.org/wiki/Enhanced_Mitigation_Experience_Toolkit), который позволяет применить защиту ко времени выполнения исполняемого файла, который был построен без нее. Это очень полезно для утилит и других программ, созданных без SDLC.
 
 ![Windows2](../assets/C-Based_Toolchain_Hardening_Windows2.png)

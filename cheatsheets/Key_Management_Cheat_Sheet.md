@@ -1,258 +1,259 @@
-# Key Management Cheat Sheet
+# Шпаргалка по управлению ключами
 
-## Introduction
+## Введение
 
-This Key Management Cheat Sheet provides developers with guidance for implementation of cryptographic key management within an application in a secure manner. It is important to document and harmonize rules and practices for:
+Эта шпаргалка по управлению ключами предоставляет разработчикам рекомендации по реализации управления криптографическими ключами в приложении безопасным образом. Важно документировать и согласовывать правила и практики для:
 
-1. Key life cycle management (generation, distribution, destruction)
-2. Key compromise, recovery and zeroization
-3. Key storage
-4. Key agreement
+1. Управления жизненным циклом ключей (создание, распределение, уничтожение)
+2. Компрометации ключей, восстановления и их аннулирования
+3. Хранения ключей
+4. Согласования ключей
 
-## General Guidelines and Considerations
+## Общие рекомендации и соображения
 
-Formulate a plan for the overall organization's cryptographic strategy to guide developers working on different applications and ensure that each application's cryptographic capability meets minimum requirements and best practices.
+Сформулируйте план общей криптографической стратегии организации, чтобы направлять разработчиков, работающих над различными приложениями, и обеспечить соответствие криптографических возможностей каждого приложения минимальным требованиям и лучшим практикам.
 
-Identify the cryptographic and key management requirements for your application and map all components that process or store cryptographic key material.
+Определите криптографические и управленческие требования для вашего приложения и картируйте все компоненты, которые обрабатывают или хранят криптографические ключи.
 
-## Key Selection
+## Выбор ключей
 
-Selection of the cryptographic and key management algorithms to use within a given application should begin with an understanding of the objectives of the application.
+Выбор криптографических и управленческих алгоритмов для использования в данном приложении должен начинаться с понимания целей приложения.
 
-For example, if the application is required to store data securely, then the developer should select an algorithm suite that supports the objective of data at rest protection security. Applications that are required to transmit and receive data would select an algorithm suite that supports the objective of data in transit protection.
+Например, если от приложения требуется безопасное хранение данных, разработчику следует выбрать набор алгоритмов, поддерживающих цель защиты данных в покое. Приложения, требующие передачи и получения данных, должны выбрать набор алгоритмов, поддерживающих цель защиты данных в транзите.
 
-We have provided recommendations on the selection of crypto suites within an application based on application and security objectives. Application developers oftentimes begin the development of crypto and key management capabilities by examining what is available in a library.
+Мы предоставили рекомендации по выбору криптографических наборов для приложения на основе его целей и требований безопасности. Разработчики приложений часто начинают разработку криптографических и управленческих возможностей, исследуя доступные библиотеки.
 
-However, an analysis of the real needs of the application should be conducted to determine the optimal key management approach. Begin by understanding the security objectives of the application which will then drive the selection of cryptographic protocols that are best suited. For example, the application may require:
+Однако следует провести анализ реальных потребностей приложения, чтобы определить оптимальный подход к управлению ключами. Начните с понимания целей безопасности приложения, которые затем определят выбор наиболее подходящих криптографических протоколов. Например, приложение может требовать:
 
-1. Confidentiality of data at rest and confidentiality of data in transit.
-2. Authenticity of the end device.
-3. Authenticity of data origin.
-4. Integrity of data in transit.
-5. Keys to create the data encryption keys.
+1. Конфиденциальности данных в покое и конфиденциальности данных в транзите.
+2. Аутентичности конечного устройства.
+3. Аутентичности происхождения данных.
+4. Целостности данных в транзите.
+5. Ключей для создания ключей шифрования данных.
 
-Once the understanding of the security needs of the application is achieved, developers can determine what protocols and algorithms are required. Once the protocols and algorithms are understood, you can begin to define the different types of keys that will support the application's objectives.
+Как только понимание потребностей в безопасности приложения будет достигнуто, разработчики смогут определить необходимые протоколы и алгоритмы. После понимания протоколов и алгоритмов вы можете начать определение различных типов ключей, которые будут поддерживать цели приложения.
 
-There are a diverse set of key types and certificates to consider, for example:
+Существует множество типов ключей и сертификатов, которые следует учитывать, например:
 
-1. **Encryption:** [Symmetric](https://en.wikipedia.org/wiki/Symmetric-key_algorithm) encryption keys, [Asymmetric](https://en.wikipedia.org/wiki/Public-key_cryptography) encryption keys (public and private).
-2. **Authentication of End Devices:** Pre-shared symmetric keys, Trusted certificates, Trust Anchors.
-3. **Data Origin Authentication:** [HMAC](https://en.wikipedia.org/wiki/HMAC).
-4. **Integrity Protection:** [Message Authentication Codes](https://en.wikipedia.org/wiki/Message_authentication_code) (MACs).
-5. **Key Encryption Keys**.
+1. **Шифрование:** симметричные ключи шифрования, асимметричные ключи шифрования (публичные и частные).
+2. **Аутентификация конечных устройств:** предварительно согласованные симметричные ключи, доверенные сертификаты, точки доверия.
+3. **Аутентификация происхождения данных:** HMAC.
+4. **Защита целостности:** коды аутентификации сообщений (MAC).
+5. **Ключи шифрования ключей**.
 
-### Algorithms and Protocols
+### Алгоритмы и Протоколы
 
-According to `NIST SP 800-57 Part 1`, many algorithms and schemes that provide a security service use a [hash function](https://en.wikipedia.org/wiki/Hash_function) as a component of the algorithm.
+Согласно `NIST SP 800-57 Часть 1`, многие алгоритмы и схемы, предоставляющие услуги безопасности, используют [хеш-функцию](https://en.wikipedia.org/wiki/Hash_function) как компонент алгоритма.
 
-Hash functions can be found in digital signature algorithms (`FIPS186`), Keyed-Hash Message Authentication Codes (HMAC) (`FIPS198`), key-derivation functions/methods (`NIST Special Publications (SP) 800-56A, 800-56B, 800-56C and 800-108`), and random number generators (`NIST SP 800-90A`). Approved hash functions are defined in `FIPS180`.
+Хеш-функции можно найти в алгоритмах цифровых подписей (`FIPS186`), в кодах аутентификации сообщений с использованием ключа (HMAC) (`FIPS198`), в функциях/методах генерации ключей (`NIST Special Publications (SP) 800-56A, 800-56B, 800-56C и 800-108`) и в генераторах случайных чисел (`NIST SP 800-90A`). Одобренные хеш-функции определены в `FIPS180`.
 
-`NIST SP 800-57 Part 1` recognizes three basic classes of approved cryptographic algorithms: hash functions, symmetric- key algorithms and asymmetric-key algorithms. The classes are defined by the number of cryptographic keys that are used in conjunction with the algorithm.
+`NIST SP 800-57 Часть 1` выделяет три основные категории одобренных криптографических алгоритмов: хеш-функции, симметричные алгоритмы и асимметричные алгоритмы. Классы определяются количеством криптографических ключей, используемых в сочетании с алгоритмом.
 
-The NSA released a report, [Commercial National Security Algorithm Suite 2.0](https://media.defense.gov/2022/Sep/07/2003071834/-1/-1/0/CSA_CNSA_2.0_ALGORITHMS_.PDF) which lists the cryptographic algorithms that are expected to be remain strong even with advances in quantum computing.
+NSA опубликовала отчет, [Commercial National Security Algorithm Suite 2.0](https://media.defense.gov/2022/Sep/07/2003071834/-1/-1/0/CSA_CNSA_2.0_ALGORITHMS_.PDF), в котором перечислены криптографические алгоритмы, которые должны оставаться надежными даже с развитием квантовых вычислений.
 
-#### Cryptographic hash functions
+#### Криптографические хеш-функции
 
-Cryptographic hash functions do not require keys. Hash functions generate a relatively small digest (hash value) from a (possibly) large input in a way that is fundamentally difficult to reverse (i.e., it is hard to find an input that will produce a given output). Hash functions are used as building blocks for key management, for example,
+Криптографические хеш-функции не требуют ключей. Хеш-функции создают относительно короткий дайджест (хеш-значение) из (возможно) большого входного значения таким образом, что в принципе трудно обратить процесс (т.е. сложно найти входное значение, которое даст заданный выход). Хеш-функции используются как строительные блоки для управления ключами, например,
 
-1. To provide data authentication and integrity services (Section 4.2.3) – the hash function is used with a key to generate a message authentication code.
-2. To compress messages for digital signature generation and verification (Section 4.2.4).
-3. To derive keys in key-establishment algorithms (Section 4.2.5).
-4. To generate deterministic random numbers (Section 4.2.7).
+1. Для предоставления услуг аутентификации и целостности данных (Раздел 4.2.3) – хеш-функция используется с ключом для генерации кода аутентификации сообщения.
+2. Для сжатия сообщений для генерации и проверки цифровой подписи (Раздел 4.2.4).
+3. Для генерации ключей в алгоритмах установления ключей (Раздел 4.2.5).
+4. Для генерации детерминированных случайных чисел (Раздел 4.2.7).
 
-#### Symmetric-key algorithms
+#### Симметричные алгоритмы
 
-Symmetric-key algorithms (sometimes known as secret-key algorithms) transform data in a way that is fundamentally difficult to undo without knowledge of a secret key. The key is "symmetric" because the same key is used for a cryptographic operation and its inverse (e.g., encryption and decryption).
+Симметричные алгоритмы (иногда называемые алгоритмами с секретным ключом) преобразуют данные таким образом, что в принципе сложно выполнить обратное преобразование без знания секретного ключа. Ключ называется "симметричным", потому что один и тот же ключ используется для криптографической операции и её обратного действия (например, шифрование и дешифрование).
 
-Symmetric keys are often known by more than one entity; however, the key shall not be disclosed to entities that are not authorized access to the data protected by that algorithm and key. Symmetric key algorithms are used, for example,
+Симметричные ключи часто известны более чем одной стороне; однако ключ не должен быть раскрыт сторонам, не имеющим разрешения на доступ к данным, защищенным этим алгоритмом и ключом. Симметричные алгоритмы используются, например,
 
-1. To provide data confidentiality (Section 4.2.2); the same key is used to encrypt and decrypt data.
-2. To provide authentication and integrity services (Section 4.2.3) in the form of Message Authentication Codes (MACs); the same key is used to generate the MAC and to validate it. MACs normally employ either a symmetric key-encryption algorithm or a cryptographic hash function as their cryptographic primitive.
-3. As part of the key-establishment process (Section 4.2.5).
-4. To generate deterministic random numbers (Section 4.2.7).
+1. Для обеспечения конфиденциальности данных (Раздел 4.2.2); один и тот же ключ используется для шифрования и дешифрования данных.
+2. Для предоставления услуг аутентификации и целостности (Раздел 4.2.3) в форме кодов аутентификации сообщений (MAC); один и тот же ключ используется для генерации MAC и его проверки. MAC обычно используют либо симметричный ключевой алгоритм шифрования, либо криптографическую хеш-функцию в качестве их криптографического примитива.
+3. Как часть процесса установления ключей (Раздел 4.2.5).
+4. Для генерации детерминированных случайных чисел (Раздел 4.2.7).
 
-#### Asymmetric-key algorithms
+#### Асимметричные алгоритмы
 
-Asymmetric-key algorithms, commonly known as public-key algorithms, use two related keys (i.e., a key pair) to perform their functions: a public key and a private key. The public key may be known by anyone; the private key should be under the sole control of the entity that "owns" the key pair. Even though the public and private keys of a key pair are related, knowledge of the public key does not reveal the private key. Asymmetric algorithms are used, for example,
+Асимметричные алгоритмы, обычно известные как алгоритмы с открытым ключом, используют две связанные ключа (т.е. пару ключей) для выполнения своих функций: открытый ключ и закрытый ключ. Открытый ключ может быть известен любому, в то время как закрытый ключ должен находиться под исключительным контролем того, кто "владеет" парой ключей. Несмотря на то что открытый и закрытый ключи пары связаны, знание открытого ключа не раскрывает закрытый ключ. Асимметричные алгоритмы используются, например,
 
-1. To compute digital signatures (Section 4.2.4).
-2. To establish cryptographic keying material (Section 4.2.5).
-3. To generate random numbers (Section 4.2.7).
+1. Для вычисления цифровых подписей (Раздел 4.2.4).
+2. Для установления криптографических ключевых материалов (Раздел 4.2.5).
+3. Для генерации случайных чисел (Раздел 4.2.7).
 
-#### Message Authentication Codes (MACs)
+#### Коды Аутентификации Сообщений (MAC)
 
-Message Authentication Codes (MACs) provide data authentication and integrity. A MAC is a cryptographic checksum on the data that is used in order to provide assurance that the data has not changed and that the MAC was computed by the expected entity.
+Коды аутентификации сообщений (MAC) обеспечивают аутентификацию данных и их целостность. MAC — это криптографическая контрольная сумма данных, используемая для гарантии того, что данные не были изменены и что MAC был вычислен ожидаемым субъектом.
 
-Although message integrity is often provided using non-cryptographic techniques known as error detection codes, these codes can be altered by an adversary to effect an action to the adversary's benefit. The use of an approved cryptographic mechanism, such as a MAC, can alleviate this problem.
+Хотя целостность сообщений часто обеспечивается с помощью некриптографических методов, известных как коды обнаружения ошибок, эти коды могут быть изменены злоумышленником для получения выгоды. Использование одобренного криптографического механизма, такого как MAC, может решить эту проблему.
 
-In addition, the MAC can provide a recipient with assurance that the originator of the data is a key holder (i.e., an entity authorized to have the key). MACs are often used to authenticate the originator to the recipient when only those two parties share the MAC key.
+Кроме того, MAC может обеспечить получателя гарантией того, что отправитель данных является обладателем ключа (т.е. субъектом, уполномоченным иметь ключ). MAC часто используются для аутентификации отправителя у получателя, когда только эти две стороны разделяют ключ MAC.
 
-#### Digital Signatures
+#### Цифровые Подписи
 
-[Digital signatures](https://en.wikipedia.org/wiki/Digital_signature) are used to provide authentication, integrity and [non-repudiation](https://en.wikipedia.org/wiki/Non-repudiation). Digital signatures are used in conjunction with hash functions and are computed on data of any length (up to a limit that is determined by the hash function).
+[Цифровые подписи](https://en.wikipedia.org/wiki/Digital_signature) используются для обеспечения аутентификации, целостности и [неопровержимости](https://en.wikipedia.org/wiki/Non-repudiation). Цифровые подписи используются вместе с хеш-функциями и вычисляются для данных любой длины (до предела, определенного хеш-функцией).
 
-`FIPS186` specifies algorithms that are approved for the computation of digital signatures.
+`FIPS186` определяет алгоритмы, одобренные для вычисления цифровых подписей.
 
-#### Key Encryption Keys
+#### Ключи для Шифрования Ключей
 
-Symmetric key-wrapping keys are used to encrypt other keys using symmetric-key algorithms. Key-wrapping keys are also known as key encrypting keys.
+Симметричные ключи обертывания используются для шифрования других ключей с помощью симметричных алгоритмов шифрования. Ключи обертывания также известны как ключи шифрования ключей.
 
-### Key Strength
+### Сила Ключей
 
-Review `NIST SP 800-57` (Recommendation for Key Management) for recommended guidelines on key strength for specific algorithm implementations. Also, consider these best practices:
+Просмотрите `NIST SP 800-57` (Рекомендации по управлению ключами) для получения рекомендаций по силе ключей для конкретных реализаций алгоритмов. Также учитывайте следующие лучшие практики:
 
-1. Establish what the application's minimum computational resistance to attack should be. Understanding the minimum computational resistance to attack should take into consideration the sophistication of your adversaries, how long data needs to be protected, where data is stored and if it is exposed. Identifying the computational resistance to attack will inform engineers as to the minimum length of the cryptographic key required to protect data over the life of that data. Consult `NIST SP 800-131a` for additional guidance on determining the appropriate key lengths for the algorithm of choice.
-2. When encrypting keys for storage or distribution, always encrypt a cryptographic key with another key of equal or greater cryptographic strength.
-3. When moving to [Elliptic Curve-based algorithms](https://en.wikipedia.org/wiki/Elliptic-curve_cryptography), choose a key length that meets or exceeds the comparative strength of other algorithms in use within your system. Refer to `NIST SP 800-57 Table 2`.
-4. Formulate a strategy for the overall organization's cryptographic strategy to guide developers working on different applications and ensure that each application's cryptographic capability meets minimum requirements and best practices.
+1. Установите, какое минимальное сопротивление атакам должно быть у приложения. Понимание минимального сопротивления атакам должно учитывать сложность ваших противников, как долго данные должны быть защищены, где данные хранятся и если они подвергаются воздействию. Определение сопротивления атакам поможет инженерам понять минимальную длину криптографического ключа, необходимого для защиты данных в течение их срока службы. Консультируйтесь с `NIST SP 800-131a` для получения дополнительной информации о определении соответствующих длин ключей для выбранного алгоритма.
+2. При шифровании ключей для хранения или распределения всегда шифруйте криптографический ключ другим ключом равной или большей криптографической силы.
+3. При переходе к [алгоритмам на основе эллиптических кривых](https://en.wikipedia.org/wiki/Elliptic-curve_cryptography) выбирайте длину ключа, которая соответствует или превосходит сравнительную силу других алгоритмов, используемых в вашей системе. Смотрите `NIST SP 800-57 Таблица 2`.
+4. Сформулируйте стратегию для общей криптографической стратегии организации, чтобы направлять разработчиков, работающих над различными приложениями, и обеспечить, чтобы криптографические возможности каждого приложения соответствовали минимальным требованиям и лучшим практикам.
 
-### Memory Management Considerations
+### Соображения по Управлению Памятью
 
-Keys stored in memory for a long time can become "burned in". This can be mitigated by splitting the key into components that are frequently updated. `NIST SP 800-57`).
+Ключи, хранящиеся в памяти длительное время, могут стать "вмонтированными" или "впаянными". Это можно смягчить, разделив ключ на компоненты, которые часто обновляются. (`NIST SP 800-57`).
 
-Loss or corruption of the memory media on which keys and/or certificates are stored, and recovery planning, according to `NIST SP 800-57`.
+Потеря или повреждение носителя памяти, на котором хранятся ключи и/или сертификаты, и планирование восстановления, согласно `NIST SP 800-57`.
 
-Plan for the recovery from possible corruption of the memory media necessary for key or certificate generation, registration, and/or distribution systems, subsystems, or components as recommended in `NIST SP 800-57`.
+Планируйте восстановление после возможного повреждения носителя памяти, необходимого для генерации ключей или сертификатов, регистрации и/или распределительных систем, подсистем или компонентов, как рекомендовано в `NIST SP 800-57`.
 
-### Perfect Forward Secrecy
+### Идеальная Прямолинейная Секретность
 
-[Ephemeral keys](https://en.wikipedia.org/wiki/Ephemeral_key) can provide perfect forward secrecy protection, which means a compromise of the server's long term signing key does not compromise the confidentiality of past sessions. Refer to [TLS cheat sheet](Transport_Layer_Security_Cheat_Sheet.md).
+[Эфемерные ключи](https://en.wikipedia.org/wiki/Ephemeral_key) могут обеспечить идеальную прямолинейную секретность, что означает, что компрометация долгосрочного подписи сервера не ставит под угрозу конфиденциальность прошлых сеансов. Смотрите [шпаргалку по TLS](Transport_Layer_Security_Cheat_Sheet.md).
 
-### Key Usage
+### Использование Ключей
 
-According to NIST, in general, a single key should be used for only one purpose (e.g., encryption, authentication, key wrapping, random number generation, or digital signatures).
+Согласно NIST, в общем случае один ключ должен использоваться только для одной цели (например, шифрование, аутентификация, обертывание ключей, генерация случайных чисел или цифровые подписи).
 
-There are several reasons for this:
+Есть несколько причин для этого:
 
-1. The use of the same key for two different cryptographic processes may weaken the security provided by one or both of the processes.
-2. Limiting the use of a key limits the damage that could be done if the key is compromised.
-3. Some uses of keys interfere with each other. For example, the length of time the key may be required for each use and purpose. Retention requirements of the data may differ for different data types.
+1. Использование одного и того же ключа для двух разных криптографических процессов может ослабить безопасность, предоставляемую одним или обоими процессами.
+2. Ограничение использования ключа ограничивает ущерб, который может быть нанесен в случае компрометации ключа.
+3. Некоторые использования ключей могут мешать друг другу. Например, время, на которое ключ может понадобиться для каждого использования и цели. Требования по удержанию данных могут различаться для разных типов данных.
 
-### Cryptographic Module Topics
+### Темы Криптографического Модуля
 
-According to `NIST SP 800-133`, cryptographic modules are the set of hardware, software, and/or firmware that implements security functions (including cryptographic algorithms and key generation) and is contained within a cryptographic module boundary to provide protection of the keys.
+Согласно `NIST SP 800-133`, криптографические модули — это набор аппаратного обеспечения, программного обеспечения и/или прошивки, который реализует функции безопасности (включая криптографические алгоритмы и генерацию ключей) и содержится в границах криптографического модуля для обеспечения защиты ключей.
 
-## Key Management Lifecycle Best Practices
+## Лучшие Практики Управления Жизненным Циклом Ключей
 
-### Generation
+### Генерация
 
-Cryptographic keys shall be generated within cryptographic module with at least a `FIPS 140-2` compliance. For explanatory purposes, consider the cryptographic module in which a key is generated to be the key-generating module.
+Криптографические ключи должны быть сгенерированы внутри криптографического модуля, соответствующего требованиям хотя бы `FIPS 140-2`. Для пояснения, рассмотрите криптографический модуль, в котором создается ключ, как модуль генерации ключей.
 
-Any random value required by the key-generating module shall be generated within that module; that is, the Random Bit Generator that generates the random value shall be implemented within cryptographic module with at least a `FIPS 140-2` compliance that generates the key.
+Любое случайное значение, необходимое модулю генерации ключей, должно быть сгенерировано внутри этого модуля; то есть Генератор Случайных Чисел, который генерирует случайное значение, должен быть реализован внутри криптографического модуля, соответствующего требованиям хотя бы `FIPS 140-2`, который генерирует ключ.
 
-Hardware cryptographic modules are preferred over software cryptographic modules for protection.
+Предпочтительнее использовать аппаратные криптографические модули по сравнению с программными для защиты.
 
-### Distribution
+### Распределение
 
-The generated keys shall be transported (when necessary) using secure channels and shall be used by their associated cryptographic algorithm within at least a `FIPS 140-2` compliant cryptographic modules. For additional detail for the recommendations in this section refer to `NIST Special Paper 800-133`.
+Сгенерированные ключи должны передаваться (если это необходимо) через защищенные каналы и использоваться их связанными криптографическими алгоритмами внутри криптографических модулей, соответствующих требованиям хотя бы `FIPS 140-2`. Для получения дополнительных рекомендаций в этом разделе смотрите `NIST Special Paper 800-133`.
 
-### Storage
+### Хранение
 
-1. Developers must understand where cryptographic keys are stored within the application. Understand what memory devices the keys are stored on.
-2. Keys must be protected on both volatile and persistent memory, ideally processed within secure cryptographic modules.
-3. Keys should never be stored in plaintext format.
-4. Ensure all keys are stored in a cryptographic vault, such as a [hardware security module](https://en.wikipedia.org/wiki/Hardware_security_module) (HSM) or isolated cryptographic service.
-5. If you are planning on storing keys in offline devices/databases, then encrypt the keys using Key Encryption Keys (KEKs) prior to the export of the key material. KEK length (and algorithm) should be equivalent to or greater in strength than the keys being protected.
-6. Ensure that keys have integrity protections applied while in storage (consider dual purpose algorithms that support encryption and Message Code Authentication (MAC)).
-7. Ensure that standard application level code never reads or uses cryptographic keys in any way and use key management libraries.
-8. Ensure that keys and cryptographic operation is done inside the sealed vault.
-9. All work should be done in the vault (such as key access, encryption, decryption, signing, etc).
+1. Разработчики должны понимать, где криптографические ключи хранятся в приложении. Понимать, на каких устройствах памяти хранятся ключи.
+2. Ключи должны быть защищены как в оперативной, так и в постоянной памяти, предпочтительно обрабатываться внутри защищенных криптографических модулей.
+3. Ключи никогда не должны храниться в формате открытого текста.
+4. Убедитесь, что все ключи хранятся в криптографическом хранилище, таком как [аппаратный модуль безопасности](https://en.wikipedia.org/wiki/Hardware_security_module) (HSM) или изолированная криптографическая служба.
+5. Если вы планируете хранить ключи в офлайн-устройствах/базах данных, шифруйте ключи с использованием Ключей Шифрования Ключей (KEKs) перед экспортом ключевых материалов. Длина KEK (и алгоритм) должна быть эквивалентна или превосходить силу защищаемых ключей.
+6. Убедитесь, что на ключи применяются защиты целостности в процессе хранения (учтите алгоритмы двойного назначения, поддерживающие шифрование и Код Аутентификации Сообщений (MAC)).
+7. Убедитесь, что стандартный код уровня приложения никогда не читает и не использует криптографические ключи и используйте библиотеки управления ключами.
+8. Убедитесь, что все операции с ключами выполняются внутри запечатанного хранилища.
+9. Все работы должны проводиться в хранилище (такие как доступ к ключу, шифрование, дешифрование, подпись и т.д.).
 
-For a more complete guide to storing sensitive information such as keys, see the [Secrets Management Cheat Sheet](Secrets_Management_Cheat_Sheet.md).
+Для более полного руководства по хранению конфиденциальной информации, такой как ключи, смотрите [Шпаргалку по Управлению Секретами](Secrets_Management_Cheat_Sheet.md).
 
-### Escrow and Backup
+### Эскроу и Резервное Копирование
 
-Data that has been encrypted with lost cryptographic keys will never be recovered. Therefore, it is essential that the application incorporate a secure key backup capability, especially for applications that support data at rest encryption for long-term data stores.
+Данные, зашифрованные утерянными криптографическими ключами, не подлежат восстановлению. Поэтому крайне важно, чтобы приложение включало возможность безопасного резервного копирования ключей, особенно для приложений, поддерживающих шифрование данных в состоянии покоя для долгосрочных хранилищ данных.
 
-When backing up keys, ensure that the database that is used to store the keys is encrypted using at least a `FIPS 140-2` validated module. It is sometimes useful to escrow key material for use in investigations and for re-provisioning of key material to users in the event that the key is lost or corrupted.
+При резервном копировании ключей убедитесь, что база данных, используемая для хранения ключей, зашифрована с использованием модуля, соответствующего требованиям хотя бы `FIPS 140-2`. Иногда полезно использовать эскроу ключевых материалов для расследований и повторного предоставления ключевых материалов пользователям в случае утери или повреждения ключа.
 
-Never escrow keys used for performing digital signatures, but consider the need to escrow keys that support encryption. Oftentimes, escrow can be performed by the [Certificate Authority](https://en.wikipedia.org/wiki/Certificate_authority) (CA) or key management system that provisions certificates and keys, however in some instances separate APIs must be implemented to allow the system to perform the escrow for the application.
+Никогда не используйте эскроу для ключей, используемых для выполнения цифровых подписей, но рассмотрите необходимость использования эскроу для ключей, поддерживающих шифрование. Обычно эскроу может выполняться [Центром сертификации](https://en.wikipedia.org/wiki/Certificate_authority) (CA) или системой управления ключами, которая предоставляет сертификаты и ключи, однако в некоторых случаях необходимо реализовать отдельные API для обеспечения эскроу для приложения.
 
-### Accountability and Audit
+### Подотчетность и Аудит
 
-Accountability involves the identification of those that have access to, or control of, cryptographic keys throughout their lifecycles. Accountability can be an effective tool to help prevent key compromises and to reduce the impact of compromises once they are detected.
+Подотчетность включает в себя идентификацию тех, кто имеет доступ к криптографическим ключам или контроль над ними на протяжении всего их жизненного цикла. Подотчетность может быть эффективным инструментом для предотвращения компрометаций ключей и уменьшения последствий компрометаций, когда они обнаружены.
 
-Although it is preferred that no humans are able to view keys, as a minimum, the key management system should account for all individuals who are able to view plaintext cryptographic keys.
+Хотя предпочтительно, чтобы никто из людей не имел возможность видеть ключи, как минимум, система управления ключами должна учитывать всех лиц, которые могут просматривать ключи в открытом тексте.
 
-In addition, more sophisticated key-management systems may account for all individuals authorized to access or control any cryptographic keys, whether in plaintext or ciphertext form.
+Кроме того, более сложные системы управления ключами могут учитывать всех лиц, уполномоченных получать доступ или контролировать криптографические ключи, будь то в открытом или зашифрованном виде.
 
-Accountability provides three significant advantages:
+Подотчетность предоставляет три значительных преимущества:
 
-1. It aids in the determination of when the compromise could have occurred and what individuals could have been involved.
-2. It tends to protect against compromise, because individuals with access to the key know that their access to the key is known.
-3. It is very useful in recovering from a detected key compromise to know where the key was used and what data or other keys were protected by the compromised key.
+1. Помогает определить, когда могла произойти компрометация и какие лица могли быть вовлечены.
+2. Способствует защите от компрометации, поскольку лица с доступом к ключу знают, что их доступ к ключу известен.
+3. Полезна при восстановлении после обнаруженной компрометации ключа, так как позволяет узнать, где использовался ключ и какие данные или другие ключи были защищены компрометированным ключом.
 
-Certain principles have been found to be useful in enforcing the accountability of cryptographic keys. These principles might not apply to all systems or all types of keys.
+Некоторые принципы оказались полезными для обеспечения подотчетности криптографических ключей. Эти принципы могут не применяться ко всем системам или всем типам ключей.
 
-Some of the principles that apply to long-term keys controlled by humans include:
+Некоторые принципы, применимые к долгосрочным ключам, контролируемым людьми, включают:
 
-1. Uniquely identifying keys.
-2. Identifying the key user.
-3. Identifying the dates and times of key use, along with the data that is protected.
-4. Identifying other keys that are protected by a symmetric or private key.
+1. Уникальная идентификация ключей.
+2. Идентификация пользователя ключа.
+3. Идентификация дат и времени использования ключа, а также данных, которые защищены.
+4. Идентификация других ключей, которые защищены симметричным или частным ключом.
 
-Two types of audit should be performed on key management systems:
+На системах управления ключами следует проводить два типа аудита:
 
-1. The security plan and the procedures that are developed to support the plan should be periodically audited to ensure that they continue to support the Key Management Policy (`NIST SP 800-57 Part 2`).
-2. The protective mechanisms employed should be periodically reassessed with respect to the level of security that they provide and are expected to provide in the future, and that the mechanisms correctly and effectively support the appropriate policies.
+1. План безопасности и процедуры, разработанные для поддержки плана, должны периодически проверяться, чтобы убедиться, что они продолжают поддерживать Политику Управления Ключами (`NIST SP 800-57 Part 2`).
+2. Защитные механизмы должны периодически переоцениваться с точки зрения уровня безопасности, который они обеспечивают и который ожидается в будущем, и того, что механизмы правильно и эффективно поддерживают соответствующие политики.
 
-New technology developments and attacks should be taken into consideration. On a more frequent basis, the actions of the humans that use, operate and maintain the system should be reviewed to verify that the humans continue to follow established security procedures.
+Необходимо учитывать новые технологические разработки и атаки. Более часто следует проверять действия людей, которые используют, эксплуатируют и обслуживают систему, чтобы убедиться, что они продолжают следовать установленным процедурам безопасности.
 
-Strong cryptographic systems can be compromised by lax and inappropriate human actions. Highly unusual events should be noted and reviewed as possible indicators of attempted attacks on the system.
+Сильные криптографические системы могут быть скомпрометированы небрежными и неподобающими действиями людей. Необычные события должны фиксироваться и рассматриваться как возможные индикаторы попыток атак на систему.
 
-### Key Compromise and Recovery
+### Компрометация Ключей и Восстановление
 
-The compromise of a key has the following implications:
+Компрометация ключа имеет следующие последствия:
 
-1. In general, the unauthorized disclosure of a key used to provide confidentiality protection (i.e., via encryption) means that all information encrypted by that key could be exposed or known by unauthorized entities. The disclosure of a Certificate of Authorities's private signature key means that an adversary can create fraudulent certificates and Certificate Revocation Lists (CRLs).
-2. A compromise of the integrity of a key means that the key is incorrect - either that the key has been modified (either deliberately or accidentally), or that another key has been substituted; this includes a deletion (non-availability) of the key. The substitution or modification of a key used to provide integrity calls into question the integrity of all information protected by the key. This information could have been provided by, or changed by, an unauthorized entity that knows the key. The substitution of a public or secret key that will be used (at a later time) to encrypt data could allow an unauthorized entity (who knows the decryption key) to decrypt data that was encrypted using the encryption key.
-3. A compromise of a key's usage or application association means that the key could be used for the wrong purpose (e.g., for key establishment instead of digital signatures) or for the wrong application, and could result in the compromise of information protected by the key.
-4. A compromise of a key's association with the owner or other entity means that the identity of the other entity cannot be assured (i.e., one does not know who the other entity really is) or that information cannot be processed correctly (e.g., decrypted with the correct key).
-5. A compromise of a key's association with other information means that there is no association at all, or the association is with the wrong "information". This could cause the cryptographic services to fail, information to be lost, or the security of the information to be compromised. Certain protective measures may be taken in order to minimize the likelihood or consequences of a key compromise. Similar affect as ransomware, except that you can't pay the ransom and get the key back.
+1. В общем случае несанкционированное раскрытие ключа, используемого для обеспечения конфиденциальности (т.е. через шифрование), означает, что вся информация, зашифрованная этим ключом, может быть раскрыта или известна несанкционированным лицам. Раскрытие частного ключа Центра сертификации означает, что злоумышленник может создать поддельные сертификаты и Списки Отменённых Сертификатов (CRL).
+2. Компрометация целостности ключа означает, что ключ неверен — либо он был изменён (умышленно или случайно), либо другой ключ был подставлен; это также включает удаление (недоступность) ключа. Замена или изменение ключа, используемого для обеспечения целостности, ставит под сомнение целостность всей информации, защищённой этим ключом. Эта информация могла быть предоставлена или изменена несанкционированным лицом, которое знает ключ. Замена открытого или закрытого ключа, который будет использован (в будущем) для шифрования данных, может позволить несанкционированному лицу (знающему ключ расшифровки) расшифровать данные, зашифрованные с помощью ключа шифрования.
+3. Компрометация использования или ассоциации ключа с приложением означает, что ключ может использоваться не по назначению (например, для установления ключей вместо цифровых подписей) или для неправильного приложения, что может привести к компрометации информации, защищённой ключом.
+4. Компрометация ассоциации ключа с владельцем или другой сущностью означает, что идентичность другой сущности не может быть подтверждена (т.е. не известно, кто на самом деле эта другая сущность) или что информация не может быть обработана правильно (например, расшифрована с правильным ключом).
+5. Компрометация ассоциации ключа с другой информацией означает, что ассоциации нет вообще или ассоциация неверна. Это может вызвать сбои в криптографических услугах, потерю информации или компрометацию безопасности информации. Определённые защитные меры могут быть приняты для минимизации вероятности или последствий компрометации ключа. Это имеет схожий эффект с программами-вымогателями, только вы не можете заплатить выкуп и вернуть ключ.
 
-The following procedures are usually involved:
+Обычно включаются следующие процедуры:
 
-1. Limiting the amount of time a symmetric or private key is in plaintext form.
-2. Preventing humans from viewing plaintext symmetric and private keys.
-3. Restricting plaintext symmetric and private keys to physically protected containers. This includes key generators, key-transport devices, key loaders, cryptographic modules, and key-storage devices.
-4. Using integrity checks to ensure that the integrity of a key or its association with other data has not been compromised. For example, keys may be wrapped (i.e., encrypted) in such a manner that unauthorized modifications to the wrapping or to the associations will be detected.
-5. Employing key confirmation (see NIST SP 800-57 Part 1 Section 4.2.5.5) to help ensure that the proper key was, in fact, established.
-6. Establishing an accountability system that keeps track of each access to symmetric and private keys in plaintext form.
-7. Providing a cryptographic integrity check on the key (e.g., using a MAC or a digital signature).
-8. The use of trusted timestamps for signed data. i. Destroying keys as soon as they are no longer needed.
-9. Creating a compromise-recovery plan, especially in the case of a CA compromise.
+1. Ограничение времени, в течение которого симметричный или частный ключ находится в открытом виде.
+2. Препятствование людям к просмотру открытых симметричных и частных ключей.
+3. Ограничение открытых симметричных и частных ключей физически защищёнными контейнерами. Это включает генераторы ключей, устройства транспортировки ключей, загрузчики ключей, криптографические модули и устройства хранения ключей.
+4. Использование проверок целостности для обеспечения того, что целостность ключа или его ассоциация с другими данными не была скомпрометирована. Например, ключи могут быть упакованы (т.е. зашифрованы) таким образом, чтобы несанкционированные изменения в упаковке или ассоциациях были обнаружены.
+5. Использование подтверждения ключа (см. NIST SP 800-57 Part 1 Section 4.2.5.5), чтобы помочь обеспечить, что был установлен правильный ключ.
+6. Создание системы подотчетности, которая отслеживает каждый доступ к симметричным и частным ключам в открытом виде.
+7. Предоставление криптографической проверки целостности ключа (например, с использованием MAC или цифровой подписи).
+8. Использование доверенных временных меток для подписанных данных.
+9. Уничтожение ключей, как только они больше не нужны.
+10. Создание плана восстановления после компрометации, особенно в случае компрометации CA.
 
-A compromise-recovery plan is essential for restoring cryptographic security services in the event of a key compromise. A compromise-recovery plan shall be documented and easily accessible.
+План восстановления после компрометации необходим для восстановления криптографических служб в случае компрометации ключа. План восстановления должен быть задокументирован и легко доступен.
 
-The compromise-recovery plan should contain:
+План восстановления после компрометации должен содержать:
 
-1. The identification and contact info of the personnel to notify.
-2. The identification and contact info of the personnel to perform the recovery actions.
-3. The re-key method.
-4. An inventory of all cryptographic keys and their use (e.g., the location of all certificates in a system).
-5. The education of all appropriate personnel on the recovery procedures.
-6. An identification and contact info of all personnel needed to support the recovery procedures.
-7. Policies that key-revocation checking be enforced (to minimize the effect of a compromise).
-8. The monitoring of the re-keying operations (to ensure that all required operations are performed for all affected keys).
-9. Any other recovery procedures, which may include:
-    1. Physical inspection of the equipment.
-    2. Identification of all information that may be compromised as a result of the incident.
-    3. Identification of all signatures that may be invalid, due to the compromise of a signing key.
-    4. Distribution of new keying material, if required.
+1. Идентификацию и контактную информацию персонала, которого необходимо уведомить.
+2. Идентификацию и контактную информацию персонала, который выполнит действия по восстановлению.
+3. Метод повторного назначения ключей.
+4. Инвентаризацию всех криптографических ключей и их использования (например, местоположение всех сертификатов в системе).
+5. Обучение всего соответствующего персонала по процедурам восстановления.
+6. Идентификацию и контактную информацию всего персонала, необходимого для поддержки процедур восстановления.
+7. Политики, требующие проверки отзыва ключей (чтобы минимизировать эффект компрометации).
+8. Мониторинг операций по повторному назначению ключей (чтобы убедиться, что все необходимые операции выполняются для всех затронутых ключей).
+9. Любые другие процедуры восстановления, которые могут включать:
+   1. Физическую проверку оборудования.
+   2. Идентификацию всей информации, которая могла быть скомпрометирована в результате инцидента.
+   3. Идентификацию всех подписей, которые могут быть недействительными из-за компрометации ключа подписи.
+   4. Распределение нового ключевого материала, если это необходимо.
 
-## Trust Stores
+### Хранилища Доверия
 
-1. Design controls to secure the trust store against injection of third-party root certificates. The access controls are managed and enforced on an entity and application basis.
-2. Implement integrity controls on objects stored in the trust store.
-3. Do not allow for export of keys held within the trust store without authentication and authorization.
-4. Setup strict policies and procedures for exporting key material from applications to network applications and other components.
-5. Implement a secure process for updating the trust store.
+1. Проектируйте контрольные механизмы для защиты хранилища доверия от внедрения корневых сертификатов третьих сторон. Контроль доступа управляется и применяется на уровне сущностей и приложений.
+2. Реализуйте контроль целостности объектов, хранящихся в хранилище доверия.
+3. Не допускайте экспорт ключей, хранящихся в хранилище доверия, без аутентификации и авторизации.
+4. Установите строгие политики и процедуры для экспорта ключевого материала из приложений в сетевые приложения и другие компоненты.
+5. Реализуйте безопасный процесс обновления хранилища доверия.
 
-## Cryptographic Key Management Libraries
+### Библиотеки Управления Криптографическими Ключами
 
-Use only reputable crypto libraries that are well maintained and updated, as well as tested and validated by third-party organizations (e.g., `NIST`/`FIPS`).
+Используйте только авторитетные криптографические библиотеки, которые хорошо поддерживаются и обновляются, а также тестируются и сертифицируются сторонними организациями (например, `NIST`/`FIPS`).
 
-## Documentation
+### Документация
 
-- [The definitive guide to encryption key management fundamentals](https://downloads.townsendsecurity.com/ebooks/EKM-Definitive-Guide.pdf).
-- [Practical cryptography for developers](https://cryptobook.nakov.com/).
+- [Окончательное руководство по основам управления ключами шифрования](https://downloads.townsendsecurity.com/ebooks/EKM-Definitive-Guide.pdf).
+- [Практическое руководство по криптографии для разработчиков](https://cryptobook.nakov.com/).

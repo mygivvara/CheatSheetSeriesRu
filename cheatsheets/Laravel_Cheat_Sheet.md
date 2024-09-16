@@ -1,42 +1,42 @@
-# Laravel Cheat Sheet
+# Шпаргалка по Laravel
 
-## Introduction
+## Введение
 
-This *Cheatsheet* intends to provide security tips to developers building Laravel applications. It aims to cover all common vulnerabilities and how to ensure that your Laravel applications are secure.
+Эта *шпаргалка* предназначена для предоставления советов по безопасности разработчикам, создающим приложения на Laravel. Она охватывает все распространенные уязвимости и способы обеспечения безопасности ваших приложений на Laravel.
 
-The Laravel Framework provides in-built security features and is meant to be secure by default. However, it also provides additional flexibility for complex use cases. This means that developers unfamiliar with the inner workings of Laravel may fall into the trap of using complex features in a way that is not secure. This guide is meant to educate developers to avoid common pitfalls and develop Laravel applications in a secure manner.
+Фреймворк Laravel предоставляет встроенные функции безопасности и предназначен для использования по умолчанию безопасным образом. Однако он также предоставляет дополнительную гибкость для сложных сценариев использования. Это означает, что разработчики, незнакомые с внутренним устройством Laravel, могут столкнуться с проблемой использования сложных функций ненадежным способом. Этот гид предназначен для обучения разработчиков избегать распространенных ошибок и разрабатывать приложения на Laravel безопасным образом.
 
-You may also refer the [Enlightn Security Documentation](https://www.laravel-enlightn.com/docs/security/), which highlights common vulnerabilities and good practices on securing Laravel applications.
+Вы также можете обратиться к [документации по безопасности Enlightn](https://www.laravel-enlightn.com/docs/security/), которая выделяет общие уязвимости и хорошие практики по обеспечению безопасности приложений на Laravel.
 
-## The Basics
+## Основы
 
-- Make sure your app is not in debug mode while in production. To turn off debug mode, set your `APP_DEBUG` environment variable to `false`:
+- Убедитесь, что ваше приложение не находится в режиме отладки в продакшене. Чтобы выключить режим отладки, установите переменную окружения `APP_DEBUG` в значение `false`:
 
 ```ini
 APP_DEBUG=false
 ```
 
-- Make sure your application key has been generated. Laravel applications use the app key for symmetric encryption and SHA256 hashes such as cookie encryption, signed URLs, password reset tokens and session data encryption. To generate the app key, you may run the `key:generate` Artisan command:
+- Убедитесь, что ключ приложения был сгенерирован. Приложения Laravel используют ключ приложения для симметричного шифрования и хеширования SHA256, таких как шифрование куки, подписанные URL-адреса, токены сброса пароля и шифрование данных сеанса. Чтобы сгенерировать ключ приложения, выполните команду Artisan `key:generate`:
 
 ```bash
 php artisan key:generate
 ```
 
-- Make sure your PHP configuration is secure. You may refer the [PHP Configuration Cheat Sheet](PHP_Configuration_Cheat_Sheet.md) for more information on secure PHP configuration settings.
+- Убедитесь, что ваша конфигурация PHP безопасна. Вы можете обратиться к [шпаргалке по конфигурации PHP](PHP_Configuration_Cheat_Sheet.md) для получения дополнительной информации о безопасных настройках конфигурации PHP.
 
-- Set safe file and directory permissions on your Laravel application. In general, all Laravel directories should be setup with a max permission level of `775` and non-executable files with a max permission level of `664`. Executable files such as Artisan or deployment scripts should be provided with a max permission level of `775`.
+- Установите безопасные разрешения на файлы и директории вашего приложения Laravel. В общем случае, все директории Laravel должны иметь максимальный уровень разрешений `775`, а неисполняемые файлы — максимальный уровень разрешений `664`. Исполняемые файлы, такие как Artisan или скрипты развертывания, должны иметь максимальный уровень разрешений `775`.
 
-- Make sure your application does not have vulnerable dependencies. You can check this using the [Enlightn Security Checker](https://github.com/enlightn/security-checker).
+- Убедитесь, что ваше приложение не имеет уязвимых зависимостей. Вы можете проверить это, используя [Enlightn Security Checker](https://github.com/enlightn/security-checker).
 
-## Cookie Security and Session Management
+## Безопасность куки и управление сеансами
 
-By default, Laravel is configured in a secure manner. However, if you change your cookie or session configurations, make sure of the following:
+По умолчанию Laravel настроен безопасным образом. Однако, если вы изменяете конфигурации куки или сеансов, убедитесь в следующем:
 
-- Enable the cookie encryption middleware if you use the `cookie` session store or if you store any kind of data that should not be readable or tampered with by clients. In general, this should be enabled unless your application has a very specific use case that requires disabling this. To enable this middleware, simply add the `EncryptCookies` middleware to the `web` middleware group in your `App\Http\Kernel` class:
+- Включите промежуточное ПО для шифрования куки, если вы используете хранилище сеансов `cookie` или если вы храните данные, которые не должны быть читаемы или изменяемы клиентами. Обычно это должно быть включено, если только ваше приложение не имеет очень специфического сценария использования, требующего отключения этой функции. Чтобы включить это промежуточное ПО, просто добавьте `EncryptCookies` в группу промежуточного ПО `web` в вашем классе `App\Http\Kernel`:
 
 ```php
 /**
- * The application's route middleware groups.
+ * Группы промежуточного ПО маршрутов приложения.
  *
  * @var array
  */
@@ -49,76 +49,76 @@ protected $middlewareGroups = [
 ];
 ```
 
-- Enable the `HttpOnly` attribute on your session cookies via your `config/session.php` file, so that your session cookies are inaccessible from Javascript:
+- Включите атрибут `HttpOnly` для ваших куки сеансов через файл `config/session.php`, чтобы ваши куки сеансов были недоступны из JavaScript:
 
 ```php
 'http_only' => true,
 ```
 
-- Unless you are using sub-domain route registrations in your Laravel application, it is recommended to set the cookie `domain` attribute to null so that only the same origin (excluding subdomains) can set the cookie. This can be configured in your `config/session.php` file:
+- Если вы не используете регистрации маршрутов с поддоменами в вашем приложении Laravel, рекомендуется установить атрибут `domain` куки в значение null, чтобы куки могли быть установлены только одним и тем же источником (исключая поддомены). Это можно настроить в вашем файле `config/session.php`:
 
 ```php
 'domain' => null,
 ```
 
-- Set your `SameSite` cookie attribute to `lax` or `strict` in your `config/session.php` file to restrict your cookies to a first-party or same-site context:
+- Установите атрибут куки `SameSite` в значение `lax` или `strict` в вашем файле `config/session.php`, чтобы ограничить использование ваших куки контекстом первой стороны или того же сайта:
 
 ```php
 'same_site' => 'lax',
 ```
 
-- If your application is HTTPS only, it is recommended to set the `secure` configuration option in your `config/session.php` file to `true` to protect against man-in-the-middle attacks. If your application has a combination of HTTP and HTTPS, then it is recommended to set this value to `null` so that the secure attribute is set automatically when serving HTTPS requests:
+- Если ваше приложение работает только через HTTPS, рекомендуется установить параметр `secure` в вашем файле `config/session.php` в значение `true`, чтобы защититься от атак типа "человек посередине". Если ваше приложение использует комбинацию HTTP и HTTPS, рекомендуется установить это значение в `null`, чтобы атрибут secure автоматически устанавливался при обслуживании HTTPS-запросов:
 
 ```php
 'secure' => null,
 ```
 
-- Ensure that you have a low session idle timeout value. [OWASP recommends](Session_Management_Cheat_Sheet.md) a 2-5 minutes idle timeout for high value applications and 15-30 minutes for low risk applications. This can be configured in your `config/session.php` file:
+- Убедитесь, что у вас установлен низкий тайм-аут бездействия сеанса. [OWASP рекомендует](Session_Management_Cheat_Sheet.md) тайм-аут 2-5 минут для приложений с высокой ценностью и 15-30 минут для приложений с низким риском. Это можно настроить в вашем файле `config/session.php`:
 
 ```php
 'lifetime' => 15,
 ```
 
-You may also refer the [Cookie Security Guide](https://owasp.org/www-chapter-london/assets/slides/OWASPLondon20171130_Cookie_Security_Myths_Misconceptions_David_Johansson.pdf) to learn more about cookie security and the cookie attributes mentioned above.
+Вы также можете обратиться к [Руководству по безопасности куки](https://owasp.org/www-chapter-london/assets/slides/OWASPLondon20171130_Cookie_Security_Myths_Misconceptions_David_Johansson.pdf), чтобы узнать больше о безопасности куки и упомянутых атрибутах куки.
 
-## Authentication
+## Аутентификация
 
-### Guards and Providers
+### Охранники и Провайдеры
 
-At its core, Laravel's authentication facilities are made up of "guards" and "providers". Guards define how users are authenticated for each request. Providers define how users are retrieved from your persistent storage.
+В основе механизмов аутентификации Laravel лежат "охранники" и "провайдеры". Охранники определяют, как пользователи аутентифицируются для каждого запроса. Провайдеры определяют, как пользователи извлекаются из вашего постоянного хранилища.
 
-Laravel ships with a `session` guard which maintains state using session storage and cookies, and a `token` guard for API tokens.
+Laravel поставляется с охранником `session`, который поддерживает состояние с использованием хранилища сеансов и куки, и охранником `token` для API токенов.
 
-For providers, Laravel ships with a `eloquent` provider for retrieving users using the Eloquent ORM and the `database` provider for retrieving users using the database query builder.
+Что касается провайдеров, Laravel поставляется с провайдером `eloquent` для извлечения пользователей с использованием Eloquent ORM и провайдером `database` для извлечения пользователей с использованием построителя запросов базы данных.
 
-Guards and providers can be configured in the `config/auth.php` file. Laravel offers the ability to build custom guards and providers as well.
+Охранники и провайдеры могут быть настроены в файле `config/auth.php`. Laravel также предоставляет возможность создавать пользовательские охранники и провайдеры.
 
-### Starter Kits
+### Стартовые комплекты
 
-Laravel offers a wide variety of first party application starter kits that include in-built authentication features:
+Laravel предлагает широкий выбор первичных стартовых комплектов приложений, которые включают встроенные функции аутентификации:
 
-1. [Laravel Breeze](https://laravel.com/docs/8.x/starter-kits#laravel-breeze): A simple, minimal implementation of all Laravel's authentication features including login, registration, password reset, email verification and password confirmation.
-2. [Laravel Fortify](https://laravel.com/docs/fortify): A headless authentication backend that includes the above authentication features along with two-factor authentication.
-3. [Laravel Jetstream](https://jetstream.laravel.com/): An application starter kit that provides a UI on top of Laravel Fortify's authentication features.
+1. [Laravel Breeze](https://laravel.com/docs/8.x/starter-kits#laravel-breeze): Простая, минимальная реализация всех функций аутентификации Laravel, включая вход в систему, регистрацию, сброс пароля, проверку электронной почты и подтверждение пароля.
+2. [Laravel Fortify](https://laravel.com/docs/fortify): Безголовый бэкэнд аутентификации, который включает вышеуказанные функции аутентификации, а также двухфакторную аутентификацию.
+3. [Laravel Jetstream](https://jetstream.laravel.com/): Стартовый комплект приложения, который предоставляет пользовательский интерфейс поверх функций аутентификации Laravel Fortify.
 
-It is recommended to use one of these starter kits to ensure robust and secure authentication for your Laravel applications.
+Рекомендуется использовать один из этих стартовых комплектов, чтобы обеспечить надежную и безопасную аутентификацию для ваших приложений на Laravel.
 
-### API Authentication Packages
+### Пакеты для Аутентификации API
 
-Laravel also offers the following API authentication packages:
+Laravel также предлагает следующие пакеты для аутентификации API:
 
-1. [Passport](https://laravel.com/docs/passport): An OAuth2 authentication provider.
-2. [Sanctum](https://laravel.com/docs/sanctum): An API token authentication provider.
+1. [Passport](https://laravel.com/docs/passport): Провайдер аутентификации OAuth2.
+2. [Sanctum](https://laravel.com/docs/sanctum): Провайдер аутентификации API токенов.
 
-Starter kits such as Fortify and Jetstream have in-built support for Sanctum.
+Стартовые комплекты, такие как Fortify и Jetstream, имеют встроенную поддержку Sanctum.
 
-## Mass Assignment
+## Массовое Присвоение
 
-[Mass assignment](Mass_Assignment_Cheat_Sheet.md) is a common vulnerability in modern web applications that use an ORM like Laravel's Eloquent ORM.
+[Массовое присвоение](Mass_Assignment_Cheat_Sheet.md) — это распространенная уязвимость в современных веб-приложениях, использующих ORM, такие как Eloquent ORM Laravel.
 
-A mass assignment is a vulnerability where an ORM pattern is abused to modify data items that the user should not be normally allowed to modify.
+Массовое присвоение — это уязвимость, при которой паттерн ORM используется для изменения данных, которые пользователь не должен был бы изменять.
 
-Consider the following code:
+Рассмотрим следующий код:
 
 ```php
 Route::any('/profile', function (Request $request) {
@@ -130,23 +130,23 @@ Route::any('/profile', function (Request $request) {
 })->middleware('auth');
 ```
 
-The above profile route allows the logged in user to change their profile information.
+Вышеуказанный маршрут профиля позволяет вошедшему в систему пользователю изменить информацию о своем профиле.
 
-However, let's say there is an `is_admin` column in the users table. You probably do not want the user to be allowed to change the value of this column. However, the above code allows users to change any column values for their row in the users table. This is a mass assignment vulnerability.
+Однако, допустим, в таблице пользователей есть столбец `is_admin`. Вы, вероятно, не хотите, чтобы пользователь мог изменять значение этого столбца. Однако вышеуказанный код позволяет пользователям изменять любые значения столбцов для своей строки в таблице пользователей. Это уязвимость массового присвоения.
 
-Laravel has in-built features by default to protect against this vulnerability. Make sure of the following to stay secure:
+Laravel имеет встроенные функции по умолчанию для защиты от этой уязвимости. Убедитесь в следующем, чтобы оставаться в безопасности:
 
-- Qualify the allowed parameters that you wish to update using `$request->only` or `$request->validated` rather than `$request->all`.
-- Do not unguard models or set the `$guarded` variable to an empty array. By doing this, you are actually disabling Laravel's in-built mass assignment protection.
-- Avoid using methods such as `forceFill` or `forceCreate` that bypass the protection mechanism. You may however use these methods if you are passing in a validated array of values.
+- Указывайте разрешенные параметры, которые вы хотите обновить, используя `$request->only` или `$request->validated`, а не `$request->all`.
+- Не снимайте защиту с моделей или не устанавливайте переменную `$guarded` в пустой массив. Делая это, вы фактически отключаете встроенную защиту от массового присвоения в Laravel.
+- Избегайте использования таких методов, как `forceFill` или `forceCreate`, которые обходят механизм защиты. Вы можете использовать эти методы, если передаете проверенный массив значений.
 
-## SQL Injection
+## SQL Инъекция
 
-SQL Injection attacks are unfortunately quite common in modern web applications and entail attackers providing malicious request input data to interfere with SQL queries. This guide covers SQL injection and how it can be prevented specifically for Laravel applications. You may also refer the [SQL Injection Prevention Cheatsheet](SQL_Injection_Prevention_Cheat_Sheet.md) for more information that is not specific to Laravel.
+Атаки SQL-инъекции, к сожалению, довольно распространены в современных веб-приложениях и предполагают, что злоумышленники предоставляют вредоносные данные запроса для вмешательства в SQL-запросы. Этот гид охватывает SQL-инъекции и способы их предотвращения конкретно для приложений Laravel. Вы также можете обратиться к [Шпаргалке по предотвращению SQL-инъекций](SQL_Injection_Prevention_Cheat_Sheet.md) для получения дополнительной информации, не специфичной для Laravel.
 
-### Eloquent ORM SQL Injection Protection
+### Защита от SQL-инъекций в Eloquent ORM
 
-By default, Laravel's Eloquent ORM protects against SQL injection by parameterizing queries and using SQL bindings. For instance, consider the following query:
+По умолчанию Eloquent ORM Laravel защищает от SQL-инъекций, параметризуя запросы и используя SQL-связки. Например, рассмотрим следующий запрос:
 
 ```php
 use App\Models\User;
@@ -154,19 +154,19 @@ use App\Models\User;
 User::where('email', $email)->get();
 ```
 
-The code above fires the query below:
+Этот код формирует следующий запрос:
 
 ```sql
 select * from `users` where `email` = ?
 ```
 
-So, even if `$email` is untrusted user input data, you are protected from SQL injection attacks.
+Таким образом, даже если `$email` содержит непроверенные данные от пользователя, вы защищены от атак SQL-инъекции.
 
-### Raw Query SQL Injection
+### SQL-инъекция в сырых запросах
 
-Laravel also offers raw query expressions and raw queries to construct complex queries or database specific queries that aren't supported out of the box.
+Laravel также предоставляет возможности для использования сырых выражений и запросов для создания сложных запросов или запросов, специфичных для базы данных, которые не поддерживаются из коробки.
 
-While this is great for flexibility, you must be careful to always use SQL data bindings for such queries. Consider the following query:
+Хотя это предоставляет большую гибкость, вы должны быть осторожны и всегда использовать SQL-связки для таких запросов. Рассмотрим следующий запрос:
 
 ```php
 use Illuminate\Support\Facades\DB;
@@ -176,15 +176,15 @@ User::whereRaw('email = "'.$request->input('email').'"')->get();
 DB::table('users')->whereRaw('email = "'.$request->input('email').'"')->get();
 ```
 
-Both lines of code actually execute the same query, which is vulnerable to SQL injection as the query does not use SQL bindings for untrusted user input data.
+Обе строки кода фактически выполняют один и тот же запрос, который уязвим к SQL-инъекциям, поскольку запрос не использует SQL-связки для непроверенных данных пользователя.
 
-The code above fires the following query:
+Этот код формирует следующий запрос:
 
 ```sql
-select * from `users` where `email` = "value of email query parameter"
+select * from `users` where `email` = "значение параметра email запроса"
 ```
 
-Always remember to use SQL bindings for request data. We can fix the above code by making the following modification:
+Всегда помните о необходимости использования SQL-связок для данных запросов. Мы можем исправить приведенный выше код, внеся следующие изменения:
 
 ```php
 use App\Models\User;
@@ -192,7 +192,7 @@ use App\Models\User;
 User::whereRaw('email = ?', [$request->input('email')])->get();
 ```
 
-We can even use named SQL bindings like so:
+Мы также можем использовать именованные SQL-связки следующим образом:
 
 ```php
 use App\Models\User;
@@ -200,11 +200,11 @@ use App\Models\User;
 User::whereRaw('email = :email', ['email' => $request->input('email')])->get();
 ```
 
-### Column Name SQL Injection
+### SQL Инъекция через имя столбца
 
-You must never allow user input data to dictate column names referenced by your queries.
+Никогда не позволяйте данным, введенным пользователем, определять имена колонок, на которые ссылаются ваши запросы.
 
-The following queries may be vulnerable to SQL injection:
+Следующие запросы могут быть уязвимы к SQL-инъекциям:
 
 ```php
 use App\Models\User;
@@ -213,11 +213,11 @@ User::where($request->input('colname'), 'somedata')->get();
 User::query()->orderBy($request->input('sortBy'))->get();
 ```
 
-It is important to note that even though Laravel has some in-built features such as wrapping column names to protect against the above SQL injection vulnerabilities, some database engines (depending on versions and configurations) may still be vulnerable because binding column names is not supported by databases.
+Важно отметить, что, хотя Laravel имеет встроенные функции, такие как оборачивание имен колонок для защиты от вышеупомянутых уязвимостей SQL-инъекций, некоторые СУБД (в зависимости от версий и конфигураций) все равно могут быть уязвимы, поскольку связывание имен колонок не поддерживается базами данных.
 
-At the very least, this may result in a mass assignment vulnerability instead of a SQL injection because you may have expected a certain set of column values, but since they are not validated here, the user is free to use other columns as well.
+По крайней мере, это может привести к уязвимости массового присвоения, вместо SQL-инъекции, поскольку вы могли ожидать определенный набор значений колонок, но, поскольку они не проверены здесь, пользователь может использовать другие колонки.
 
-Always validate user input for such situations like so:
+Всегда проверяйте данные, введенные пользователем, в таких ситуациях следующим образом:
 
 ```php
 use App\Models\User;
@@ -226,11 +226,11 @@ $request->validate(['sortBy' => 'in:price,updated_at']);
 User::query()->orderBy($request->validated()['sortBy'])->get();
 ```
 
-### Validation Rule SQL Injection
+### Уязвимость SQL-инъекции в Правилах Проверки
 
-Certain validation rules have the option of providing database column names. Such rules are vulnerable to SQL injection in the same manner as column name SQL injection because they construct queries in a similar manner.
+Некоторые правила проверки имеют возможность предоставления имен колонок базы данных. Такие правила уязвимы к SQL-инъекциям аналогичным образом, как и инъекции через имена колонок, поскольку они формируют запросы подобным образом.
 
-For example, the following code may be vulnerable:
+Например, следующий код может быть уязвим:
 
 ```php
 use Illuminate\Validation\Rule;
@@ -240,7 +240,7 @@ $request->validate([
 ]);
 ```
 
-Behind the scenes, the above code triggers the following query:
+Внутри этот код выполняет следующий запрос:
 
 ```php
 use App\Models\User;
@@ -249,37 +249,39 @@ $colname = $request->input('colname');
 User::where($colname, $request->input('id'))->where($colname, '<>', $id)->count();
 ```
 
-Since the column name is dictated by user input, it is similar to column name SQL injection.
+Поскольку имя колонки определяется данными, введенными пользователем, это аналогично SQL-инъекции через имена колонок.
 
-## Cross Site Scripting (XSS)
+## Межсайтовый скриптинг (XSS)
 
-[XSS attacks](https://owasp.org/www-community/attacks/xss/) are injection attacks where malicious scripts (such as JavaScript code snippets) are injected into trusted websites.
+[Aтаки XSS](https://owasp.org/www-community/attacks/xss/) — это инъекции, при которых вредоносные скрипты (например, фрагменты JavaScript-кода) внедряются в доверенные веб-сайты.
 
-Laravel's [Blade templating engine](https://laravel.com/docs/blade) has echo statements `{{ }}` that automatically escape variables using the `htmlspecialchars` PHP function to protect against XSS attacks.
+Шаблонизатор [Blade](https://laravel.com/docs/blade) в Laravel имеет операторы вывода `{{ }}`, которые автоматически экранируют переменные с помощью функции `htmlspecialchars` PHP для защиты от XSS-атак.
 
-Laravel also offers displaying unescaped data using the unescaped syntax `{!! !!}`. This must not be used on any untrusted data, otherwise your application will be subject to an XSS attack.
+Laravel также предлагает отображение неэкранованных данных с использованием неэкранованного синтаксиса `{!! !!}`. Это не следует использовать для непроверенных данных, иначе ваше приложение может подвергнуться XSS-атаке.
 
-For instance, if you have something like this in any of your Blade templates, it would result in a vulnerability:
+Например, если у вас есть что-то подобное в любом из ваших Blade-шаблонов, это приведет к уязвимости:
 
 ```blade
 {!! request()->input('somedata') !!}
 ```
 
-This, however, is safe to do:
+Однако это безопасно:
 
 ```blade
 {{ request()->input('somedata') }}
 ```
 
-For other information on XSS prevention that is not specific to Laravel, you may refer the [Cross Site Scripting Prevention Cheatsheet](Cross_Site_Scripting_Prevention_Cheat_Sheet.md).
+Для другой информации о предотвращении XSS, не специфичной для Laravel, вы можете обратиться к [Шпаргалке по предотвращению межсайтового скриптинга](Cross_Site_Scripting_Prevention_Cheat_Sheet.md).
 
-## Unrestricted File Uploads
+Конечно! Исправлю заголовки:
 
-Unrestricted file upload attacks entail attackers uploading malicious files to compromise web applications. This section describes how to protect against such attacks while building Laravel applications. You may also refer the [File Upload Cheatsheet](File_Upload_Cheat_Sheet.md) to learn more.
+## Неограниченная загрузка файлов
 
-### Always Validate File Type and Size
+Атаки неограниченной загрузки файлов включают в себя загрузку злоумышленниками вредоносных файлов для компрометации веб-приложений. Этот раздел описывает, как защититься от таких атак при разработке приложений на Laravel. Вы также можете обратиться к [Шпаргалке по загрузке файлов](File_Upload_Cheat_Sheet.md) для получения дополнительной информации.
 
-Always validate the file type (extension or MIME type) and file size to avoid storage DOS attacks and remote code execution:
+### Всегда проверяйте тип и размер файла
+
+Всегда проверяйте тип файла (расширение или MIME-тип) и размер файла, чтобы избежать атак DOS на хранилище и удаленного выполнения кода:
 
 ```php
 $request->validate([
@@ -287,17 +289,17 @@ $request->validate([
 ]);
 ```
 
-Storage DOS attacks exploit missing file size validations and upload massive files to cause a denial of service (DOS) by exhausting the disk space.
+Атаки DOS на хранилище используют отсутствие проверки размера файла и загружают большие файлы, чтобы вызвать отказ в обслуживании (DOS), исчерпывая дисковое пространство.
 
-Remote code execution attacks entail first, uploading malicious executable files (such as PHP files) and then, triggering their malicious code by visiting the file URL (if public).
+Атаки удаленного выполнения кода заключаются в том, что сначала загружаются вредоносные исполняемые файлы (например, PHP-файлы), а затем их вредоносный код запускается, посещая URL файла (если он доступен публично).
 
-Both these attacks can be avoided by simple file validations as mentioned above.
+Обе эти атаки можно избежать с помощью простых проверок файлов, как указано выше.
 
-### Do Not Rely On User Input To Dictate Filenames or Path
+### Не полагайтесь на входные данные пользователя для определения имен файлов или пути
 
-If your application allows user controlled data to construct the path of a file upload, this may result in overwriting a critical file or storing the file in a bad location.
+Если ваше приложение позволяет данным, контролируемым пользователем, формировать путь для загрузки файла, это может привести к перезаписи критического файла или сохранению файла в неправильном месте.
 
-Consider the following code:
+Рассмотрим следующий код:
 
 ```php
 Route::post('/upload', function (Request $request) {
@@ -307,9 +309,9 @@ Route::post('/upload', function (Request $request) {
 });
 ```
 
-This route saves a file to a directory specific to a user ID. Here, we rely on the `filename` user input data and this may result in a vulnerability as the filename could be something like `../2/filename.pdf`. This will upload the file in user ID 2's directory instead of the directory pertaining to the current logged in user.
+Этот маршрут сохраняет файл в каталог, специфичный для ID пользователя. Здесь мы полагаемся на данные `filename`, введенные пользователем, и это может привести к уязвимости, поскольку имя файла может быть таким, как `../2/filename.pdf`. Это приведет к загрузке файла в каталог пользователя с ID 2, а не в каталог текущего вошедшего пользователя.
 
-To fix this, we should use the `basename` PHP function to strip out any directory information from the `filename` input data:
+Чтобы исправить это, мы должны использовать функцию PHP `basename`, чтобы удалить любую информацию о каталоге из данных `filename`:
 
 ```php
 Route::post('/upload', function (Request $request) {
@@ -319,19 +321,21 @@ Route::post('/upload', function (Request $request) {
 });
 ```
 
-### Avoid Processing ZIP or XML Files If Possible
+### Избегайте обработки ZIP или XML файлов, если это возможно
 
-XML files can expose your application to a wide variety of attacks such as XXE attacks, the billion laughs attack and others. If you process ZIP files, you may be exposed to zip bomb DOS attacks.
+XML-файлы могут подвергнуть ваше приложение различным атакам, таким как атаки XXE, атака "миллиард смехов" и другим. Если вы обрабатываете ZIP-файлы, вы можете столкнуться с атаками zip bomb DOS.
 
-Refer the [XML Security Cheatsheet](XML_Security_Cheat_Sheet.md) and the [File Upload Cheatsheet](File_Upload_Cheat_Sheet.md) to learn more.
+Обратитесь к [Шпаргалке по XML-безопасности](XML_Security_Cheat_Sheet.md) и [Шпаргалке по загрузке файлов](File_Upload_Cheat_Sheet.md) для получения дополнительной информации.
 
-## Path Traversal
+Прошу прощения, исправлю заголовки:
 
-A path traversal attack aims to access files by manipulating request input data with `../` sequences and variations or by using absolute file paths.
+## Переход по путям
 
-If you allow users to download files by filename, you may be exposed to this vulnerability if input data is not stripped of directory information.
+Атака через переход по путям направлена на доступ к файлам, манипулируя входными данными запроса с помощью последовательностей `../` и их вариациями или используя абсолютные пути файлов.
 
-Consider the following code:
+Если вы позволяете пользователям загружать файлы по имени файла, вы можете подвергнуться этой уязвимости, если входные данные не очищаются от информации о каталоге.
+
+Рассмотрим следующий код:
 
 ```php
 Route::get('/download', function(Request $request) {
@@ -339,9 +343,9 @@ Route::get('/download', function(Request $request) {
 });
 ```
 
-Here, the filename is not stripped of directory information, so a malformed filename such as `../../.env` could expose your application credentials to potential attackers.
+Здесь имя файла не очищается от информации о каталоге, поэтому неправильно сформированное имя файла, такое как `../../.env`, может раскрыть ваши учетные данные приложения потенциальным злоумышленникам.
 
-Similar to unrestricted file uploads, you should use the `basename` PHP function to strip out directory information like so:
+Аналогично неограниченной загрузке файлов, вы должны использовать функцию PHP `basename`, чтобы удалить информацию о каталоге:
 
 ```php
 Route::get('/download', function(Request $request) {
@@ -349,11 +353,11 @@ Route::get('/download', function(Request $request) {
 });
 ```
 
-## Open Redirection
+## Открытое перенаправление
 
-Open Redirection attacks in themselves are not that dangerous but they enable phishing attacks.
+Атаки через открытое перенаправление сами по себе не так опасны, но они могут привести к фишинг-атакам.
 
-Consider the following code:
+Рассмотрим следующий код:
 
 ```php
 Route::get('/redirect', function (Request $request) {
@@ -361,49 +365,49 @@ Route::get('/redirect', function (Request $request) {
 });
 ```
 
-This code redirects the user to any external URL provided by user input. This could enable attackers to create seemingly safe URLs like `https://example.com/redirect?url=http://evil.com`. For instance, attackers may use a URL of this type to spoof password reset emails and lead victims to expose their credentials on the attacker's website.
+Этот код перенаправляет пользователя на любой внешний URL, предоставленный входными данными пользователя. Это может позволить злоумышленникам создавать казалось бы безопасные URL, такие как `https://example.com/redirect?url=http://evil.com`. Например, злоумышленники могут использовать URL такого типа, чтобы подделать электронные письма для сброса пароля и направить жертв на сайт злоумышленника для раскрытия своих учетных данных.
 
-## Cross Site Request Forgery (CSRF)
+## Cross-Site Request Forgery (CSRF)
 
-[Cross-Site Request Forgery (CSRF)](https://owasp.org/www-community/attacks/csrf) is a type of attack that occurs when a malicious web site, email, blog, instant message, or program causes a user's web browser to perform an unwanted action on a trusted site when the user is authenticated.
+[Cross-Site Request Forgery (CSRF)](https://owasp.org/www-community/attacks/csrf) — это тип атаки, который происходит, когда вредоносный веб-сайт, электронное письмо, блог, мгновенное сообщение или программа вызывает выполнение нежелательного действия на доверенном сайте, когда пользователь аутентифицирован.
 
-Laravel provides CSRF protection out-of-the-box with the `VerifyCSRFToken` middleware. Generally, if you have this middleware in the `web` middleware group of your `App\Http\Kernel` class, you should be well protected:
+Laravel предоставляет защиту от CSRF "из коробки" с помощью промежуточного ПО `VerifyCsrfToken`. Обычно, если у вас есть это промежуточное ПО в группе `web` вашего класса `App\Http\Kernel`, вы должны быть хорошо защищены:
 
 ```php
 /**
- * The application's route middleware groups.
+ * Группы промежуточного ПО маршрутов приложения.
  *
  * @var array
  */
 protected $middlewareGroups = [
     'web' => [
         ...
-         \App\Http\Middleware\VerifyCsrfToken::class,
-         ...
+        \App\Http\Middleware\VerifyCsrfToken::class,
+        ...
     ],
 ];
 ```
 
-Next, for all your `POST` request forms, you may use the `@csrf` blade directive to generate the hidden CSRF input token fields:
+Для всех форм запросов `POST` вы можете использовать директиву Blade `@csrf`, чтобы создать скрытые поля с токеном CSRF:
 
 ```html
 <form method="POST" action="/profile">
     @csrf
 
-    <!-- Equivalent to... -->
+    <!-- Эквивалентно... -->
     <input type="hidden" name="_token" value="{{ csrf_token() }}" />
 </form>
 ```
 
-For AJAX requests, you can setup the [X-CSRF-Token header](https://laravel.com/docs/csrf#csrf-x-csrf-token).
+Для AJAX-запросов вы можете настроить заголовок [X-CSRF-Token](https://laravel.com/docs/csrf#csrf-x-csrf-token).
 
-Laravel also provides the ability to exclude certain routes from CSRF protection using the `$except` variable in your CSRF middleware class. Typically, you would want to exclude only stateless routes (e.g. APIs or webhooks) from CSRF protection. If any other routes are excluded, these may result in CSRF vulnerabilities.
+Laravel также предоставляет возможность исключить определенные маршруты из защиты CSRF с помощью переменной `$except` в вашем классе промежуточного ПО CSRF. Обычно вы хотите исключить только безгосударственные маршруты (например, API или вебхуки) из защиты CSRF. Если какие-либо другие маршруты исключены, это может привести к уязвимостям CSRF.
 
-## Command Injection
+## Командная инъекция
 
-Command Injection vulnerabilities involve executing shell commands constructed with unescaped user input data.
+Уязвимости командной инъекции связаны с выполнением команд оболочки, построенных с использованием неэкранированных данных ввода пользователя.
 
-For example, the following code performs a `whois` on a user provided domain name:
+Например, следующий код выполняет команду `whois` для предоставленного пользователем доменного имени:
 
 ```php
 public function verifyDomain(Request $request)
@@ -412,13 +416,13 @@ public function verifyDomain(Request $request)
 }
 ```
 
-The above code is vulnerable as the user data is not escaped properly. To do so, you may use the `escapeshellcmd` and/or `escapeshellarg` PHP functions.
+Этот код уязвим, так как данные пользователя не экранированы должным образом. Чтобы избежать этого, вы можете использовать функции PHP `escapeshellcmd` и/или `escapeshellarg`.
 
-## Other Injections
+## Другие инъекции
 
-Object injection, eval code injection and extract variable hijacking attacks involve unserializing, evaluating or using the `extract` function on untrusted user input data.
+Атаки, связанные с инъекцией объектов, инъекцией кода `eval` и захватом переменных с помощью функции `extract`, включают десериализацию, оценку или использование функции `extract` с не доверенными данными пользователя.
 
-Some examples are:
+Примеры таких атак:
 
 ```php
 unserialize($request->input('data'));
@@ -426,30 +430,30 @@ eval($request->input('data'));
 extract($request->all());
 ```
 
-In general, avoid passing any untrusted input data to these dangerous functions.
+В общем, избегайте передачи любых недоверенных данных ввода в эти опасные функции.
 
-## Security Headers
+## Заголовки безопасности
 
-You should consider adding the following security headers to your web server or Laravel application middleware:
+Рассмотрите возможность добавления следующих заголовков безопасности на ваш веб-сервер или в промежуточное ПО приложения Laravel:
 
 - X-Frame-Options
 - X-Content-Type-Options
-- Strict-Transport-Security (for HTTPS only applications)
+- Strict-Transport-Security (только для приложений HTTPS)
 - Content-Security-Policy
 
-For more information, refer the [OWASP secure headers project](https://owasp.org/www-project-secure-headers/).
+Для получения дополнительной информации обратитесь к [OWASP проекту по безопасным заголовкам](https://owasp.org/www-project-secure-headers/).
 
-## Tools
+## Инструменты
 
-You should consider using [Enlightn](https://www.laravel-enlightn.com/), a static and dynamic analysis tool for Laravel applications that has over 45 automated security checks to identify potential security issues. There is both an open source version and a commercial version of Enlightn available. Enlightn includes an extensive 45 page documentation on security vulnerabilities and a great way to learn more on Laravel security is to just review its [documentation](https://www.laravel-enlightn.com/docs/security/).
+Рассмотрите возможность использования [Enlightn](https://www.laravel-enlightn.com/), инструмента статического и динамического анализа для приложений Laravel, который имеет более 45 автоматизированных проверок безопасности для выявления потенциальных проблем безопасности. Доступна как открытая, так и коммерческая версии Enlightn. Enlightn включает обширную документацию из 45 страниц по уязвимостям безопасности, и отличный способ узнать больше о безопасности Laravel — это просто ознакомиться с его [документацией](https://www.laravel-enlightn.com/docs/security/).
 
-You should also use the [Enlightn Security Checker](https://github.com/enlightn/security-checker) or the [Local PHP Security Checker](https://github.com/fabpot/local-php-security-checker). Both of them are open source packages, licensed under the MIT and AGPL licenses respectively, that scan your PHP dependencies for known vulnerabilities using the [Security Advisories Database](https://github.com/FriendsOfPHP/security-advisories).
+Также используйте [Enlightn Security Checker](https://github.com/enlightn/security-checker) или [Local PHP Security Checker](https://github.com/fabpot/local-php-security-checker). Оба этих инструмента являются открытым исходным кодом, лицензированным соответственно под MIT и AGPL лицензиями, которые сканируют ваши зависимости PHP на наличие известных уязвимостей с использованием [Security Advisories Database](https://github.com/FriendsOfPHP/security-advisories).
 
-## References
+## Ссылки
 
-- [Laravel Documentation on Authentication](https://laravel.com/docs/authentication)
-- [Laravel Documentation on Authorization](https://laravel.com/docs/authorization)
-- [Laravel Documentation on CSRF](https://laravel.com/docs/csrf)
-- [Laravel Documentation on Validation](https://laravel.com/docs/validation)
-- [Enlightn SAST and DAST Tool](https://www.laravel-enlightn.com/)
-- [Laravel Enlightn Security Documentation](https://www.laravel-enlightn.com/docs/security/)
+- [Документация Laravel по аутентификации](https://laravel.com/docs/authentication)
+- [Документация Laravel по авторизации](https://laravel.com/docs/authorization)
+- [Документация Laravel по CSRF](https://laravel.com/docs/csrf)
+- [Документация Laravel по валидации](https://laravel.com/docs/validation)
+- [Enlightn SAST и DAST Tool](https://www.laravel-enlightn.com/)
+- [Документация по безопасности Laravel Enlightn](https://www.laravel-enlightn.com/docs/security/)

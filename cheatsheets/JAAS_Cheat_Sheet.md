@@ -1,24 +1,24 @@
-# JAAS Cheat Sheet
+# Cheat Sheet по JAAS
 
-## Introduction - What is JAAS authentication
+## Введение - Что такое аутентификация JAAS
 
-The process of verifying the identity of a user or another system is authentication.
+Процесс проверки личности пользователя или другой системы называется аутентификацией.
 
-[JAAS](https://docs.oracle.com/javase/8/docs/technotes/guides/security/jaas/JAASRefGuide.html), as an authentication framework manages the authenticated user's identity and credentials from login to logout.
+[JAAS](https://docs.oracle.com/javase/8/docs/technotes/guides/security/jaas/JAASRefGuide.html), как фреймворк аутентификации, управляет личностью и учетными данными аутентифицированного пользователя от входа в систему до выхода.
 
-The JAAS authentication lifecycle:
+Жизненный цикл аутентификации JAAS:
 
-1. Create `LoginContext`.
-2. Read the configuration file for one or more `LoginModules` to initialize.
-3. Call `LoginContext.initialize()` for each LoginModule to initialize.
-4. Call `LoginContext.login()` for each LoginModule.
-5. If login successful then call `LoginContext.commit()` else call `LoginContext.abort()`
+1. Создайте `LoginContext`.
+2. Прочитайте конфигурационный файл для одного или нескольких `LoginModules` для инициализации.
+3. Вызовите `LoginContext.initialize()` для каждого `LoginModule` для инициализации.
+4. Вызовите `LoginContext.login()` для каждого `LoginModule`.
+5. Если вход выполнен успешно, вызовите `LoginContext.commit()`, в противном случае вызовите `LoginContext.abort()`.
 
-## Configuration file
+## Конфигурационный файл
 
-The JAAS configuration file contains a `LoginModule` stanza for each `LoginModule` available for logging on to the application.
+Конфигурационный файл JAAS содержит секцию `LoginModule` для каждого доступного `LoginModule` для входа в приложение.
 
-A stanza from a JAAS configuration file:
+Пример секции из конфигурационного файла JAAS:
 
 ```text
 Branches
@@ -29,38 +29,38 @@ Branches
 }
 ```
 
-Note the placement of the semicolons, terminating both `LoginModule` entries and stanzas.
+Обратите внимание на размещение точек с запятой, которые завершает как записи `LoginModule`, так и секции.
 
-The word required indicates the `LoginContext`'s `login()` method must be successful when logging in the user. The `LoginModule`-specific values `debug` and `succeeded` are passed to the `LoginModule`.
+Слово `required` указывает на то, что метод `login()` `LoginContext` должен быть успешным при входе пользователя. Значения, специфичные для `LoginModule`, такие как `debug` и `succeeded`, передаются в `LoginModule`.
 
-They are defined by the `LoginModule` and their usage is managed inside the `LoginModule`. Note, Options are Configured using key-value pairing such as `debug="true"` and the key and value should be separated by a `=` sign.
+Они определяются `LoginModule` и их использование управляется внутри `LoginModule`. Обратите внимание, что параметры настраиваются с помощью пар ключ-значение, таких как `debug="true"`, и ключ и значение должны быть разделены знаком `=`.
 
-## Main.java (The client)
+## Main.java (Клиент)
 
-- Execution syntax:
+- Синтаксис выполнения:
 
 ```text
 Java –Djava.security.auth.login.config==packageName/packageName.config
         packageName.Main Stanza1
 
-Where:
-    packageName is the directory containing the config file.
-    packageName.config specifies the config file in the Java package, packageName.
-    packageName.Main specifies Main.java in the Java package, packageName.
-    Stanza1 is the name of the stanza Main() should read from the config file.
+Где:
+    packageName - директория, содержащая конфигурационный файл.
+    packageName.config - указывает конфигурационный файл в пакете Java, packageName.
+    packageName.Main - указывает на Main.java в пакете Java, packageName.
+    Stanza1 - имя секции, которую должен прочитать Main() из конфигурационного файла.
 ```
 
-- When executed, the 1st command-line argument is the stanza from the config file. The Stanza names the `LoginModule` to be used. The 2nd argument is the `CallbackHandler`.
-- Create a new `LoginContext` with the arguments passed to `Main.java`.
-    - `loginContext = new LoginContext (args[0], new AppCallbackHandler());`
-- Call the LoginContext.Login Module:
+- При выполнении первый аргумент командной строки — это секция из конфигурационного файла. Секция указывает, какой `LoginModule` должен быть использован. Второй аргумент — это `CallbackHandler`.
+- Создайте новый `LoginContext` с аргументами, переданными в `Main.java`:
+    - `loginContext = new LoginContext(args[0], new AppCallbackHandler());`
+- Вызовите модуль LoginContext:
     - `loginContext.login();`
-- The value in succeeded Option is returned from `loginContext.login()`.
-- If the login was successful, a subject was created.
+- Значение в параметре `succeeded` возвращается из `loginContext.login()`.
+- Если вход в систему прошел успешно, создается субъект.
 
 ## LoginModule.java
 
-A `LoginModule` must have the following authentication methods:
+`LoginModule` должен иметь следующие методы аутентификации:
 
 - `initialize()`
 - `login()`
@@ -70,85 +70,85 @@ A `LoginModule` must have the following authentication methods:
 
 ### initialize()
 
-In `Main()`, after the `LoginContext` reads the correct stanza from the config file, the `LoginContext` instantiates the `LoginModule` specified in the stanza.
+В `Main()`, после того как `LoginContext` прочитает правильную секцию из конфигурационного файла, `LoginContext` создает экземпляр `LoginModule`, указанный в секции.
 
-- `initialize()` methods signature:
-    - `Public void initialize (Subject subject, CallbackHandler callbackHandler, Map sharedState, Map options)`
-- The arguments above should be saved as follows:
+- Подпись метода `initialize()`:
+    - `Public void initialize(Subject subject, CallbackHandler callbackHandler, Map sharedState, Map options)`
+- Аргументы выше должны сохраняться следующим образом:
     - `this.subject = subject;`
     - `this.callbackHandler = callbackHandler;`
     - `this.sharedState = sharedState;`
     - `this.options = options;`
-- What the `initialize()` method does:
-    - Builds a subject object of the `Subject` class contingent on a successful `login()`.
-    - Sets the `CallbackHandler` which interacts with the user to gather login information.
-    - If a `LoginContext` specifies 2 or more LoginModules, which is legal, they can share information via a `sharedState` map.
-    - Saves state information such as debug and succeeded in an options Map.
+- Что делает метод `initialize()`:
+    - Создает объект субъекта класса `Subject` при успешной аутентификации.
+    - Устанавливает `CallbackHandler`, который взаимодействует с пользователем для сбора информации для входа.
+    - Если `LoginContext` указывает 2 или более `LoginModules`, что допустимо, они могут обмениваться информацией через карту `sharedState`.
+    - Сохраняет информацию о состоянии, такую как `debug` и `succeeded`, в карте `options`.
 
 ### login()
 
-Captures user supplied login information. The code snippet below declares an array of two callback objects which, when passed to the `callbackHandler.handle` method in the `callbackHandler.java` program, will be loaded with a username and password provided interactively by the user:
+Метод `login()` захватывает информацию для входа, предоставленную пользователем. Приведенный ниже фрагмент кода объявляет массив из двух объектов обратного вызова, которые, переданные методу `callbackHandler.handle` в программе `callbackHandler.java`, будут заполнены именем пользователя и паролем, предоставленными пользователем интерактивно:
 
 ```java
 NameCallback nameCB = new NameCallback("Username");
-PasswordCallback passwordCB = new PasswordCallback ("Password", false);
+PasswordCallback passwordCB = new PasswordCallback("Password", false);
 Callback[] callbacks = new Callback[] { nameCB, passwordCB };
-callbackHandler.handle (callbacks);
+callbackHandler.handle(callbacks);
 ```
 
-- Authenticates the user
-- Retrieves the user supplied information from the callback objects:
-    - `String ID = nameCallback.getName ();`
-    - `char[] tempPW = passwordCallback.getPassword ();`
-- Compare `name` and `tempPW` to values stored in a repository such as LDAP.
-- Set the value of the variable succeeded and return to `Main()`.
+- Аутентифицирует пользователя.
+- Извлекает информацию, предоставленную пользователем, из объектов обратного вызова:
+    - `String ID = nameCallback.getName();`
+    - `char[] tempPW = passwordCallback.getPassword();`
+- Сравнивает `name` и `tempPW` со значениями, хранящимися в репозитории, таком как LDAP.
+- Устанавливает значение переменной `succeeded` и возвращается в `Main()`.
 
 ### commit()
 
-Once the users credentials are successfully verified during `login()`, the JAAS authentication framework associates the credentials, as needed, with the subject.
+После успешной проверки учетных данных пользователя в методе `login()`, фреймворк JAAS связывает учетные данные с субъектом, если это необходимо.
 
-There are two types of credentials, **Public** and **Private**:
+Существуют два типа учетных данных: **Публичные** и **Приватные**:
 
-- Public credentials include public keys.
-- Private credentials include passwords and public keys.
+- Публичные учетные данные включают в себя публичные ключи.
+- Приватные учетные данные включают в себя пароли и публичные ключи.
 
-Principals (i.e. Identities the subject has other than their login name) such as employee number or membership ID in a user group are added to the subject.
+Принципы (т.е. идентификаторы, которые субъект имеет помимо имени для входа), такие как номер сотрудника или ID в группе пользователей, добавляются к субъекту.
 
-Below, is an example `commit()` method where first, for each group the authenticated user has membership in, the group name is added as a principal to the subject. The subject's username is then added to their public credentials.
+Ниже приведен пример метода `commit()`, в котором сначала для каждой группы, в которой аутентифицированный пользователь имеет членство, имя группы добавляется в качестве принципала к субъекту. Затем имя пользователя добавляется к их публичным учетным данным.
 
-Code snippet setting then adding any principals and a public credentials to a subject:
+Фрагмент кода, устанавливающий и добавляющий любые принципы и публичные учетные данные к субъекту:
 
 ```java
 public boolean commit() {
-    If (userAuthenticated) {
-        Set groups = UserService.findGroups (username);
-        for (Iterator itr = groups.iterator (); itr.hasNext (); {
-            String groupName = (String) itr.next ();
-            UserGroupPrincipal group = new UserGroupPrincipal (GroupName);
-            subject.getPrincipals ().add (group);
+    if (userAuthenticated) {
+        Set groups = UserService.findGroups(username);
+        for (Iterator itr = groups.iterator(); itr.hasNext(); ) {
+            String groupName = (String) itr.next();
+            UserGroupPrincipal group = new UserGroupPrincipal(groupName);
+            subject.getPrincipals().add(group);
         }
-        UsernameCredential cred = new UsernameCredential (username);
-        subject.getPublicCredentials().add (cred);
+        UsernameCredential cred = new UsernameCredential(username);
+        subject.getPublicCredentials().add(cred);
     }
 }
 ```
 
 ### abort()
 
-The `abort()` method is called when authentication doesn't succeed. Before the `abort()` method exits the `LoginModule`, care should be taken to reset state including the username and password input fields.
+Метод `abort()` вызывается, когда аутентификация не удалась. Перед тем как метод `abort()` завершит работу `LoginModule`, необходимо сбросить состояние, включая поля ввода имени пользователя и пароля.
 
 ### logout()
 
-The release of the users principals and credentials when `LoginContext.logout` is called:
+Метод `logout()` освобождает принципы и учетные данные пользователя, когда вызывается `LoginContext.logout`:
 
 ```java
 public boolean logout() {
     if (!subject.isReadOnly()) {
-        Set principals = subject.getPrincipals(UserGroupPrincipal.class);
+        Set principals = subject.getPrincipals(UserGroupPrincipal.class);
         subject.getPrincipals().removeAll(principals);
-        Set creds = subject.getPublicCredentials(UsernameCredential.class);
+        Set creds = subject.getPublicCredentials(UsernameCredential.class);
         subject.getPublicCredentials().removeAll(creds);
-        return true;
+        return true;
     } else {
         return false;
     }
@@ -157,10 +157,10 @@ public boolean logout() {
 
 ## CallbackHandler.java
 
-The `callbackHandler` is in a source (`.java`) file separate from any single `LoginModule` so that it can service a multitude of LoginModules with differing callback objects:
+`CallbackHandler` находится в отдельном исходном (.java) файле, отличном от любого конкретного `LoginModule`, чтобы он мог обслуживать множество `LoginModules` с различными объектами обратного вызова:
 
-- Creates instance of the `CallbackHandler` class and has only one method, `handle()`.
-- A `CallbackHandler` servicing a LoginModule requiring username & password to login:
+- Создает экземпляр класса `CallbackHandler` и имеет только один метод, `handle()`.
+- `CallbackHandler`, обслуживающий `LoginModule`, требующий имя пользователя и пароль для входа:
 
 ```java
 public void handle(Callback[] callbacks) {
@@ -169,7 +169,7 @@ public void handle(Callback[] callbacks) {
         if (callback instanceof NameCallback) {
             NameCallback nameCallBack = (NameCallback) callback;
             nameCallBack.setName(username);
-    }  else if (callback instanceof PasswordCallback) {
+        } else if (callback instanceof PasswordCallback) {
             PasswordCallback passwordCallBack = (PasswordCallback) callback;
             passwordCallBack.setPassword(password.toCharArray());
         }
@@ -177,11 +177,11 @@ public void handle(Callback[] callbacks) {
 }
 ```
 
-## Related Articles
+## Связанные статьи
 
-- [JAAS in Action](https://jaasbook.wordpress.com/2009/09/27/intro/), Michael Coté, posted on September 27, 2009, URL as 5/14/2012.
-- Pistoia Marco, Nagaratnam Nataraj, Koved Larry, Nadalin Anthony from book ["Enterprise Java Security" - Addison-Wesley, 2004](https://www.oreilly.com/library/view/enterprise-javatm-security/0321118898/).
+- [JAAS in Action](https://jaasbook.wordpress.com/2009/09/27/intro/), Michael Coté, опубликовано 27 сентября 2009 года, URL по состоянию на 5/14/2012.
+- Пистоя Марко, Нагаратнам Натарадж, Ковед Ларри, Надалин Энтони из книги ["Enterprise Java Security" - Addison-Wesley, 2004](https://www.oreilly.com/library/view/enterprise-javatm-security/0321118898/).
 
-## Disclosure
+## Примечание
 
-All of the code in the attached JAAS cheat sheet has been copied verbatim from this [free source](https://jaasbook.wordpress.com/2009/09/27/intro/).
+Весь код в этой шпаргалке был скопирован дословно из этого [бесплатного источника](https://jaasbook.wordpress.com/2009/09/27/intro/).

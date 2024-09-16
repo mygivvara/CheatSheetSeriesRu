@@ -1,143 +1,143 @@
-# Credential Stuffing Prevention Cheat Sheet
+# Шпаргалка по предотвращению вброса учётных данных
 
-## Introduction
+## Введение
 
-This cheatsheet covers defences against two common types of authentication-related attacks: credential stuffing and password spraying. Although these are separate, distinct attacks, in many cases the defences that would be implemented to protect against them are the same, and they would also be effective at protecting against brute-force attacks.  A summary of these different attacks is listed below:
+В этой шпаргалке рассматриваются средства защиты от двух распространенных типов атак, связанных с аутентификацией: вброс учетных данных и распыление паролей. Хотя это отдельные атаки, во многих случаях средства защиты от них одинаковы, и они также эффективны для защиты от атак перебора.  Ниже приводится краткое описание этих различных атак:
 
-| Attack Type | Description |
+| Тип атаки | Описание |
 |-------------|-------------|
-| Brute Force | Testing multiple passwords from dictionary or other source against a single account. |
-| Credential Stuffing | Testing username/password pairs obtained from the breach of another site. |
-| Password Spraying | Testing a single weak password against a large number of different accounts.|
+| Brute Force | Проверка нескольких паролей из словаря или другого источника против одной учетной записи. |
+| Credential Stuffing | Проверка пар имя пользователя/пароль, полученных в результате взлома другого сайта. |
+| Проверка паролей | Проверка одного слабого пароля против большого количества различных учетных записей.
 
-## Multi-Factor Authentication
+## Многофакторная аутентификация
 
-[Multi-factor authentication (MFA)](Multifactor_Authentication_Cheat_Sheet.md) is by far the best defense against the majority of password-related attacks, including credential stuffing and password spraying, with analysis by Microsoft suggesting that it would have stopped [99.9% of account compromises](https://techcommunity.microsoft.com/t5/Azure-Active-Directory-Identity/Your-Pa-word-doesn-t-matter/ba-p/731984). As such, it should be implemented wherever possible. Historically, depending on the audience of the application, it may not have been practical or feasible to enforce the use of MFA, however with modern browsers and mobile devices now supporting FIDO2 Passkeys and other forms of MFA, it is attainable for most use cases.
+[Многофакторная аутентификация (MFA)](Multifactor_Authentication_Cheat_Sheet.md) - это, безусловно, лучшая защита от большинства атак, связанных с паролями, включая вброс учетных данных и подбор паролей. Анализ Microsoft показывает, что она остановила бы [99,9% компрометаций учетных записей](https://techcommunity.microsoft.com/t5/Azure-Active-Directory-Identity/Your-Pa-word-doesn-t-matter/ba-p/731984). Поэтому ее следует внедрять везде, где это возможно. Исторически, в зависимости от аудитории приложения, принудительное использование MFA могло быть нецелесообразным или невыполнимым, однако с учетом того, что современные браузеры и мобильные устройства теперь поддерживают FIDO2 Passkeys и другие формы MFA, это вполне достижимо для большинства случаев использования.
 
-In order to balance security and usability, multi-factor authentication can be combined with other techniques to require the 2nd factor only in specific circumstances where there is reason to suspect that the login attempt may not be legitimate, such as a login from:
+Чтобы сбалансировать безопасность и удобство использования, многофакторную аутентификацию можно сочетать с другими методами, требующими введения второго фактора только в определенных обстоятельствах, когда есть основания подозревать, что попытка входа в систему может быть нелегитимной, например, при входе в систему с сайта:
 
-- A new browser/device or IP address.
-- An unusual country or location.
-- Specific countries that are considered untrusted or typically do not contain users of a service.
-- An IP address that appears on known denylists or is associated with anonymization services, such as proxy or VPN services.
-- An IP address that has tried to login to multiple accounts.
-- A login attempt that appears to be scripted or from a bot rather than a human (i.e. large login volume sourced from a single IP or subnet).
+- Новый браузер/устройство или IP-адрес.
+- Необычная страна или место.
+- Определенные страны, которые считаются недоверенными или обычно не содержат пользователей службы.
+- IP-адрес, который фигурирует в известных списках отрицания или связан с сервисами анонимизации, такими как прокси- или VPN-сервисы.
+- IP-адрес, который пытался войти в несколько учетных записей.
+- Попытка входа в систему, которая кажется заскриптованной или предпринятой ботом, а не человеком (например, большое количество входов в систему с одного IP-адреса или подсети).
 
-Or an organization may choose to require MFA in the form of a "step-up" authentication for the above scenarios during a session combined with a request for a high risk activity such as:
+Или же организация может решить потребовать MFA в виде "ступенчатой" аутентификации для вышеупомянутых сценариев во время сеанса, совмещенного с запросом на выполнение действий с высоким риском, например:
 
-- Large currency transactions
-- Privileged or Administrative configuration changes
+- Крупные валютные операции
+- Привилегированные или административные изменения конфигурации
 
-Additionally, for enterprise applications, known trusted IP ranges could be added to an allowlist so that MFA is not required when users connect from these ranges.
+Кроме того, для корпоративных приложений в список разрешений можно добавить известные доверенные диапазоны IP-адресов, чтобы не требовать MFA при подключении пользователей из этих диапазонов.
 
-## Alternative Defenses
+## Альтернативная защита
 
-Where it is not possible to implement MFA, there are many alternative defenses that can be used to protect against credential stuffing and password spraying. In isolation none of these are as effective as MFA, however multiple, layered defenses can provide a reasonable degree of protection. In many cases, these mechanisms will also protect against brute-force or password spraying attacks.
+Если реализовать MFA невозможно, существует множество альтернативных средств защиты, которые можно использовать для защиты от подбора и распыления паролей. В отдельности ни один из них не является столь же эффективным, как MFA, однако многоуровневая защита может обеспечить разумную степень защиты. Во многих случаях эти механизмы также защищают от атак методом перебора или распыления паролей.
 
-Where an application has multiple user roles, it may be appropriate to implement different defenses for different roles. For example, it may not be feasible to enforce MFA for all users, but it should be possible to require that all administrators use it.
+Если приложение имеет несколько ролей пользователей, может быть целесообразно реализовать различные средства защиты для разных ролей. Например, может быть нецелесообразно внедрять MFA для всех пользователей, но можно потребовать, чтобы все администраторы использовали его.
 
-## Defense in Depth & Metrics
+## Глубинная защита и метрики
 
-While not a specific technique, it is important to implement defenses that consider the impact of individual defenses being defeated or otherwise failing.  As an example, client-side defenses, such as device fingerprinting or JavaScript challenges, may be spoofed or bypassed and other layers of defense should be implemented to account for this.
+Несмотря на то что это не конкретная техника, важно реализовать защиту, учитывающую последствия поражения или иного отказа отдельных средств защиты.  Например, защитные средства на стороне клиента, такие как отпечатки устройства или вызовы JavaScript, могут быть подделаны или обойдены, и для учета этого должны быть реализованы другие уровни защиты.
 
-Additionally, each defense should generate volume metrics for use as a detective mechanism. Ideally the metrics will include both detected and mitigated attack volume and allow for filtering on fields such as IP address.  Monitoring and reporting on these metrics may identify defense failures or the presence of unidentified attacks, as well as the impact of new or improved defenses.
+Кроме того, каждая система защиты должна генерировать метрики объема атак для использования в качестве детективного механизма. В идеале метрики должны включать как обнаруженные, так и устраненные атаки и позволять фильтровать их по таким полям, как IP-адрес.  Мониторинг и отчетность по этим показателям могут выявить сбои в защите или наличие неопознанных атак, а также влияние новых или улучшенных средств защиты.
 
-Finally, when administration of different defenses is performed by multiple teams, care should be taken to ensure there is communication and coordination when separate teams are performing maintenance, deployment or otherwise modifying individual defenses.
+Наконец, если администрирование различных защитных систем осуществляется несколькими командами, следует позаботиться об обеспечении связи и координации действий, когда отдельные команды выполняют обслуживание, развертывание или другие изменения отдельных защитных систем.
 
-### Secondary Passwords, PINs and Security Questions
+### Вторичные пароли, PIN-коды и вопросы безопасности
 
-As well as requiring a user to enter their password when authenticating, users can also be prompted to provide additional security information such as:
+Помимо требования ввести пароль при аутентификации, пользователям также может быть предложено предоставить дополнительную информацию о безопасности, например:
 
-- A PIN
-- Specific characters from a secondary passwords or memorable word
-- Answers to [security questions](Choosing_and_Using_Security_Questions_Cheat_Sheet.md)
+- PIN-код
+- Определенные символы из вторичного пароля или запоминающегося слова
+- Ответы на [вопросы по безопасности](Choosing_and_Using_Security_Questions_Cheat_Sheet.md)
 
-It must be emphasised that this **does not** constitute multi-factor authentication (as both factors are the same - something you know). However, it can still provide a useful layer of protection against both credential stuffing and password spraying where proper MFA can't be implemented.
+Следует подчеркнуть, что это **не** представляет собой многофакторную аутентификацию (поскольку оба фактора одинаковы - это то, что вы знаете). Тем не менее, она может обеспечить полезный уровень защиты от вброса и распыления паролей в тех случаях, когда невозможно реализовать надлежащую MFA.
 
 ### CAPTCHA
 
-Requiring a user to solve a "Completely Automated Public Turing test to tell Computers and Humans Apart" (CAPTCHA) or similar puzzle for each login attempt can help to identify automated/bot attacks and help prevent automated login attempts, and may slow down credential stuffing or password spraying attacks.  However, CAPTCHAs are not perfect, and in many cases tools or services exist that can be used to break them with a reasonably high success rate.  Monitoring CAPTCHA solve rates may help identify impact to good users, as well as automated CAPTCHA breaking technology, possibly indicated by abnormally high solve rates.
+Требование к пользователю решить "Полностью автоматизированный публичный тест Тьюринга для различения компьютеров и людей" (CAPTCHA) или аналогичную головоломку при каждой попытке входа в систему может помочь выявить автоматические/бот-атаки и предотвратить автоматические попытки входа в систему, а также замедлить атаки на вбивание учетных данных или распыление паролей.  Однако CAPTCHA не идеальны, и во многих случаях существуют инструменты или сервисы, которые можно использовать для их взлома с достаточно высоким процентом успеха.  Мониторинг количества решений CAPTCHA может помочь выявить воздействие на добросовестных пользователей, а также автоматизированные технологии взлома CAPTCHA, о чем может свидетельствовать аномально высокое количество решений.
 
-To improve usability, it may be desirable to only require the user solve a CAPTCHA when the login request is considered suspicious or high risk, using the same criteria discussed in the MFA section.
+Для повышения удобства использования может быть желательно требовать от пользователя решения CAPTCHA только в том случае, если запрос на вход в систему считается подозрительным или высокорискованным, используя те же критерии, которые обсуждались в разделе MFA.
 
-### IP Mitigation and Intelligence
+### Блокирование IP адресов и 
 
-Blocking IP addresses may be sufficent to stop less sophisticated attacks, but should not be used as the primary defense due to the ease in circumvention.  It is more effective to have a graduated response to abuse that leverages multiple defensive measures depending on different factors of the attack.
+Блокирование IP-адресов может быть достаточным для пресечения менее сложных атак, но не должно использоваться в качестве основной защиты из-за легкости обхода.  Более эффективным является поэтапный ответ на злоупотребления, который использует несколько защитных мер в зависимости от различных факторов атаки.
 
-Any process or decision to mitigate (including blocking and CAPTCHA) credential stuffing traffic from an IP address should consider a multitude of abuse scenarios, and not rely on a single predictable volume limit.  Short (i.e. burst) and long time periods should be considered, as well as high request volume and instances where one IP address, likely in concert with _many_ other IP addresses, generates low but consistent volumes of traffic.  Additionally, mitigation decisions should consider factors such as IP address classification (ex: residential vs hosting) and geolocation.  These factors may be leveraged to raise or lower mitigation thresholds in order to reduce potential impact on legitimate users or more aggresively mitigate abuse originating from abnormal sources.  Mitigations, especially blocking an IP address, should be temporary and processes should be in place to remove an IP address from a mitigated state as abuse declines or stops.
+Любой процесс или решение по смягчению последствий (включая блокировку и CAPTCHA) трафика с IP-адреса для вброса учетных данных должны учитывать множество сценариев злоупотреблений, а не полагаться на единственный предсказуемый предел объема.  Следует учитывать короткие (т. е. всплески) и длительные периоды времени, а также большой объем запросов и случаи, когда один IP-адрес, вероятно, совместно с _многими_ другими IP-адресами, генерирует небольшой, но постоянный объем трафика.  Кроме того, при принятии решений о смягчении последствий следует учитывать такие факторы, как классификация IP-адресов (например, жилые и хостинговые) и геолокация.  Эти факторы могут быть использованы для повышения или понижения порогов смягчения, чтобы уменьшить потенциальное воздействие на легитимных пользователей или более активно бороться со злоупотреблениями, исходящими из аномальных источников.  Меры смягчения, особенно блокировка IP-адреса, должны быть временными, и должны быть предусмотрены процессы, позволяющие выводить IP-адрес из состояния смягчения по мере снижения или прекращения злоупотреблений.
 
-Many credential stuffing toolkits, such as [Sentry MBA](https://federalnewsnetwork.com/wp-content/uploads/2020/06/Shape-Threat-Research-Automating-Cybercrime-with-SentryMBA.pdf), offer built-in use of proxy networks to distribute requests across a large volume of unique IP addressess.  This may defeat both IP block-lists and rate limiting, as per IP request volume may remain relatively low, even on high volume attacks.  Correlating authentication traffic with proxy and similar IP address intelligence, as well as hosting provider IP address ranges can help identify highly distributed credential stuffing attacks, as well as serve as a mitigation trigger.  For example, every request originating from a hosting provider could be required to solve CAPTCHA.
+Многие наборы инструментов для вброса учетных данных, такие как [Sentry MBA](https://federalnewsnetwork.com/wp-content/uploads/2020/06/Shape-Threat-Research-Automating-Cybercrime-with-SentryMBA.pdf), предлагают встроенное использование прокси-сетей для распределения запросов по большому количеству уникальных IP-адресов.  Это может помочь преодолеть блокировку IP-списков и ограничение скорости, поскольку объем запросов на один IP-адрес может оставаться относительно низким даже при большом количестве атак.  Корреляция трафика аутентификации с данными о прокси и аналогичных IP-адресах, а также с диапазонами IP-адресов хостинг-провайдеров может помочь выявить высокораспределенные атаки на вброс учетных данных, а также послужить триггером для смягчения последствий.  Например, каждый запрос, исходящий от хостинг-провайдера, может быть обязан решить CAPTCHA.
 
-There are both public and commercial sources of IP address intelligence and classification that may be leveraged as data sources for this purpose.  Additionally, some hosting providers publish their own IP address space, such as [AWS](https://docs.aws.amazon.com/vpc/latest/userguide/aws-ip-ranges.html).
+Существуют как публичные, так и коммерческие источники информации и классификации IP-адресов, которые можно использовать в качестве источников данных для этой цели.  Кроме того, некоторые хостинг-провайдеры публикуют свое собственное пространство IP-адресов, например [AWS](https://docs.aws.amazon.com/vpc/latest/userguide/aws-ip-ranges.html).
 
-Separate from blocking network connections, consider storing an account's IP address authentication history.  In case a recent IP address is added to a block or mitigation list, it may be appropriate to lock the account and notify the user.
+Помимо блокировки сетевых подключений, рассмотрите возможность хранения истории проверки подлинности IP-адресов учетной записи.  В случае добавления недавнего IP-адреса в список блокировки или смягчения последствий, возможно, будет уместно заблокировать учетную запись и уведомить пользователя.
 
-### Device Fingerprinting
+### Отпечатки устройств
 
-Aside from the IP address, there are a number of different factors that can be used to attempt to fingerprint a device. Some of these can be obtained passively by the server from the HTTP headers (particularly the "User-Agent" header), including:
+Помимо IP-адреса, существует ряд различных факторов, которые могут быть использованы для попытки отпечатка устройства. Некоторые из них сервер может получить пассивно из HTTP-заголовков (в частности, заголовка "User-Agent"), в том числе:
 
-- Operating system & version
-- Browser & version
-- Language
+- Операционная система и версия
+- Браузер и его версия
+- Язык
 
-Using JavaScript it is possible to access far more information, such as:
+С помощью JavaScript можно получить доступ к гораздо большему количеству информации, например:
 
-- Screen resolution
-- Installed fonts
-- Installed browser plugins
+- Разрешение экрана
+- Установленные шрифты
+- Установленные плагины для браузера
 
-Using these various attributes, it is possible to create a fingerprint of the device. This fingerprint can then be matched against any browser attempting to login to the account, and if it doesn't match then the user can be prompted for additional authentication. Many users will have multiple devices or browsers that they use, so it is not practical to simply block attempts that do not match the existing fingerprints, however it is common to define a process for users or customers to view their device history and manage their remembered devices.  Also these attributes can be used to detect anomalous activity such as a device appearing to be running an older version of OS or Browser.
+Используя эти различные атрибуты, можно создать отпечаток устройства. Этот отпечаток может быть сопоставлен с любым браузером, пытающимся войти в учетную запись, и если он не совпадает, то пользователю может быть предложено пройти дополнительную аутентификацию. У многих пользователей есть несколько устройств или браузеров, которые они используют, поэтому нецелесообразно просто блокировать попытки, не соответствующие существующим отпечаткам, однако обычно определяют процесс, позволяющий пользователям или клиентам просматривать историю своих устройств и управлять запомненными устройствами.  Кроме того, эти атрибуты могут использоваться для обнаружения аномальной активности, например, устройства, на котором установлена старая версия ОС или браузера.
 
-The [fingerprintjs2](https://github.com/Valve/fingerprintjs2) JavaScript library can be used to carry out client-side fingerprinting.
+Библиотека JavaScript [fingerprintjs2](https://github.com/Valve/fingerprintjs2) может быть использована для проведения фингерпринтинга на стороне клиента.
 
-It should be noted that as all this information is provided by the client, it can potentially be spoofed by an attacker. In some cases spoofing these attributes is trivial (such as the "User-Agent") header, but in other cases it may be more difficult to modify these attributes.
+Следует отметить, что поскольку вся эта информация предоставляется клиентом, она потенциально может быть подделана злоумышленником. В некоторых случаях подмена этих атрибутов тривиальна (например, заголовок "User-Agent"), но в других случаях модифицировать эти атрибуты может быть сложнее.
 
-### Connection Fingerprinting
+### Фингерпринтинг соединений
 
-Similar to device fingerprinting, there are numerous fingerprinting techniques available for network connections.  Some examples include [JA3](https://github.com/salesforce/ja3), HTTP/2 fingerprinting and HTTP header order.  As these techniques typically focus on how a connection is made, connection fingerprinting may provide more accurate results than other defenses that rely on an indicator, such as an IP address, or request data, such as user agent string.
+Как и в случае с отпечатками устройств, существует множество методов отпечатков для сетевых соединений.  Некоторые примеры включают [JA3](https://github.com/salesforce/ja3), отпечатки HTTP/2 и порядок заголовков HTTP.  Поскольку эти методы обычно фокусируются на способе установления соединения, отпечатки соединений могут давать более точные результаты, чем другие средства защиты, которые полагаются на индикатор, например IP-адрес, или данные запроса, например строку агента пользователя.
 
-Connection fingerprinting may also be used in conjunction with other defenses to ascertain the truthfulness of an authentication request.  For example, if the user agent header and device fingerprint indicates a mobile device, but the connection fingerprint indicates a Python script, the request is likely suspect.
+Отпечатки соединений также могут использоваться в сочетании с другими средствами защиты для проверки правдивости запроса на аутентификацию.  Например, если заголовок агента пользователя и отпечаток устройства указывают на мобильное устройство, а отпечаток соединения указывает на сценарий Python, запрос, скорее всего, подозрителен.
 
-### Require Unpredictable Usernames
+### Требуйте непредсказуемые имена пользователей
 
-Credential stuffing attacks rely on not just the re-use of passwords between multiple sites, but also the re-use of usernames. A significant number of websites use the email address as the username, and as most users will have a single email address they use for all their accounts, this makes the combination of an email address and password very effective for credential stuffing attacks.
+Атаки на вброс учетных данных основаны не только на повторном использовании паролей на разных сайтах, но и на повторном использовании имен пользователей. Значительное число веб-сайтов используют адрес электронной почты в качестве имени пользователя, а поскольку у большинства пользователей есть один адрес электронной почты, который они используют для всех своих учетных записей, это делает комбинацию адреса электронной почты и пароля очень эффективной для атак на вбивание учетных данных.
 
-Requiring users to create their own username when registering on the website makes it harder for an attacker to obtain valid username and password pairs for credential stuffing, as many of the available credential lists only include email addresses. Providing the user with a generated username can provide a higher degree of protection (as users are likely to choose the same username on most websites), but is user unfriendly. Additionally, care needs to be taken to ensure that the generated username is not predictable (such as being based on the user's full name, or sequential numeric IDs), as this could make enumerating valid usernames for a password spraying attack easier.
+Требование к пользователям создавать собственное имя пользователя при регистрации на сайте усложняет злоумышленникам задачу получения достоверных пар имени пользователя и пароля для подстановки учетных данных, поскольку многие из доступных списков учетных данных включают только адреса электронной почты. Предоставление пользователю сгенерированного имени пользователя может обеспечить более высокую степень защиты (поскольку пользователи, скорее всего, будут выбирать одно и то же имя пользователя на большинстве веб-сайтов), однако оно неудобно для пользователя. Кроме того, необходимо позаботиться о том, чтобы сгенерированное имя пользователя не было предсказуемым (например, основанным на полном имени пользователя или последовательных цифровых идентификаторах), так как это может облегчить перечисление действительных имен пользователей для атаки с использованием пароля.
 
-### Multi-Step Login Processes
+### Многоступенчатые процессы входа в систему
 
-The majority of off-the-shelf tools are designed for a single step login process, where the credentials are POSTed to the server, and the response indicates whether or not the login attempt was successful. By adding additional steps to this process, such as requiring the username and password to be entered sequentially, or requiring that the user first obtains a random [CSRF Token](Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.md) before they can login, this makes the attack slightly more difficult to perform, and doubles the number of requests that the attacker must make.
+Большинство готовых инструментов рассчитаны на одноэтапный процесс входа в систему, когда учетные данные отправляются на сервер, а в ответе указывается, была ли попытка входа успешной. Добавление дополнительных шагов к этому процессу, например, требование последовательного ввода имени пользователя и пароля или получение пользователем случайного [CSRF Token](Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.md) перед входом в систему, несколько усложняет атаку и удваивает количество запросов, которые должен сделать злоумышленник.
 
-Multi-step login processes, however, should be mindful that they do not faciliate [user enumeration](Authentication_Cheat_Sheet.md).  Enumerating users prior to a credential stuffing attack may result in a harder to identify, lower request volume attack.
+Однако при многоступенчатых процессах входа в систему следует помнить, что они не способствуют [перечислению пользователей] (Authentication_Cheat_Sheet.md).  Перечисление пользователей перед атакой на вброс учетных данных может привести к тому, что атаку будет сложнее идентифицировать, а объем запросов будет меньше.
 
-### Require JavaScript and Block Headless Browsers
+### Требуйте JavaScript и блокируйте Headless браузеры
 
-Most tools used for these types of attacks will make direct POST requests to the server and read the responses, but will not download or execute JavaScript that was contained in them. By requiring the attacker to evaluate JavaScript in the response (for example to generate a valid token that must be submitted with the request), this forces the attacker to either use a real browser with an automation framework like Selenium or Headless Chrome, or to implement JavaScript parsing with another tool such as PhantomJS. Additionally, there are a number of techniques that can be used to identify [Headless Chrome](https://antoinevastel.com/bot%20detection/2018/01/17/detect-chrome-headless-v2.html) or [PhantomJS](https://blog.shapesecurity.com/2015/01/22/detecting-phantomjs-based-visitors/).
+Большинство инструментов, используемых для подобных атак, выполняют прямые POST-запросы к серверу и читают ответы, но не загружают и не выполняют содержащийся в них JavaScript. Требуя от злоумышленника оценить JavaScript в ответе (например, для генерации валидного токена, который должен быть отправлен вместе с запросом), это вынуждает его либо использовать настоящий браузер с фреймворком автоматизации, таким как Selenium или Headless Chrome, либо реализовать разбор JavaScript с помощью другого инструмента, такого как PhantomJS. Кроме того, существует ряд техник, которые могут быть использованы для идентификации [Headless Chrome](https://antoinevastel.com/bot%20detection/2018/01/17/detect-chrome-headless-v2.html) или [PhantomJS](https://blog.shapesecurity.com/2015/01/22/detecting-phantomjs-based-visitors/).
 
-Please note that blocking visitors who have JavaScript disabled will reduce the accessibility of the website, especially to visitors who use screen readers. In certain jurisdictions this may be in breach of equalities legislation.
+Обратите внимание, что блокирование посетителей, у которых отключен JavaScript, снизит доступность сайта, особенно для посетителей, использующих программы для чтения с экрана. В некоторых юрисдикциях это может быть нарушением законодательства о равноправии.
 
-### Degredation
+### Деградация
 
-A more aggresive defense against credential stuffing is to implement measures that increase the amount of time the attack takes to complete.  This may include incrementally increasing the complexity of the JavaScript that must be evaluated, introducing long wait periods before responding to requests, returning overly large HTML assets or returning randomized error messages.
+Более агрессивная защита от вброса учетных данных заключается в применении мер, которые увеличивают время, необходимое для завершения атаки.  Это может включать постепенное увеличение сложности JavaScript, который должен быть оценен, введение длительных периодов ожидания перед ответом на запросы, возвращение слишком больших HTML-активов или возвращение произвольных сообщений об ошибках.
 
-Due to their potential negative impact on legitimate users, great care must be taken with this type of defense, though it may be needed in order to mitigate more sophisticated credential stuffing attacks.
+Из-за их потенциального негативного влияния на легитимных пользователей к этому типу защиты следует относиться с большой осторожностью, хотя он может быть необходим для борьбы с более сложными атаками, связанными с вбросом учетных данных.
 
-### Identifying Leaked Passwords
+### Выявление утечки паролей
 
-[ASVS v4.0 Password Security Requirements](https://github.com/OWASP/ASVS/blob/master/4.0/en/0x11-V2-Authentication.md#v21-password-security-requirements) provision (2.1.7) on verifying new passwords presence in breached password datasets should be implemented.
+Должно быть реализовано положение (2.1.7) [ASVS v4.0 Password Security Requirements](https://github.com/OWASP/ASVS/blob/master/4.0/en/0x11-V2-Authentication.md#v21-password-security-requirements) о проверке наличия новых паролей в наборах данных взломанных паролей.
 
-There are both commercial and free services that may be of use for validating passwords presence in prior breaches.  A well known free service for this is [Pwned Passwords](https://haveibeenpwned.com/Passwords). You can host a copy of the application yourself, or use the [API](https://haveibeenpwned.com/API/v2#PwnedPasswords).
+Существуют как коммерческие, так и бесплатные сервисы, которые могут быть полезны для проверки паролей, присутствовавших в предыдущих взломах.  Известным бесплатным сервисом для этого является [Pwned Passwords](https://haveibeenpwned.com/Passwords). Вы можете разместить копию приложения у себя или воспользоваться [API](https://haveibeenpwned.com/API/v2#PwnedPasswords).
 
-### Notify users about unusual security events
+### Уведомляйте пользователей о необычных событиях безопасности
 
-When suspicious or unusual activity is detected, it may be appropriate to notify or warn the user. However, care should be taken that the user does not get overwhelmed with a large number of notifications that are not important to them, or they will just start to ignore or delete them.  Additionally, due to frequent reuse of passwords across multiple sites, the possibility that the users email account has also been compromised should be considered.
+При обнаружении подозрительной или необычной активности может быть целесообразно уведомить или предупредить пользователя. Однако следует позаботиться о том, чтобы пользователь не был перегружен большим количеством неважных для него уведомлений, иначе он просто начнет их игнорировать или удалять.  Кроме того, из-за частого повторного использования паролей на нескольких сайтах следует рассмотреть возможность того, что учетная запись электронной почты пользователя также была взломана.
 
-For example, it would generally not be appropriate to notify a user that there had been an attempt to login to their account with an incorrect password. However, if there had been a login with the correct password, but which had then failed the subsequent MFA check, the user should be notified so that they can change their password.  Subsequently, should the user request multiple password resets from different devices or IP addresses, it may be appropriate to prevent further access to the account pending further user verification processes.
+Например, обычно не следует уведомлять пользователя о том, что была попытка войти в его учетную запись с неправильным паролем. Однако если была попытка войти в систему с правильным паролем, но при этом последующая проверка MFA не удалась, пользователя следует уведомить, чтобы он мог сменить пароль.  Впоследствии, если пользователь запрашивает несколько сбросов пароля с разных устройств или IP-адресов, может быть целесообразно предотвратить дальнейший доступ к учетной записи до дальнейших процессов проверки пользователя.
 
-Details related to current or recent logins should also be made visible to the user. For example, when they login to the application, the date, time and location of their previous login attempt could be displayed to them. Additionally, if the application supports concurrent sessions, the user should be able to view a list of all active sessions, and to terminate any other sessions that are not legitimate.
+Подробности, связанные с текущими или недавними входами в систему, также должны быть видны пользователю. Например, при входе в приложение пользователю может быть показана дата, время и место предыдущей попытки входа. Кроме того, если приложение поддерживает одновременные сеансы, пользователь должен иметь возможность просмотреть список всех активных сеансов и прервать все сеансы, которые не являются законными.
 
-## References
+## Ссылки
 
 - [OWASP Credential Stuffing Article](https://owasp.org/www-community/attacks/Credential_stuffing)
 - [OWASP Automated Threats to Web Applications](https://owasp.org/www-project-automated-threats-to-web-applications/)
-- Project: [OAT-008 Credential Stuffing](https://owasp.org/www-community/attacks/Credential_stuffing), which is one of 20 defined threats in the [OWASP Automated Threat Handbook](https://owasp.org/www-pdf-archive/Automated-threat-handbook.pdf) this project produced.
+- Проект: [OAT-008 Credential Stuffing](https://owasp.org/www-community/attacks/Credential_stuffing), которая является одной из 20 определенных угроз в [OWASP Automated Threat Handbook](https://owasp.org/www-pdf-archive/Automated-threat-handbook.pdf), подготовленном этим проектом.
