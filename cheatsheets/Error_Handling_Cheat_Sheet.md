@@ -1,18 +1,18 @@
-# Error Handling Cheat Sheet
+## Шпаргалка по Обработке Ошибок
 
-## Introduction
+### Введение
 
-Error handling is a part of the overall security of an application. Except in movies, an attack always begins with a **Reconnaissance** phase in which the attacker will try to gather as much technical information (often *name* and *version* properties) as possible about the target, such as the application server, frameworks, libraries, etc.
+Обработка ошибок — это важная часть общей безопасности приложения. Как правило, атака начинается с фазы **Разведки**, когда злоумышленник пытается собрать как можно больше технической информации (например, *имя* и *версия* серверов, фреймворков и библиотек) о цели, таких как сервер приложений, используемые фреймворки и библиотеки.
 
-Unhandled errors can assist an attacker in this initial phase, which is very important for the rest of the attack.
+Неперехваченные ошибки могут помочь злоумышленнику на этом этапе, что крайне важно для последующих атак.
 
-The following [link](https://web.archive.org/web/20230929111320/https://cipher.com/blog/a-complete-guide-to-the-phases-of-penetration-testing/) provides a description of the different phases of an attack.
+Следующая [ссылка](https://web.archive.org/web/20230929111320/https://cipher.com/blog/a-complete-guide-to-the-phases-of-penetration-testing/) описывает различные фазы атаки.
 
-## Context
+### Контекст
 
-Issues at the error handling level can reveal a lot of information about the target and can also be used to identify injection points in the target's features.
+Ошибки в обработке могут раскрыть много информации о цели, а также использоваться для выявления точек инъекции в функциональности приложения.
 
-Below is an example of the disclosure of a technology stack, here the Struts2 and Tomcat versions, via an exception rendered to the user:
+Пример раскрытия стека технологий (версий Struts2 и Tomcat) через исключение, отображаемое пользователю:
 
 ```text
 HTTP Status 500 - For input string: "null"
@@ -30,54 +30,45 @@ java.lang.NumberFormatException: For input string: "null"
     java.lang.Integer.parseInt(Integer.java:492)
     java.lang.Integer.parseInt(Integer.java:527)
     sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-    sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
-    sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-    java.lang.reflect.Method.invoke(Method.java:606)
-    com.opensymphony.xwork2.DefaultActionInvocation.invokeAction(DefaultActionInvocation.java:450)
-    com.opensymphony.xwork2.DefaultActionInvocation.invokeActionOnly(DefaultActionInvocation.java:289)
-    com.opensymphony.xwork2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:252)
-    org.apache.struts2.interceptor.debugging.DebuggingInterceptor.intercept(DebuggingInterceptor.java:256)
-    com.opensymphony.xwork2.DefaultActionInvocation.invoke(DefaultActionInvocation.java:246)
     ...
-
 note: The full stack trace of the root cause is available in the Apache Tomcat/7.0.56 logs.
 ```
 
-Below is an example of disclosure of a SQL query error, along with the site installation path, that can be used to identify an injection point:
+Пример раскрытия SQL-ошибки с путём установки сайта, что может быть использовано для нахождения уязвимых точек инъекции:
 
 ```text
 Warning: odbc_fetch_array() expects parameter /1 to be resource, boolean given
 in D:\app\index_new.php on line 188
 ```
 
-The [OWASP Testing Guide](https://owasp.org/www-project-web-security-testing-guide/stable/4-Web_Application_Security_Testing/01-Information_Gathering/) provides different techniques to obtain technical information from an application.
+[Руководство по тестированию OWASP](https://owasp.org/www-project-web-security-testing-guide/stable/4-Web_Application_Security_Testing/01-Information_Gathering/) предоставляет различные методы получения технической информации из приложения.
 
-## Objective
+### Цель
 
-The article shows how to configure a global error handler as part of your application's runtime configuration. In some cases, it may be more efficient to define this error handler as part of your code. The outcome being that when an unexpected error occurs then a generic response is returned by the application but the error details are logged server side for investigation, and not returned to the user.
+Настройка глобального обработчика ошибок должна быть частью конфигурации выполнения вашего приложения. При возникновении непредвиденной ошибки приложение должно возвращать пользователю общий ответ, а детали ошибки логироваться на сервере для последующего расследования.
 
-The following schema shows the target approach:
+Ниже приведена схема предлагаемого подхода:
 
-![Overview](../assets/Error_Handling_Cheat_Sheet_Overview.png)
+![Обзор](../assets/Error_Handling_Cheat_Sheet_Overview.png)
 
-As most recent application topologies are *API based*, we assume in this article that the backend exposes only a REST API and does not contain any user interface content. The application should try and exhaustively cover all possible failure modes and use 5xx errors only to indicate responses to requests that it cannot fulfill, but not provide any content as part of the response that would reveal implementation details. For that, [RFC 7807 - Problem Details for HTTP APIs](https://www.rfc-editor.org/rfc/rfc7807) defines a document format.  
-For the error logging operation itself, the [logging cheat sheet](Logging_Cheat_Sheet.md) should be used. This article focuses on the error handling part.
+Поскольку большинство современных приложений основано на *API*, в данной статье предполагается, что бэкенд предоставляет только REST API и не содержит пользовательского интерфейса. Приложение должно стараться охватывать все возможные режимы отказа и использовать ошибки 5xx только для обозначения того, что запрос не может быть выполнен, при этом не предоставляя никакой информации, раскрывающей детали реализации. Для этого [RFC 7807 - Problem Details for HTTP APIs](https://www.rfc-editor.org/rfc/rfc7807) определяет формат документа.  
+Для самой операции логирования ошибок используйте [шпаргалку по логированию](Logging_Cheat_Sheet.md). Данная статья фокусируется на части обработки ошибок.
 
-## Proposition
+### Предложение
 
-For each technology stack, the following configuration options are proposed:
+Для каждого стека технологий предлагаются следующие варианты конфигурации:
 
-### Standard Java Web Application
+#### Стандартное веб-приложение на Java
 
-For this kind of application, a global error handler can be configured at the **web.xml** deployment descriptor level.
+Для таких приложений глобальный обработчик ошибок можно настроить на уровне дескриптора развертывания **web.xml**.
 
-We propose here a configuration that can be used from Servlet specification *version 2.5* and above.
+Пример конфигурации, которая может использоваться с версией спецификации Servlet *2.5* и выше.
 
-With this configuration, any unexpected error will cause a redirection to the page **error.jsp** in which the error will be traced and a generic response will be returned.
+С этой конфигурацией любая непредвиденная ошибка приведёт к перенаправлению на страницу **error.jsp**, где ошибка будет зарегистрирована, а пользователю вернётся общий ответ.
 
-Configuration of the redirection into the **web.xml** file:
+Конфигурация перенаправления в файле **web.xml**:
 
-``` xml
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ns="http://java.sun.com/xml/ns/javaee"
 xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
@@ -91,32 +82,31 @@ version="3.0">
 </web-app>
 ```
 
-Content of the **error.jsp** file:
+Содержимое файла **error.jsp**:
 
-``` java
+```java
 <%@ page language="java" isErrorPage="true" contentType="application/json; charset=UTF-8"
     pageEncoding="UTF-8"%>
 <%
 String errorMessage = exception.getMessage();
-//Log the exception via the content of the implicit variable named "exception"
-//...
-//We build a generic response with a JSON format because we are in a REST API app context
-//We also add an HTTP response header to indicate to the client app that the response is an error
+// Логируем исключение через переменную "exception"
+// ...
+// Строим общий ответ в формате JSON, так как мы в контексте REST API приложения
+// Также добавляем заголовок HTTP-ответа, чтобы указать клиенту, что произошла ошибка
 response.setHeader("X-ERROR", "true");
-//Note that we're using an internal server error response
-//In some cases it may be prudent to return 4xx error codes, when we have misbehaving clients
+// Используем ответ с кодом ошибки сервера
 response.setStatus(500);
 %>
-{"message":"An error occur, please retry"}
+{"message":"Произошла ошибка, повторите попытку"}
 ```
 
-### Java SpringMVC/SpringBoot web application
+### Веб-приложение Java SpringMVC/SpringBoot
 
-With [SpringMVC](https://docs.spring.io/spring/docs/current/spring-framework-reference/web.html) or [SpringBoot](https://spring.io/projects/spring-boot), you can define a global error handler by implementing the following class in your project. Spring Framework 6 introduced [the problem details based on RFC 7807](https://github.com/spring-projects/spring-framework/issues/27052).
+В SpringMVC или SpringBoot можно определить глобальный обработчик ошибок, реализовав следующий класс в вашем проекте. В Spring Framework 6 была введена поддержка обработки ошибок в соответствии с [RFC 7807](https://github.com/spring-projects/spring-framework/issues/27052) (Problem Details for HTTP APIs).
 
-We indicate to the handler, via the annotation [@ExceptionHandler](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/web/bind/annotation/ExceptionHandler.html), to act when any exception extending the class *java.lang.Exception* is thrown by the application. We also use the [ProblemDetail class](https://docs.spring.io/spring-framework/docs/6.0.0/javadoc-api/org/springframework/http/ProblemDetail.html) to create the response object.
+Мы указываем обработчику с помощью аннотации [@ExceptionHandler](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/web/bind/annotation/ExceptionHandler.html), что он должен обрабатывать любые исключения, наследуемые от класса *java.lang.Exception*, которые выбрасываются в приложении. Мы также используем класс [ProblemDetail](https://docs.spring.io/spring-framework/docs/6.0.0/javadoc-api/org/springframework/http/ProblemDetail.html) для создания объекта ответа.
 
-``` java
+```java
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -125,35 +115,30 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 /**
- * Global error handler in charge of returning a generic response in case of unexpected error situation.
+ * Глобальный обработчик ошибок, отвечающий за возврат общего ответа в случае неожиданных ошибок.
  */
 @RestControllerAdvice
 public class RestResponseEntityExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(value = {Exception.class})
     public ProblemDetail handleGlobalError(RuntimeException exception, WebRequest request) {
-        //Log the exception via the content of the parameter named "exception"
-        //...
-        //Note that we're using an internal server error response
-        //In some cases it may be prudent to return 4xx error codes, if we have misbehaving clients
-        //By specification, the content-type can be "application/problem+json" or "application/problem+xml"
-        return ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "An error occur, please retry");
+        // Логирование исключения через параметр "exception"
+        // ...
+        // Используем ответ с ошибкой сервера
+        // В некоторых случаях разумно возвращать 4xx ошибки для некорректных запросов
+        // Согласно спецификации, content-type может быть "application/problem+json" или "application/problem+xml"
+        return ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "Произошла ошибка, повторите попытку");
     }
 }
 ```
 
-References:
+### Веб-приложение ASP.NET Core
 
-- [Exception handling with Spring](https://www.baeldung.com/exception-handling-for-rest-with-spring)
-- [Exception handling with SpringBoot](https://www.toptal.com/java/spring-boot-rest-api-error-handling)
+В ASP.NET Core вы можете определить глобальный обработчик ошибок, указав, что обработчик исключений является отдельным контроллером API.
 
-### ASP NET Core web application
+Пример содержимого контроллера API, предназначенного для обработки ошибок:
 
-With [ASP.NET Core](https://docs.microsoft.com/en-us/aspnet/core/?view=aspnetcore-2.2), you can define a global error handler by indicating that the exception handler is a dedicated API Controller.
-
-Content of the API Controller dedicated to the error handling:
-
-``` csharp
+```csharp
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
@@ -164,7 +149,7 @@ using System.Net;
 namespace MyProject.Controllers
 {
     /// <summary>
-    /// API Controller used to intercept and handle all unexpected exception
+    /// API контроллер для перехвата и обработки всех неожиданных исключений.
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]
@@ -172,9 +157,9 @@ namespace MyProject.Controllers
     public class ErrorController : ControllerBase
     {
         /// <summary>
-        /// Action that will be invoked for any call to this Controller in order to handle the current error
+        /// Метод, который будет вызван для обработки текущей ошибки.
         /// </summary>
-        /// <returns>A generic error formatted as JSON because we are in a REST API app context</returns>
+        /// <returns>Возвращает общий ответ об ошибке в формате JSON, так как приложение использует REST API.</returns>
         [HttpGet]
         [HttpPost]
         [HttpHead]
@@ -184,19 +169,16 @@ namespace MyProject.Controllers
         [HttpPatch]
         public JsonResult Handle()
         {
-            //Get the exception that has implied the call to this controller
+            // Получение исключения, которое привело к вызову этого контроллера
             Exception exception = HttpContext.Features.Get<IExceptionHandlerFeature>()?.Error;
-            //Log the exception via the content of the variable named "exception" if it is not NULL
-            //...
-            //We build a generic response with a JSON format because we are in a REST API app context
-            //We also add an HTTP response header to indicate to the client app that the response
-            //is an error
-            var responseBody = new Dictionary<String, String>{ {
-                "message", "An error occur, please retry"
-            } };
+            // Логирование исключения, если оно не NULL
+            // ...
+            // Формируем общий ответ в формате JSON
+            var responseBody = new Dictionary<String, String> {
+                { "message", "Произошла ошибка, повторите попытку" }
+            };
             JsonResult response = new JsonResult(responseBody);
-            //Note that we're using an internal server error response
-            //In some cases it may be prudent to return 4xx error codes, if we have misbehaving clients
+            // Используем код ошибки сервера
             response.StatusCode = (int)HttpStatusCode.InternalServerError;
             Request.HttpContext.Response.Headers.Remove("X-ERROR");
             Request.HttpContext.Response.Headers.Add("X-ERROR", "true");
@@ -206,9 +188,9 @@ namespace MyProject.Controllers
 }
 ```
 
-Definition in the application **Startup.cs** file of the mapping of the exception handler to the dedicated error handling API controller:
+### Определение в файле **Startup.cs** для сопоставления обработчика исключений с выделенным контроллером API для обработки ошибок:
 
-``` csharp
+```csharp
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -219,75 +201,93 @@ namespace MyProject
 {
     public class Startup
     {
-...
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
-            //First we configure the error handler middleware!
-            //We enable the global error handler in others environments than DEV
-            //because debug page are useful during implementation
+            // Сначала настраиваем промежуточное ПО для обработки ошибок!
+            // Включаем глобальный обработчик ошибок в средах, отличных от DEV,
+            // так как страницы отладки полезны при разработке
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
             else
             {
-                //Our global handler is defined on "/api/error" URL so we indicate to the
-                //exception handler to call this API controller
-                //on any unexpected exception raised by the application
+                // Наш глобальный обработчик определён на URL "/api/error", 
+                // поэтому указываем обработчику исключений вызывать этот API-контроллер
+                // при любом неожиданном исключении, возникшем в приложении
                 app.UseExceptionHandler("/api/error");
 
-                //To customize the response content type and text, use the overload of
-                //UseStatusCodePages that takes a content type and format string.
-                app.UseStatusCodePages("text/plain", "Status code page, status code: {0}");
+                // Чтобы настроить тип контента и текст ответа, используйте перегрузку
+                // метода UseStatusCodePages, принимающую тип контента и строку формата.
+                app.UseStatusCodePages("text/plain", "Страница статуса, код статуса: {0}");
             }
 
-            //We configure others middlewares, remember that the declaration order is important...
+            // Настраиваем другие промежуточные ПО, не забывая, что порядок объявления важен...
             app.UseMvc();
-            //...
         }
     }
 }
 ```
 
-References:
+### Веб-приложение ASP.NET Web API
 
-- [Exception handling with ASP.Net Core](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/error-handling?view=aspnetcore-2.1)
+В [ASP.NET Web API](https://www.asp.net/web-api) (для стандартного .NET Framework, а не .NET Core) можно определить и зарегистрировать обработчики для отслеживания и обработки любых ошибок, возникающих в приложении.
 
-### ASP NET Web API web application
+Определение обработчика для отслеживания деталей ошибки:
 
-With [ASP.NET Web API](https://www.asp.net/web-api) (from the standard .NET framework and not from the .NET Core framework), you can define and register handlers in order to trace and handle any error that occurs in the application.
-
-Definition of the handler for the tracing of the error details:
-
-``` csharp
+```csharp
 using System;
 using System.Web.Http.ExceptionHandling;
 
 namespace MyProject.Security
 {
     /// <summary>
-    /// Global logger used to trace any error that occurs at application wide level
+    /// Глобальный логгер для отслеживания любых ошибок, возникающих на уровне всего приложения
     /// </summary>
     public class GlobalErrorLogger : ExceptionLogger
     {
         /// <summary>
-        /// Method in charge of the management of the error from a tracing point of view
+        /// Метод, отвечающий за управление ошибками с точки зрения логирования
         /// </summary>
-        /// <param name="context">Context containing the error details</param>
+        /// <param name="context">Контекст, содержащий детали ошибки</param>
         public override void Log(ExceptionLoggerContext context)
         {
-            //Get the exception
+            // Получаем исключение
             Exception exception = context.Exception;
-            //Log the exception via the content of the variable named "exception" if it is not NULL
-            //...
+            // Логируем исключение через переменную "exception", если она не NULL
+            // ...
         }
     }
 }
 ```
 
-Definition of the handler for the management of the error in order to return a generic response:
+### Регистрация глобального логгера в конфигурации Web API:
 
-``` csharp
+Чтобы зарегистрировать глобальный логгер, добавьте его в коллекцию служб `ExceptionLogger` в файле конфигурации Web API:
+
+```csharp
+public static class WebApiConfig
+{
+    public static void Register(HttpConfiguration config)
+    {
+        // Регистрация глобального логгера для всех ошибок
+        config.Services.Add(typeof(IExceptionLogger), new GlobalErrorLogger());
+
+        // Настройка маршрутов Web API
+        config.MapHttpAttributeRoutes();
+
+        config.Routes.MapHttpRoute(
+            name: "DefaultApi",
+            routeTemplate: "api/{controller}/{id}",
+            defaults: new { id = RouteParameter.Optional }
+        );
+    }
+}
+```
+
+### Определение обработчика для управления ошибками с целью возврата общего ответа:
+
+```csharp
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -302,39 +302,38 @@ using System.Web.Http.ExceptionHandling;
 namespace MyProject.Security
 {
     /// <summary>
-    /// Global handler used to handle any error that occurs at application wide level
+    /// Глобальный обработчик для обработки любых ошибок, возникающих на уровне всего приложения.
     /// </summary>
     public class GlobalErrorHandler : ExceptionHandler
     {
         /// <summary>
-        /// Method in charge of handle the generic response send in case of error
+        /// Метод, отвечающий за управление общим ответом, отправляемым в случае ошибки.
         /// </summary>
-        /// <param name="context">Error context</param>
+        /// <param name="context">Контекст ошибки</param>
         public override void Handle(ExceptionHandlerContext context)
         {
             context.Result = new GenericResult();
         }
 
         /// <summary>
-        /// Class used to represent the generic response send
+        /// Класс, представляющий общий ответ на ошибку.
         /// </summary>
         private class GenericResult : IHttpActionResult
         {
             /// <summary>
-            /// Method in charge of creating the generic response
+            /// Метод, отвечающий за создание общего ответа.
             /// </summary>
-            /// <param name="cancellationToken">Object to cancel the task</param>
-            /// <returns>A task in charge of sending the generic response</returns>
+            /// <param name="cancellationToken">Объект для отмены задачи</param>
+            /// <returns>Задача, отвечающая за отправку общего ответа</returns>
             public Task<HttpResponseMessage> ExecuteAsync(CancellationToken cancellationToken)
             {
-                //We build a generic response with a JSON format because we are in a REST API app context
-                //We also add an HTTP response header to indicate to the client app that the response
-                //is an error
-                var responseBody = new Dictionary<String, String>{ {
-                    "message", "An error occur, please retry"
-                } };
-                // Note that we're using an internal server error response
-                // In some cases it may be prudent to return 4xx error codes, if we have misbehaving clients 
+                // Формируем общий ответ в формате JSON, так как это контекст REST API
+                // Также добавляем заголовок HTTP-ответа, чтобы указать клиенту, что произошла ошибка
+                var responseBody = new Dictionary<String, String>{
+                    { "message", "Произошла ошибка, повторите попытку" }
+                };
+                // Используем ответ с кодом ошибки сервера (500)
+                // В некоторых случаях разумно вернуть код ошибки 4xx, если проблема вызвана некорректными действиями клиента
                 HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.InternalServerError);
                 response.Headers.Add("X-ERROR", "true");
                 response.Content = new StringContent(JsonConvert.SerializeObject(responseBody),
@@ -346,9 +345,9 @@ namespace MyProject.Security
 }
 ```
 
-Registration of the both handlers in the application **WebApiConfig.cs** file:
+### Регистрация обоих обработчиков в файле **WebApiConfig.cs**:
 
-``` csharp
+```csharp
 using MyProject.Security;
 using System.Web.Http;
 using System.Web.Http.ExceptionHandling;
@@ -359,19 +358,19 @@ namespace MyProject
     {
         public static void Register(HttpConfiguration config)
         {
-            //Register global error logging and handling handlers in first
+            // Регистрация глобального логгера и обработчика ошибок
             config.Services.Replace(typeof(IExceptionLogger), new GlobalErrorLogger());
             config.Services.Replace(typeof(IExceptionHandler), new GlobalErrorHandler());
-            //Rest of the configuration
+            // Остальная конфигурация
             //...
         }
     }
 }
 ```
 
-Setting customErrors section to the **Web.config** file within the ```csharp <system.web>``` node as follows.
+### Настройка секции `customErrors` в файле **Web.config** в пределах узла `<system.web>`:
 
-```csharp
+```xml
 <configuration>
     ...
     <system.web>
@@ -382,16 +381,15 @@ Setting customErrors section to the **Web.config** file within the ```csharp <sy
 </configuration>
 ```
 
-References:
+### Источники информации и ссылки:
 
-- [Exception handling with ASP.Net Web API](https://exceptionnotfound.net/the-asp-net-web-api-exception-handling-pipeline-a-guided-tour/)
+- [Обработка исключений в ASP.Net Web API](https://exceptionnotfound.net/the-asp-net-web-api-exception-handling-pipeline-a-guided-tour/)
+- [Обработка ошибок в ASP.NET](https://docs.microsoft.com/en-us/aspnet/web-forms/overview/getting-started/getting-started-with-aspnet-45-web-forms/aspnet-error-handling)
 
-- [ASP.NET Error Handling](https://docs.microsoft.com/en-us/aspnet/web-forms/overview/getting-started/getting-started-with-aspnet-45-web-forms/aspnet-error-handling)
+### Пример исходного кода:
 
-## Sources of the prototype
+Исходный код всех песочниц, созданных для поиска правильной конфигурации, доступен в этом [репозитории на GitHub](https://github.com/righettod/poc-error-handling).
 
-The source code of all the sandbox projects created to find the right setup to use is stored in this [GitHub repository](https://github.com/righettod/poc-error-handling).
+### Приложение: HTTP ошибки
 
-## Appendix HTTP Errors
-
-A reference for HTTP errors can be found here [RFC 2616](https://www.ietf.org/rfc/rfc2616.txt). Using error messages that do not provide implementation details is important to avoid information leakage. In general, consider using 4xx error codes for requests that are due to an error on the part of the HTTP client (e.g. unauthorized access, request body too large) and use 5xx to indicate errors that are triggered on server side, due to an unforeseen bug. Ensure that applications are monitored for 5xx errors which are a good indication of the application failing for some sets of inputs.
+Референс HTTP ошибок можно найти здесь: [RFC 2616](https://www.ietf.org/rfc/rfc2616.txt). Использование сообщений об ошибках без предоставления деталей реализации важно для предотвращения утечек информации. В общем случае рекомендуется использовать коды ошибок 4xx для клиентских ошибок (например, неавторизованный доступ, слишком большой запрос), а коды 5xx для ошибок сервера, вызванных непредвиденными багами.

@@ -1,270 +1,269 @@
-# HTTP Security Response Headers Cheat Sheet
+# Шпаргалка по заголовкам безопасности HTTP-ответов
 
-## Introduction
+## Введение
 
-HTTP Headers are a great booster for web security with easy implementation. Proper HTTP response headers can help prevent security vulnerabilities like Cross-Site Scripting, Clickjacking, Information disclosure and more.
+HTTP-заголовки являются отличным инструментом для повышения веб-безопасности и легко внедряются. Правильные HTTP-заголовки ответа могут помочь предотвратить уязвимости, такие как межсайтовый скриптинг, кликовая подделка, раскрытие информации и другие.
 
-In this cheat sheet, we will review all security-related HTTP headers, recommended configurations, and reference other sources for complicated headers.
+В этой шпаргалке мы рассмотрим все заголовки HTTP, связанные с безопасностью, рекомендованные конфигурации и ссылки на другие источники для сложных заголовков.
 
-## Security Headers
+## Заголовки безопасности
 
 ### X-Frame-Options
 
-The `X-Frame-Options` HTTP response header can be used to indicate whether or not a browser should be allowed to render a page in a `<frame>`, `<iframe>`, `<embed>` or `<object>`. Sites can use this to avoid [clickjacking](https://owasp.org/www-community/attacks/Clickjacking) attacks, by ensuring that their content is not embedded into other sites.
+Заголовок HTTP-ответа `X-Frame-Options` можно использовать для указания того, следует ли браузеру разрешать отображение страницы в `<frame>`, `<iframe>`, `<embed>` или `<object>`. Сайты могут использовать это, чтобы избежать атак [кликовой подделки](https://owasp.org/www-community/attacks/Clickjacking), убедившись, что их контент не встраивается на другие сайты.
 
-Content Security Policy (CSP) frame-ancestors directive obsoletes X-Frame-Options for supporting browsers ([source](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options)).
+Директива `frame-ancestors` в Политике безопасности контента (CSP) устарела для поддерживающих браузеров ([источник](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options)).
 
-X-Frame-Options header is only useful when the HTTP response where it is included has something to interact with (e.g. links, buttons). If the HTTP response is a redirect or an API returning JSON data, X-Frame-Options does not provide any security.
+Заголовок X-Frame-Options полезен только тогда, когда HTTP-ответ, в котором он включен, имеет что-то для взаимодействия (например, ссылки, кнопки). Если HTTP-ответ является перенаправлением или API, возвращающим данные JSON, X-Frame-Options не обеспечивает безопасности.
 
-#### Recommendation
+#### Рекомендации
 
-Use Content Security Policy (CSP) frame-ancestors directive if possible.
+Используйте директиву `frame-ancestors` в Политике безопасности контента (CSP), если это возможно.
 
-Do not allow displaying of the page in a frame.
+Не разрешайте отображение страницы в фрейме.
 > `X-Frame-Options: DENY`
 
 ### X-XSS-Protection
 
-The HTTP `X-XSS-Protection` response header is a feature of Internet Explorer, Chrome, and Safari that stops pages from loading when they detect reflected cross-site scripting (XSS) attacks.
+Заголовок HTTP-ответа `X-XSS-Protection` является функцией Internet Explorer, Chrome и Safari, которая останавливает загрузку страниц, когда обнаруживает атаки межсайтового скриптинга (XSS).
 
-WARNING: Even though this header can protect users of older web browsers that don't yet support CSP, in some cases, this header can create XSS vulnerabilities in otherwise safe websites [source](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-XSS-Protection).
+ПРЕДУПРЕЖДЕНИЕ: Хотя этот заголовок может защитить пользователей старых веб-браузеров, которые еще не поддерживают CSP, в некоторых случаях этот заголовок может создавать уязвимости XSS на в остальном безопасных веб-сайтах ([источник](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-XSS-Protection)).
 
-#### Recommendation
+#### Рекомендации
 
-Use a Content Security Policy (CSP) that disables the use of inline JavaScript.
+Используйте Политику безопасности контента (CSP), которая отключает использование встроенного JavaScript.
 
-Do not set this header or explicitly turn it off.
+Не устанавливайте этот заголовок или явно отключите его.
 > `X-XSS-Protection: 0`
 
-Please see [Mozilla X-XSS-Protection](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-XSS-Protection) for details.
+Подробнее см. [Mozilla X-XSS-Protection](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-XSS-Protection).
 
 ### X-Content-Type-Options
 
-The `X-Content-Type-Options` response HTTP header is used by the server to indicate to the browsers that the MIME types advertised in the Content-Type headers should be followed and not guessed.
+Заголовок HTTP-ответа `X-Content-Type-Options` используется сервером для указания браузерам, что MIME-типы, указанные в заголовках Content-Type, должны соблюдаться, а не угадываться.
 
-This header is used to block browsers' [MIME type sniffing](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types#mime_sniffing), which can transform non-executable MIME types into executable MIME types ([MIME Confusion Attacks](https://blog.mozilla.org/security/2016/08/26/mitigating-mime-confusion-attacks-in-firefox/)).
+Этот заголовок используется для блокировки [определения MIME-типа](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types#mime_sniffing) браузерами, которое может преобразовывать неисполняемые MIME-типы в исполняемые MIME-типы ([Атаки путаницы MIME](https://blog.mozilla.org/security/2016/08/26/mitigating-mime-confusion-attacks-in-firefox/)).
 
-#### Recommendation
+### Рекомендации
 
-Set the Content-Type header correctly throughout the site.
+Установите заголовок `Content-Type` правильно на всех страницах сайта.
 
 > `X-Content-Type-Options: nosniff`
 
 ### Referrer-Policy
 
-The `Referrer-Policy` HTTP header controls how much referrer information (sent via the Referer header) should be included with requests.
+Заголовок HTTP `Referrer-Policy` контролирует, сколько информации о реферере (отправленной через заголовок Referer) должно включаться в запросы.
 
-#### Recommendation
+#### Рекомендации
 
-Referrer policy has been supported by browsers since 2014. Today, the default behavior in modern browsers is to no longer send all referrer information (origin, path, and query string) to the same site but to only send the origin to other sites. However, since not all users may be using the latest browsers we suggest forcing this behavior by sending this header on all responses.
+Политика реферера поддерживается браузерами с 2014 года. Сегодня стандартное поведение современных браузеров заключается в том, чтобы не отправлять всю информацию о реферере (происхождение, путь и строку запроса) на тот же сайт, а отправлять только происхождение на другие сайты. Однако, поскольку не все пользователи могут использовать последние версии браузеров, мы рекомендуем принудительно устанавливать это поведение, отправляя этот заголовок во всех ответах.
 
 > `Referrer-Policy: strict-origin-when-cross-origin`
 
-- *NOTE:* For more information on configuring this header please see [Mozilla Referrer-Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy).
+- *ПРИМЕЧАНИЕ:* Для получения дополнительной информации о настройке этого заголовка см. [Mozilla Referrer-Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy).
 
 ### Content-Type
 
-The `Content-Type` representation header is used to indicate the original media type of the resource (before any content encoding is applied for sending). If not set correctly, the resource (e.g. an image) may be interpreted as HTML, making XSS vulnerabilities possible.
+Заголовок `Content-Type` используется для указания оригинального типа медиа-ресурса (до применения любого кодирования контента для отправки). Если он не установлен правильно, ресурс (например, изображение) может быть интерпретирован как HTML, что может создать уязвимости XSS.
 
-Although it is recommended to always set the `Content-Type` header correctly, it would constitute a vulnerability only if the content is intended to be rendered by the client and the resource is untrusted (provided or modified by a user).
+Хотя рекомендуется всегда правильно устанавливать заголовок `Content-Type`, это будет представлять собой уязвимость только в том случае, если контент предназначен для отображения клиентом, а ресурс является ненадежным (предоставлен или изменен пользователем).
 
-#### Recommendation
+#### Рекомендации
 
 > `Content-Type: text/html; charset=UTF-8`
 
-- *NOTE:* the `charset` attribute is necessary to prevent XSS in **HTML** pages
-- *NOTE*: the `text/html` can be any of the possible [MIME types](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types)
+- *ПРИМЕЧАНИЕ:* Атрибут `charset` необходим для предотвращения XSS на **HTML** страницах.
+- *ПРИМЕЧАНИЕ:* `text/html` может быть любым из возможных [MIME-типа](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types).
 
 ### Set-Cookie
 
-The `Set-Cookie` HTTP response header is used to send a cookie from the server to the user agent, so the user agent can send it back to the server later. To send multiple cookies, multiple Set-Cookie headers should be sent in the same response.
+Заголовок HTTP-ответа `Set-Cookie` используется для отправки куки от сервера к пользовательскому агенту, чтобы пользовательский агент мог отправить его обратно на сервер позже. Для отправки нескольких куки следует отправить несколько заголовков Set-Cookie в одном ответе.
 
-This is not a security header per se, but its security attributes are crucial.
+Это не является заголовком безопасности само по себе, но его атрибуты безопасности имеют решающее значение.
 
-#### Recommendation
+#### Рекомендации
 
-- Please read [Session Management Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html#cookies) for a detailed explanation on cookie configuration options.
+- Пожалуйста, ознакомьтесь со [Шпаргалкой по управлению сессиями](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html#cookies) для детального объяснения вариантов конфигурации куки.
 
 ### Strict-Transport-Security (HSTS)
 
-The HTTP `Strict-Transport-Security` response header (often abbreviated as HSTS) lets a website tell browsers that it should only be accessed using HTTPS, instead of using HTTP.
+Заголовок HTTP-ответа `Strict-Transport-Security` (часто сокращаемый как HSTS) позволяет веб-сайту сообщить браузерам, что его следует использовать только через HTTPS, а не через HTTP.
 
-#### Recommendation
+#### Рекомендации
 
 > `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`
 
-- *NOTE*: Read carefully how this header works before using it. If the HSTS header is misconfigured or if there is a problem with the SSL/TLS certificate being used, legitimate users might be unable to access the website. For example, if the HSTS header is set to a very long duration and the SSL/TLS certificate expires or is revoked, legitimate users might be unable to access the website until the HSTS header duration has expired.
+- *ПРИМЕЧАНИЕ:* Ознакомьтесь внимательно с тем, как работает этот заголовок, перед его использованием. Если заголовок HSTS неправильно настроен или возникают проблемы с используемым сертификатом SSL/TLS, законные пользователи могут оказаться заблокированными для доступа к сайту. Например, если заголовок HSTS установлен на очень долгий срок, а сертификат SSL/TLS истекает или аннулируется, пользователи могут не иметь доступа к сайту, пока срок действия заголовка HSTS не истечет.
 
-Please checkout [HTTP Strict Transport Security Cheat Sheet](HTTP_Strict_Transport_Security_Cheat_Sheet.md) for more information.
+Пожалуйста, ознакомьтесь с [Чек-листом HTTP Strict Transport Security](HTTP_Strict_Transport_Security_Cheat_Sheet.md) для получения дополнительной информации.
 
 ### Expect-CT ❌
 
-The `Expect-CT` header lets sites opt-in to reporting of Certificate Transparency (CT) requirements. Given that mainstream clients now require CT qualification, the only remaining value is reporting such occurrences to the nominated report-uri value in the header. The header is now less about enforcement and more about detection/reporting.
+Заголовок `Expect-CT` позволяет сайтам согласиться на отчетность о требованиях к прозрачности сертификатов (CT). Поскольку основные клиенты теперь требуют квалификации CT, единственное оставшееся значение — это отчетность о таких событиях на указанное значение report-uri в заголовке. Этот заголовок теперь меньше касается принудительного применения и больше касается обнаружения/отчетности.
 
-#### Recommendation
+#### Рекомендации
 
-Do not use it. Mozilla [recommends](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Expect-CT) avoiding it, and removing it from existing code if possible.
+Не используйте этот заголовок. Mozilla [рекомендует](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Expect-CT) избегать его и, если возможно, удалять из существующего кода.
 
 ### Content-Security-Policy (CSP)
 
-Content Security Policy (CSP) is a security feature that is used to specify the origin of content that is allowed to be loaded on a website or in a web applications. It is an added layer of security that helps to detect and mitigate certain types of attacks, including Cross-Site Scripting (XSS) and data injection attacks. These attacks are used for everything from data theft to site defacement to distribution of malware.
+Content Security Policy (CSP) — это функция безопасности, которая используется для указания источника контента, который разрешено загружать на веб-сайте или в веб-приложении. Это дополнительный уровень безопасности, который помогает обнаруживать и смягчать определенные типы атак, включая межсайтовое скриптование (XSS) и атаки на ввод данных. Эти атаки используются для кражи данных, порчи сайта и распространения вредоносного ПО.
 
-- *NOTE*: This header is relevant to be applied in pages which can load and interpret scripts and code, but might be meaningless in the response of a REST API that returns content that is not going to be rendered.
+- *ПРИМЕЧАНИЕ:* Этот заголовок актуален для страниц, которые могут загружать и интерпретировать скрипты и код, но может быть неуместен в ответах REST API, которые возвращают контент, не предназначенный для рендеринга.
 
-#### Recommendation
+#### Рекомендации
 
-Content Security Policy is complex to configure and maintain. For an explanation on customization options, please read [Content Security Policy Cheat Sheet](Content_Security_Policy_Cheat_Sheet.md)
+Политика безопасности контента сложна для настройки и поддержания. Для объяснения вариантов настройки, пожалуйста, читайте [Чек-лист Content Security Policy](Content_Security_Policy_Cheat_Sheet.md).
 
 ### Access-Control-Allow-Origin
 
-If you don't use this header, your site is protected by default by the Same Origin Policy (SOP). What this header does is relax this control in specified circumstances.
+Если вы не используете этот заголовок, ваш сайт по умолчанию защищен Политикой одного источника (SOP). Этот заголовок ослабляет этот контроль в определенных случаях.
 
-The `Access-Control-Allow-Origin` is a CORS (cross-origin resource sharing) header. This header indicates whether the response it is related to can be shared with requesting code from the given origin. In other words, if siteA requests a resource from siteB, siteB should indicate in its `Access-Control-Allow-Origin` header that siteA is allowed to fetch that resource, if not, the access is blocked due to Same Origin Policy (SOP).
+`Access-Control-Allow-Origin` — это заголовок CORS (доступ к ресурсам с другого источника). Этот заголовок указывает, может ли ответ, к которому он относится, быть передан запрашивающему коду с указанного источника. Другими словами, если сайтA запрашивает ресурс у сайтаB, сайтB должен указать в заголовке `Access-Control-Allow-Origin`, что сайтA может получить этот ресурс; в противном случае доступ будет заблокирован из-за Политики одного источника (SOP).
 
-#### Recommendation
+#### Рекомендации
 
-If you use it, set specific [origins](https://developer.mozilla.org/en-US/docs/Glossary/Origin) instead of `*`. Checkout [Access-Control-Allow-Origin](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin) for details.
+Если вы используете этот заголовок, устанавливайте конкретные [источники](https://developer.mozilla.org/en-US/docs/Glossary/Origin) вместо `*`. Ознакомьтесь с [Access-Control-Allow-Origin](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin) для получения подробной информации.
 > `Access-Control-Allow-Origin: https://yoursite.com`
 
-- *NOTE*: The use of '\*' might be necessary depending on your needs. For example, for a public API that should be accessible from any origin, it might be necessary to allow '\*'.
+- *ПРИМЕЧАНИЕ:* Использование `*` может быть необходимо в зависимости от ваших потребностей. Например, для общедоступного API, который должен быть доступен с любого источника, может потребоваться разрешение `*`.
 
 ### Cross-Origin-Opener-Policy (COOP)
 
-The HTTP `Cross-Origin-Opener-Policy` (COOP) response header allows you to ensure a top-level document does not share a browsing context group with cross-origin documents.
+Заголовок HTTP-ответа `Cross-Origin-Opener-Policy` (COOP) позволяет убедиться, что главный документ не делится группой контекстов просмотра с документами с другого источника.
 
-This header works together with Cross-Origin-Embedder-Policy (COEP) and Cross-Origin-Resource-Policy (CORP) explained below.
+Этот заголовок работает вместе с Cross-Origin-Embedder-Policy (COEP) и Cross-Origin-Resource-Policy (CORP), объясненными ниже.
 
-This mechanism protects against attacks like Spectre which can cross the security boundary established by Same Origin Policy (SOP) for resources in the same browsing context group.
+Этот механизм защищает от атак, таких как Spectre, которые могут пересечь границу безопасности, установленную Политикой одного источника (SOP) для ресурсов в одной группе контекста просмотра.
 
-As this headers are very related to browsers, it may not make sense to be applied to REST APIs or clients that are not browsers.
+Так как эти заголовки тесно связаны с браузерами, их может не иметь смысла применять к REST API или клиентам, не являющимся браузерами.
 
-#### Recommendation
+#### Рекомендации
 
-Isolates the browsing context exclusively to same-origin documents.
-> `HTTP Cross-Origin-Opener-Policy: same-origin`
+Изолируйте контекст просмотра исключительно для документов с того же источника.
+> `Cross-Origin-Opener-Policy: same-origin`
 
 ### Cross-Origin-Embedder-Policy (COEP)
 
-The HTTP `Cross-Origin-Embedder-Policy` (COEP) response header prevents a document from loading any cross-origin resources that don't explicitly grant the document permission (using [CORP](#cross-origin-resource-policy) or CORS).
+Заголовок HTTP-ответа `Cross-Origin-Embedder-Policy` (COEP) предотвращает загрузку документа любых ресурсов с другого источника, которые явно не предоставляют разрешение этому документу (с помощью [CORP](#cross-origin-resource-policy) или CORS).
 
-- *NOTE*: Enabling this will block cross-origin resources not configured correctly from loading.
+- *ПРИМЕЧАНИЕ:* Включение этого заголовка заблокирует загрузку ресурсов с другого источника, если они не настроены должным образом.
 
-#### Recommendation
+#### Рекомендации
 
-A document can only load resources from the same origin, or resources explicitly marked as loadable from another origin.
+Документ может загружать ресурсы только с того же источника или ресурсы, явно отмеченные как доступные с другого источника.
 > `Cross-Origin-Embedder-Policy: require-corp`
 
-- *NOTE*: you can bypass it for specific resources by adding the `crossorigin` attribute:
+- *ПРИМЕЧАНИЕ:* Вы можете обойти это для конкретных ресурсов, добавив атрибут `crossorigin`:
 - `<img src="https://thirdparty.com/img.png" crossorigin>`
 
 ### Cross-Origin-Resource-Policy (CORP)
 
-The `Cross-Origin-Resource-Policy` (CORP) header allows you to control the set of origins that are empowered to include a resource. It is a robust defense against attacks like [Spectre](https://meltdownattack.com/), as it allows browsers to block a given response before it enters an attacker's process.
+Заголовок `Cross-Origin-Resource-Policy` (CORP) позволяет контролировать набор источников, которые могут включать ресурс. Это надежная защита от атак, таких как [Spectre](https://meltdownattack.com/), поскольку позволяет браузерам блокировать ответ до того, как он попадет в процесс злоумышленника.
 
-#### Recommendation
+#### Рекомендации
 
-Limit current resource loading to the site and sub-domains only.
+Ограничьте загрузку текущего ресурса только для сайта и его подсайтов.
 > `Cross-Origin-Resource-Policy: same-site`
 
 ### Permissions-Policy (formerly Feature-Policy)
 
-Permissions-Policy allows you to control which origins can use which browser features, both in the top-level page and in embedded frames. For every feature controlled by Feature Policy, the feature is only enabled in the current document or frame if its origin matches the allowed list of origins. This means that you can configure your site to never allow the camera or microphone to be activated. This prevents that an injection, for example an XSS, enables the camera, the microphone, or other browser feature.
+Permissions-Policy позволяет контролировать, какие источники могут использовать какие функции браузера как на главной странице, так и в встроенных фреймах. Для каждой функции, управляемой Permissions-Policy, функция включается в текущем документе или фрейме только в том случае, если его источник соответствует разрешенному списку источников. Это означает, что вы можете настроить свой сайт так, чтобы никогда не разрешать активацию камеры или микрофона. Это предотвращает возможность того, что инъекция, например, XSS, активирует камеру, микрофон или другие функции браузера.
 
-More information: [Permissions-Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Permissions-Policy)
+Более подробная информация: [Permissions-Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Permissions-Policy)
 
-#### Recommendation
+#### Рекомендации
 
-Set it and disable all the features that your site does not need or allow them only to the authorized domains:
+Установите этот заголовок и отключите все функции, которые вашему сайту не нужны, или разрешите их только авторизованным доменам:
 > `Permissions-Policy: geolocation=(), camera=(), microphone=()`
 
-- *NOTE*: This example is disabling geolocation, camera, and microphone for all domains.
+- *ПРИМЕЧАНИЕ:* Этот пример отключает геолокацию, камеру и микрофон для всех доменов.
 
 ### FLoC (Federated Learning of Cohorts)
 
-FLoC is a method proposed by Google in 2021 to deliver interest-based advertisements to groups of users ("cohorts"). The [Electronic Frontier Foundation](https://www.eff.org/deeplinks/2021/03/googles-floc-terrible-idea), [Mozilla](https://blog.mozilla.org/en/privacy-security/privacy-analysis-of-floc/), and others believe FLoC does not do enough to protect users' privacy.
+FLoC — это метод, предложенный Google в 2021 году, для доставки интересных рекламных объявлений группам пользователей ("когортам"). [Electronic Frontier Foundation](https://www.eff.org/deeplinks/2021/03/googles-floc-terrible-idea), [Mozilla](https://blog.mozilla.org/en/privacy-security/privacy-analysis-of-floc/), и другие считают, что FLoC не обеспечивает достаточную защиту конфиденциальности пользователей.
 
-#### Recommendation
+#### Рекомендации
 
-A site can declare that it does not want to be included in the user's list of sites for cohort calculation by sending this HTTP header.
-> Permissions-Policy: interest-cohort=()
+Сайт может объявить, что не хочет включаться в список сайтов пользователя для расчета когорты, отправив этот HTTP-заголовок.
+> `Permissions-Policy: interest-cohort=()`
 
 ### Server
 
-The `Server` header describes the software used by the origin server that handled the request — that is, the server that generated the response.
+Заголовок `Server` описывает программное обеспечение, используемое исходным сервером, который обработал запрос — то есть сервер, который сгенерировал ответ.
 
-This is not a security header, but how it is used is relevant for security.
+Это не является заголовком безопасности, но то, как он используется, имеет значение для безопасности.
 
-#### Recommendation
+#### Рекомендации
 
-Remove this header or set non-informative values.
+Удалите этот заголовок или установите неинформативные значения.
 > `Server: webserver`
 
-- *NOTE*: Remember that attackers have other means of fingerprinting the server technology.
+- *ПРИМЕЧАНИЕ:* Помните, что злоумышленники имеют и другие способы определения технологии сервера.
 
 ### X-Powered-By
 
-The `X-Powered-By` header describes the technologies used by the webserver. This information exposes the server to attackers. Using the information in this header, attackers can find vulnerabilities easier.
+Заголовок `X-Powered-By` описывает технологии, используемые веб-сервером. Эта информация раскрывает сервер злоумышленникам. Используя информацию в этом заголовке, злоумышленники могут легче находить уязвимости.
 
-#### Recommendation
+#### Рекомендации
 
-Remove all `X-Powered-By` headers.
+Удалите все заголовки `X-Powered-By`.
 
-- *NOTE*: Remember that attackers have other means of fingerprinting your tech stack.
+- *ПРИМЕЧАНИЕ:* Помните, что злоумышленники имеют и другие способы определения вашего технологического стека.
 
 ### X-AspNet-Version
 
-Provides information about the .NET version.
+Предоставляет информацию о версии .NET.
 
-#### Recommendation
+#### Рекомендации
 
-Disable sending this header. Add the following line in your `web.config` in the `<system.web>` section to remove it.
+Отключите отправку этого заголовка. Добавьте следующую строку в ваш файл `web.config` в раздел `<system.web>` для его удаления.
 
 ```xml
 <httpRuntime enableVersionHeader="false" />
 ```
 
-- *NOTE*: Remember that attackers have other means of fingerprinting your tech stack.
+- *ПРИМЕЧАНИЕ:* Помните, что злоумышленники имеют и другие способы определения вашего технологического стека.
 
 ### X-AspNetMvc-Version
 
-Provides information about the .NET version.
+Предоставляет информацию о версии .NET.
 
-#### Recommendation
+#### Рекомендации
 
-Disable sending this header. To remove the `X-AspNetMvc-Version` header, add the below line in `Global.asax` file.
+Отключите отправку этого заголовка. Чтобы удалить заголовок `X-AspNetMvc-Version`, добавьте следующую строку в файл `Global.asax`.
 
 ```lang-none
 MvcHandler.DisableMvcResponseHeader = true;
 ```
 
-- *NOTE*: Remember that attackers have other means of fingerprinting your tech stack.
+- *ПРИМЕЧАНИЕ:* Помните, что злоумышленники имеют и другие способы определения вашего технологического стека.
 
 ### X-DNS-Prefetch-Control
 
-The `X-DNS-Prefetch-Control` HTTP response header controls DNS prefetching, a feature by which browsers proactively perform domain name resolution on both links that the user may choose to follow as well as URLs for items referenced by the document, including images, CSS, JavaScript, and so forth.
+Заголовок `X-DNS-Prefetch-Control` HTTP-ответа управляет предзагрузкой DNS, функцией, при которой браузеры проактивно выполняют разрешение доменных имен как для ссылок, которые пользователь может выбрать для перехода, так и для URL-адресов элементов, упомянутых в документе, включая изображения, CSS, JavaScript и так далее.
 
-#### Recommendation
+#### Рекомендации
 
-The default behavior of browsers is to perform DNS caching which is good for most websites.
-If you do not control links on your website, you might want to set `off` as a value to disable DNS prefetch to avoid leaking information to those domains.
+Обычно браузеры выполняют кэширование DNS, что хорошо для большинства веб-сайтов. Если вы не контролируете ссылки на вашем сайте, вы можете установить значение `off`, чтобы отключить предзагрузку DNS и избежать утечки информации на эти домены.
 
 > `X-DNS-Prefetch-Control: off`
 
-- *NOTE*: Do not rely in this functionality for anything production sensitive: it is not standard or fully supported and implementation may vary among browsers.
+- *ПРИМЕЧАНИЕ:* Не полагайтесь на эту функциональность для защиты конфиденциальной информации в производственных системах: она не является стандартной и полностью поддерживаемой, и реализация может различаться между браузерами.
 
 ### Public-Key-Pins (HPKP)
 
-The HTTP `Public-Key-Pins` response header is used to associate a specific cryptographic public key with a certain web server to decrease the risk of MITM attacks with forged certificates.
+HTTP-заголовок `Public-Key-Pins` используется для связывания конкретного криптографического публичного ключа с определенным веб-сервером, чтобы уменьшить риск атак "человек посередине" с поддельными сертификатами.
 
-#### Recommendation
+#### Рекомендации
 
-This header is deprecated and should not be used anymore.
+Этот заголовок устарел и больше не следует использовать.
 
-## Adding HTTP Headers in Different Technologies
+## Использование HTTP заголовков в иных технологиях.
 
 ### PHP
 
-The sample code below sets the `X-Frame-Options` header in PHP.
+Для установки заголовка `X-Frame-Options` в PHP используйте следующий код:
 
 ```php
 header("X-Frame-Options: DENY");
@@ -272,9 +271,9 @@ header("X-Frame-Options: DENY");
 
 ### Apache
 
-Below is an `.htaccess` sample configuration which sets the `X-Frame-Options` header in Apache. Note that without the `always` option, the header will only be sent for certain status codes, as described in [the Apache documentation](https://httpd.apache.org/docs/2.4/mod/mod_headers.html#header).
+Для установки заголовка `X-Frame-Options` в Apache, добавьте следующий код в файл `.htaccess`. Обратите внимание, что без опции `always` заголовок будет отправляться только для некоторых кодов состояния, как указано в [документации Apache](https://httpd.apache.org/docs/2.4/mod/mod_headers.html#header).
 
-```lang-bsh
+```bash
 <IfModule mod_headers.c>
 Header always set X-Frame-Options "DENY"
 </IfModule>
@@ -282,7 +281,7 @@ Header always set X-Frame-Options "DENY"
 
 ### IIS
 
-Add configurations below to your `Web.config` in IIS to send the `X-Frame-Options` header.
+Чтобы установить заголовок `X-Frame-Options` в IIS, добавьте следующую конфигурацию в файл `Web.config`:
 
 ```xml
 <system.webServer>
@@ -298,28 +297,28 @@ Add configurations below to your `Web.config` in IIS to send the `X-Frame-Option
 
 ### HAProxy
 
-Add the line below to your front-end, listen, or backend configurations to send the `X-Frame-Options` header.
+Чтобы отправить заголовок `X-Frame-Options` в HAProxy, добавьте следующую строку в конфигурации вашего front-end, listen или backend:
 
-```lang-none
+```none
 http-response set-header X-Frame-Options DENY
 ```
 
 ### Nginx
 
-Below is a sample configuration, it sets the `X-Frame-Options` header in Nginx. Note that without the `always` option, the header will only be sent for certain status codes, as described in [the nginx documentation](https://nginx.org/en/docs/http/ngx_http_headers_module.html#add_header).
+Ниже приведена примерная конфигурация, которая устанавливает заголовок `X-Frame-Options` в Nginx. Обратите внимание, что без опции `always` заголовок будет отправляться только для определенных кодов состояния, как описано в [документации nginx](https://nginx.org/en/docs/http/ngx_http_headers_module.html#add_header).
 
-```lang-none
+```none
 add_header "X-Frame-Options" "DENY" always;
 ```
 
 ### Express
 
-You can use [helmet](https://www.npmjs.com/package/helmet) to setup HTTP headers in Express. The code below is sample for adding the `X-Frame-Options` header.
+Вы можете использовать [helmet](https://www.npmjs.com/package/helmet) для настройки HTTP заголовков в Express. Приведенный ниже код является примером добавления заголовка `X-Frame-Options`.
 
 ```javascript
 const helmet = require('helmet');
 const app = express();
-// Sets "X-Frame-Options: SAMEORIGIN"
+// Устанавливает "X-Frame-Options: SAMEORIGIN"
 app.use(
  helmet.frameguard({
    action: "sameorigin",
@@ -327,18 +326,17 @@ app.use(
 );
 ```
 
-## Testing Proper Implementation of Security Headers
+## Тестирование правильной реализации заголовков безопасности
 
 ### Mozilla Observatory
 
-The [Mozilla Observatory](https://observatory.mozilla.org/) is an online tool which helps you to check your website's header status.
+[Mozilla Observatory](https://observatory.mozilla.org/) — это онлайн-инструмент, который помогает проверить статус заголовков на вашем сайте.
 
 ### SmartScanner
 
-[SmartScanner](https://www.thesmartscanner.com/) has a dedicated [test profile](https://www.thesmartscanner.com/docs/configuring-security-tests) for testing security of HTTP headers.
-Online tools usually test the homepage of the given address. But SmartScanner scans the whole website. So, you can make sure all of your web pages have the right HTTP Headers in place.
+[SmartScanner](https://www.thesmartscanner.com/) имеет специализированный [профиль тестирования](https://www.thesmartscanner.com/docs/configuring-security-tests) для проверки безопасности HTTP заголовков. Онлайн-инструменты обычно тестируют домашнюю страницу указанного адреса. Но SmartScanner сканирует весь сайт. Так что вы можете убедиться, что все ваши веб-страницы имеют правильные HTTP заголовки.
 
-## References
+## Ссылки
 
 - [Mozilla: X-Frame-Options](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options)
 - [Mozilla: X-XSS-Protection](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-XSS-Protection)
@@ -353,4 +351,4 @@ Online tools usually test the homepage of the given address. But SmartScanner sc
 - [Mozilla: Cross-Origin-Resource-Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Resource-Policy)
 - [Mozilla: Cross-Origin-Embedder-Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Embedder-Policy)
 - [Mozilla: Server Header](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Server)
-- [Linked OWASP project: Secure Headers Project](https://owasp.org/www-project-secure-headers/)
+- [Связанный проект OWASP: Проект Secure Headers](https://owasp.org/www-project-secure-headers/)

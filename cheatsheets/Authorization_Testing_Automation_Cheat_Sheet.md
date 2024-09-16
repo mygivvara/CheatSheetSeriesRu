@@ -1,69 +1,70 @@
-# Authorization Testing Automation Cheat Sheet
+# Шпаргалка по автоматизации тестирования авторизации
 
-## Introduction
+## Введение
 
-**When you are implementing protection measures for an application, one of the most important parts of the process is defining and implementing the application's authorizations.** Despite all of the checks and security audits conducted during the creation phase, most of the problems with authorizations occur because features are added/modified in updated releases without determining their effect on the application's authorizations (usually because of cost or time issue reasons).
+**При реализации мер защиты приложения одной из самых важных частей процесса является определение и внедрение авторизаций приложения.** Несмотря на все проверки и аудиты безопасности, проводимые на этапе создания, большинство проблем с авторизациями возникают из-за добавления или изменения функций в обновленных выпусках без определения их влияния на авторизации приложения (как правило, по причинам, связанным с затратами или временем).
 
-To deal with this problem, we recommend that developers automate the evaluation of the authorizations and perform a test when a new release is created. This ensures that the team knows if changes to the application will conflict with an authorization's definition and/or implementation.
+Чтобы решить эту проблему, мы рекомендуем разработчикам автоматизировать оценку авторизаций и проводить тестирование при выпуске новой версии. Это гарантирует, что команда будет знать, будут ли изменения в приложении конфликтовать с определением и/или реализацией авторизации.
 
-## Context
+## Контекст
 
-An authorization usually contains two elements (also named dimensions): The **Feature** and the **Logical Role** that accesses it. Sometimes a third dimension named **Data** is added in order to define access that includes a filtering at business data level.
+Авторизация обычно содержит два элемента (также называемых измерениями): **Функцию** и **Логическую роль**, которая получает к ней доступ. Иногда добавляется третье измерение под названием **Данные**, чтобы определить доступ, включающий фильтрацию на уровне бизнес-данных.
 
-Generally, the two dimensions of each authorization should be listed in a spreadsheet that is called an **authorization matrix**. When authorizations are tested, the logical roles are sometimes called a **Point Of View**.
+Как правило, два измерения каждой авторизации должны быть указаны в электронной таблице, которая называется **Матрицей авторизации**. При тестировании авторизаций логические роли иногда называют **Точкой зрения**.
 
-## Objective
+## Цель
 
-This cheat sheet is designed to help you generate your own approaches to automating authorization tests in an authorization matrix. Since developers will need to design their own approach to automating authorization tests, **this cheat sheet will show a possible approach to automating authorization tests for one possible implementation of an application that exposes REST Services.**
+Эта шпаргалка предназначена для помощи в разработке собственных подходов к автоматизации тестирования авторизаций в матрице авторизаций. Так как разработчикам нужно будет разработать собственный подход к автоматизации тестирования авторизаций, **эта шпаргалка покажет возможный подход к автоматизации тестов авторизаций для одной из возможных реализаций приложения, предоставляющего REST-сервисы.**
 
-## Proposition
+## Предложение
 
-### Preparing to automate the authorization matrix
+### Подготовка к автоматизации матрицы авторизаций
 
-Before we start to automate a test of the authorization matrix, we will need to do the following:
+Прежде чем начать автоматизацию тестирования матрицы авторизаций, необходимо выполнить следующие действия:
 
-1. **Formalize the authorization matrix in a pivot format file, which will allow you to:**
-    1. Easily process the matrix by a program.
-    2. Allow a human to read and update when you need to follow up on the authorization combinations.
-    3. Set up a hierarchy of the authorizations, which will allow you to easily create different combinations.
-    4. Create the maximum possible of independence from the technology and design used to implement the applications.
+1. **Формализовать матрицу авторизаций в виде файла сводного формата, который позволит вам:**
+    1. Легко обрабатывать матрицу программой.
+    2. Дать возможность человеку читать и обновлять ее при необходимости отслеживания комбинаций авторизаций.
+    3. Настроить иерархию авторизаций, что позволит легко создавать различные комбинации.
+    4. Создать максимально возможную независимость от используемой технологии и дизайна приложения.
 
-2. **Create a set of integration tests that fully use the authorization matrix pivot file as an input source, which will allow you to evaluate the different combinations with the following advantages:**
-    1. The minimum possible of maintenance when the authorization matrix pivot file is updated.
-    2. A clear indication, in case of failed test, of the source authorization combination that does not respect the authorization matrix.
+2. **Создать набор интеграционных тестов, которые полностью используют файл сводного формата матрицы авторизаций в качестве источника данных, что позволит вам оценить различные комбинации с следующими преимуществами:**
+    1. Минимальное возможное обслуживание при обновлении файла сводного формата матрицы авторизаций.
+    2. Четкое указание, в случае провала теста, комбинации авторизаций, которая не соответствует матрице авторизаций.
 
-### Create the authorization matrix pivot file
+### Создание файла сводного формата матрицы авторизаций
 
-**In this example, we use an XML format to formalize the authorization matrix.**
+**В этом примере мы используем формат XML для формализации матрицы авторизаций.**
 
-This XML structure has three main sections (or nodes):
+Эта XML-структура включает три основных раздела (или узла):
 
-- Node **roles**: Describes the possible logical roles used in the system, provides a list of the roles, and explains the different roles (authorization level).
-- Node **services**: Provides a list of the available services exposed by the system, provides a description of those services, and defines the associated logical role(s) that can call them.
-- Node **services-testing**: Provides a test payload for each service if the service uses input data other than the one coming from URL or path.
+- Узел **roles**: Описывает возможные логические роли, используемые в системе, предоставляет список ролей и объясняет различные уровни авторизации.
+- Узел **services**: Предоставляет список доступных сервисов, предлагаемых системой, дает описание этих сервисов и определяет связанные логические роли, которые могут их вызывать.
+- Узел **services-testing**: Предоставляет тестовую нагрузку для каждого сервиса, если сервис использует входные данные, отличные от тех, которые поступают из URL или пути.
 
-**This sample demonstrates how an authorization could be defined with XML**:
+**Этот пример демонстрирует, как может быть определена авторизация с использованием XML:**:
 
-> Placeholders (values between {}) are used to mark location where test value must be placed by the integration tests if needed
+> Плейсхолдеры (значения в {} ) используются для обозначения местоположения, куда тестовые значения должны быть вставлены интеграционными тестами при необходимости.
 
 ``` xml
   <?xml version="1.0" encoding="UTF-8"?>
   <!--
-      This file materializes the authorization matrix for the different
-      services exposed by the system:
+      Этот файл создает матрицу авторизации для различных 
+      служб, предоставляемых системой:
 
-      The tests will use this as a input source for the different test cases by:
-      1) Defining legitimate access and the correct implementation
-      2) Identifing illegitimate access (authorization definition issue
-      on service implementation)
+      Тесты будут использовать ее в качестве источника входных данных для различных \
+      тестовых примеров путем:
+      1) Определения легитимного доступа и правильной реализации
+      2) Выявления нелегитимного доступа (проблема с определением авторизации
+      при реализации службы)
 
-      The "name" attribute is used to uniquely identify a SERVICE or a ROLE.
+       Атрибут "name" используется для уникальной идентификации СЛУЖБЫ или РОЛИ.
   -->
   <authorization-matrix>
 
-      <!-- Describe the possible logical roles used in the system, is used here to
-      provide a list+explanation
-      of the different roles (authorization level) -->
+      <!-- Описание возможных логических ролей, используемых в системе, используется здесь для
+        предоставления списка+пояснений
+        различных ролей (уровень авторизации) -->
       <roles>
           <role name="ANONYMOUS"
           description="Indicate that no authorization is needed"/>
@@ -73,8 +74,8 @@ This XML structure has three main sections (or nodes):
           description="Role affecting an administrator user (highest access right)"/>
       </roles>
 
-      <!-- List and describe the available services exposed by the system and the associated
-      logical role(s) that can call them -->
+      <!-- Перечислите и опишите доступные службы, предоставляемые системой, и связанные с ними
+        логические роли, которые могут их вызывать -->
       <services>
           <service name="ReadSingleMessage" uri="/{messageId}" http-method="GET"
           http-response-code-for-access-allowed="200" http-response-code-for-access-denied="403">
@@ -99,7 +100,7 @@ This XML structure has three main sections (or nodes):
           </service>
       </services>
 
-      <!-- Provide a test payload for each service if needed -->
+      <!-- При необходимости предоставьте тестовый пейлоад для каждой службы -->
       <services-testing>
           <service name="ReadSingleMessage">
               <payload/>
@@ -120,13 +121,13 @@ This XML structure has three main sections (or nodes):
   </authorization-matrix>
 ```
 
-### Implementing an integration test
+### Реализация интеграционного теста
 
-**To create an integration test, you should use a maximum of factorized code and one test case by Point Of View (POV) so the verifications can be profiled by access level (logical role). This will facilitate the rendering/identification of the errors.**
+**Чтобы создать интеграционный тест, вы должны использовать максимально факторизованный код и один тестовый случай для каждой Точки Зрения (Point Of View, POV), чтобы верификации могли быть профилированы по уровню доступа (логическая роль). Это упростит отображение/идентификацию ошибок.**
 
-In this integration test, we have implemented parsing, object mapping and access to the authorization matrix by marshalling XML into a Java object and unmarshalling the object back into XML These features are used to implement the tests (JAXB here) and limit the code to the developer in charge of performing the tests.
+В этом интеграционном тесте мы реализовали парсинг, сопоставление объектов и доступ к матрице авторизаций путем маршаллинга XML в объект Java и демаршаллинга объекта обратно в XML. Эти функции используются для реализации тестов (здесь применяется JAXB) и ограничивают объем кода, который должен разрабатывать разработчик, отвечающий за выполнение тестов.
 
-**Here is a sample implementation of an integration test case class:**
+**Пример реализации класса интеграционного тестового случая:**
 
 ``` java
   import org.owasp.pocauthztesting.enumeration.SecurityRole;
@@ -155,14 +156,14 @@ In this integration test, we have implemented parsing, object mapping and access
   import java.util.Optional;
 
   /**
-   * Integration test cases validate the correct implementation of the authorization matrix.
-   * They create a test case by logical role that will test access on all services exposed by the system.
-   * This implementation focuses on readability
+   * Интеграционные тестовые случаи проверяют корректность реализации матрицы авторизаций.
+   * Они создают тестовый случай для каждой логической роли, который проверяет доступ ко всем сервисам, предоставляемым системой.
+   * Эта реализация ориентирована на читаемость кода.
    */
   public class AuthorizationMatrixIT {
 
       /**
-       * Object representation of the authorization matrix
+       * Представление объекта матрицы авторизаций
        */
       private static AuthorizationMatrix AUTHZ_MATRIX;
 
@@ -170,9 +171,9 @@ In this integration test, we have implemented parsing, object mapping and access
 
 
       /**
-       * Load the authorization matrix in objects tree
+       * Загрузка матрицы авторизаций в древовидную структуру объектов
        *
-       * @throws Exception If any error occurs
+       * @throws Exception Если произошла ошибка
        */
       @BeforeClass
       public static void globalInit() throws Exception {
@@ -188,7 +189,7 @@ In this integration test, we have implemented parsing, object mapping and access
       }
 
       /**
-       * Test access to the services from a anonymous user.
+       * Тестирование доступа к сервисам от анонимного пользователя.
        *
        * @throws Exception
        */
@@ -197,11 +198,11 @@ In this integration test, we have implemented parsing, object mapping and access
           //Run the tests - No access token here
           List<String> errors = executeTestWithPointOfView(SecurityRole.ANONYMOUS, null);
           //Verify the test results
-          Assert.assertEquals("Access issues detected using the ANONYMOUS USER point of view:\n" + formatErrorsList(errors), 0, errors.size());
+          Assert.assertEquals("Проблемы с доступом обнаружены используя Точку Зрения АНОНИМНОГО ПОЛЬЗОВАТЕЛЯ:\n" + formatErrorsList(errors), 0, errors.size());
       }
 
       /**
-       * Test access to the services from a basic user.
+       * Тестирование доступа к сервисам от обычного пользователя.
        *
        * @throws Exception
        */
@@ -212,47 +213,47 @@ In this integration test, we have implemented parsing, object mapping and access
           //Run the tests
           List<String> errors = executeTestWithPointOfView(SecurityRole.BASIC, accessToken);
           //Verify the test results
-          Assert.assertEquals("Access issues detected using the BASIC USER point of view:\n " + formatErrorsList(errors), 0, errors.size());
+          Assert.assertEquals("Проблемы с доступом обнаружены используя Точку Зрения ОБЫЧНОГО ПОЛЬЗОВАТЕЛЯ:\n " + formatErrorsList(errors), 0, errors.size());
       }
 
       /**
-       * Test access to the services from a user with administrator access.
+       * Тестирование доступа к сервисам от пользователя с правами администратора.
        *
        * @throws Exception
        */
       @Test
       public void testAccessUsingAdministratorUserPointOfView() throws Exception {
-          //Get access token representing the authorization for the associated point of view
+          //Получение токена доступа, представляющего авторизацию для связанной точки зрения
           String accessToken = generateTestCaseAccessToken("admin", SecurityRole.ADMIN);
-          //Run the tests
+          //Запуск тестов
           List<String> errors = executeTestWithPointOfView(SecurityRole.ADMIN, accessToken);
-          //Verify the test results
-          Assert.assertEquals("Access issues detected using the ADMIN USER point of view:\n" + formatErrorsList(errors), 0, errors.size());
+          //Проверка результатов тестов
+          Assert.assertEquals("Проблемы с доступом обнаружены используя Точку Зрения АДМИНИСТРАТОРА:\n" + formatErrorsList(errors), 0, errors.size());
       }
 
       /**
-       * Evaluate the access to all service using the specified point of view (POV).
+       * Оценка доступа ко всем сервисам с использованием указанной точки зрения (POV).
        *
-       * @param pointOfView Point of view to use
-       * @param accessToken Access token that is linked to the point of view in terms of authorization.
-       * @return List of errors detected
-       * @throws Exception If any error occurs
+       * @param pointOfView Используемая точка зрения
+       * @param accessToken Токен доступа, связанный с точкой зрения с точки зрения авторизации.
+       * @return Список обнаруженных ошибок
+       * @throws Exception Если произошла ошибка
        */
       private List<String> executeTestWithPointOfView(SecurityRole pointOfView, String accessToken) throws Exception {
           List<String> errors = new ArrayList<>();
-          String errorMessageTplForUnexpectedReturnCode = "The service '%s' when called with POV '%s' return a response code %s that is not the expected one in allowed or denied case.";
-          String errorMessageTplForIncorrectReturnCode = "The service '%s' when called with POV '%s' return a response code %s that is not the expected one (%s expected).";
-          String fatalErrorMessageTpl = "The service '%s' when called with POV %s meet the error: %s";
+          String errorMessageTplForUnexpectedReturnCode = "Сервис '%s' при вызове с POV '%s' возвращает код ответа %s, который не является ожидаемым в случае разрешения или отказа.";
+          String errorMessageTplForIncorrectReturnCode = "Сервис '%s' при вызове с POV '%s' возвращает код ответа %s, который не является ожидаемым (ожидался %s).";
+          String fatalErrorMessageTpl = "Сервис '%s' при вызове с POV %s вызывает ошибку: %s";
 
-          //Get the list of services to call
+          //Получение списка сервисов для вызова
           List<AuthorizationMatrix.Services.Service> services = AUTHZ_MATRIX.getServices().getService();
 
-          //Get the list of services test payload to use
+          //Получение списка тестовой нагрузки сервисов для использования
           List<AuthorizationMatrix.ServicesTesting.Service> servicesTestPayload = AUTHZ_MATRIX.getServicesTesting().getService();
 
-          //Call all services sequentially (no special focus on performance here)
+          //Последовательный вызов всех сервисов (без особого акцента на производительность)
           services.forEach(service -> {
-              //Get the service test payload for the current service
+              //Получить тестовую нагрузку для текущего сервиса
               String payload = null;
               String payloadContentType = null;
               Optional<AuthorizationMatrix.ServicesTesting.Service> serviceTesting = servicesTestPayload.stream().filter(srvPld -> srvPld.getName().equals(service.getName())).findFirst();
@@ -260,22 +261,22 @@ In this integration test, we have implemented parsing, object mapping and access
                   payload = serviceTesting.get().getPayload().getValue();
                   payloadContentType = serviceTesting.get().getPayload().getContentType();
               }
-              //Call the service and verify if the response is consistent
+              //Вызвать сервис и проверить, соответствует ли ответ ожиданиям
               try {
-                  //Call the service
+                  //Вызвать сервис
                   int serviceResponseCode = callService(service.getUri(), payload, payloadContentType, service.getHttpMethod(), accessToken);
-                  //Check if the role represented by the specified point of view is defined for the current service
+                  //Проверить, определена ли роль, представленная указанной точкой зрения, для текущего сервиса
                   Optional<AuthorizationMatrix.Services.Service.Role> role = service.getRole().stream().filter(r -> r.getName().equals(pointOfView.name())).findFirst();
                   boolean accessIsGrantedInAuthorizationMatrix = role.isPresent();
-                  //Verify behavior consistency according to the response code returned and the authorization configured in the matrix
+                  //Проверить согласованность поведения в соответствии с возвращаемым кодом ответа и авторизацией, настроенной в матрице
                   if (serviceResponseCode == service.getHttpResponseCodeForAccessAllowed()) {
-                      //Roles is not in the list of role allowed to access to the service so it's an error
+                      //Роль не входит в список ролей, которым разрешен доступ к сервису, следовательно, это ошибка
                       if (!accessIsGrantedInAuthorizationMatrix) {
                           errors.add(String.format(errorMessageTplForIncorrectReturnCode, service.getName(), pointOfView.name(), serviceResponseCode,
                            service.getHttpResponseCodeForAccessDenied()));
                       }
                   } else if (serviceResponseCode == service.getHttpResponseCodeForAccessDenied()) {
-                      //Roles is in the list of role allowed to access to the service so it's an error
+                      //Роль входит в список ролей, которым разрешен доступ к сервису, следовательно, это ошибка
                       if (accessIsGrantedInAuthorizationMatrix) {
                           errors.add(String.format(errorMessageTplForIncorrectReturnCode, service.getName(), pointOfView.name(), serviceResponseCode,
                            service.getHttpResponseCodeForAccessAllowed()));
@@ -294,21 +295,21 @@ In this integration test, we have implemented parsing, object mapping and access
       }
 
       /**
-       * Call a service with a specific payload and return the HTTP response code that was received.
-       * This step was delegated in order to made the test cases more easy to maintain.
+       * Вызвать сервис с определенной нагрузкой и вернуть HTTP-код ответа, который был получен.
+       * Этот шаг был делегирован для облегчения поддержки тестовых случаев.
        *
-       * @param uri                URI of the target service
-       * @param payloadContentType Content type of the payload to send
-       * @param payload            Payload to send
-       * @param httpMethod         HTTP method to use
-       * @param accessToken        Access token to specify to represent the identity of the caller
-       * @return The HTTP response code received
-       * @throws Exception If any error occurs
+       * @param uri                URI целевого сервиса
+       * @param payloadContentType Тип содержимого нагрузки, которую нужно отправить
+       * @param payload            Нагрузка, которую нужно отправить
+       * @param httpMethod         HTTP-метод, который нужно использовать
+       * @param accessToken        Токен доступа для указания идентичности вызывающего пользователя
+       * @return Полученный HTTP-код ответ
+       * @throws Exception Исключение возникает в случае любой ошибки
        */
       private int callService(String uri, String payload, String payloadContentType, String httpMethod, String accessToken) throws Exception {
           int rc;
 
-          //Build the request - Use Apache HTTP Client in order to be more flexible in the combination.
+          //Построить запрос — используйте Apache HTTP Client, чтобы обеспечить большую гибкость в комбинациях.
           HttpRequestBase request;
           String url = (BASE_URL + uri).replaceAll("\\{messageId\\}", "1");
           switch (httpMethod) {
@@ -326,15 +327,15 @@ In this integration test, we have implemented parsing, object mapping and access
                   }
                   break;
               default:
-                  throw new UnsupportedOperationException(httpMethod + " not supported !");
+                  throw new UnsupportedOperationException(httpMethod + " не поддерживается !");
           }
-          request.setHeader("Authorization", (accessToken != null) ? accessToken : "");
+          request.setHeader("Авторизация", (accessToken != null) ? accessToken : "");
 
 
-          //Send the request and get the HTTP response code.
+          //Отправить запрос и получить HTTP-код ответа.
           try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
               try (CloseableHttpResponse httpResponse = httpClient.execute(request)) {
-                  //Don't care here about the response content...
+                  //Содержимое ответа здесь не имеет значения...
                   rc = httpResponse.getStatusLine().getStatusCode();
               }
           }
@@ -343,12 +344,12 @@ In this integration test, we have implemented parsing, object mapping and access
       }
 
       /**
-       * Generate a JWT token for the specified user and role.
+       * Генерация JWT-токена для указанного пользователя и роли.
        *
-       * @param login User login
-       * @param role  Authorization logical role
-       * @return The JWT token
-       * @throws Exception If any error occurs during the creation
+       * @param login Логин пользователя
+       * @param role  Логическая роль авторизации
+       * @return JWT-токен
+       * @throws Exception Исключение возникает в случае любой ошибки при создании
        */
       private String generateTestCaseAccessToken(String login, SecurityRole role) throws Exception {
           return new AuthService().issueAccessToken(login, role);
@@ -356,10 +357,10 @@ In this integration test, we have implemented parsing, object mapping and access
 
 
       /**
-       * Format a list of errors to a printable string.
+       * Форматировать список ошибок в строку для печати.
        *
-       * @param errors Error list
-       * @return Printable string
+       * @param errors Список ошибок
+       * @return Строка для печати
        */
       private String formatErrorsList(List<String> errors) {
           StringBuilder buffer = new StringBuilder();
@@ -369,7 +370,7 @@ In this integration test, we have implemented parsing, object mapping and access
   }
 ```
 
-If an authorization issue is detected (or issues are detected), the output is the following:
+Если обнаружена проблема с авторизацией (или несколько проблем), вывод будет следующим:
 
 ```java
 testAccessUsingAnonymousUserPointOfView(org.owasp.pocauthztesting.AuthorizationMatrixIT)
@@ -390,11 +391,11 @@ Access issues detected using the BASIC USER point of view:
     a response code 200 that is not the expected one (403 expected).
 ```
 
-## Rendering the authorization matrix for an audit / review
+## Отображение матрицы авторизаций для аудита / проверки
 
-Even if the authorization matrix is stored in a human-readable format (XML), you might want to show an on-the-fly rendered representation of the XML file to spot potential inconsistencies and facilitate the review, audit and discussion about the authorization matrix.
+Даже если матрица авторизаций хранится в формате, удобочитаемом для человека (например, в XML), возможно, вы захотите представить ее в динамически сгенерированном виде. Это поможет выявить потенциальные несоответствия и упростить проверку, аудит и обсуждение матрицы авторизаций.
 
-To achieve this task, you could use the following XSL stylesheet:
+Для выполнения этой задачи вы можете использовать следующий XSL-стилистический лист:
 
 ``` xslt
 <?xml version="1.0" encoding="UTF-8"?>
@@ -500,10 +501,10 @@ To achieve this task, you could use the following XSL stylesheet:
 </xsl:stylesheet>
 ```
 
-Example of the rendering:
+Пример отображения
 
 ![RenderingExample](../assets/Authorization_Testing_Automation_AutomationRendering.png)
 
-## Sources of the prototype
+## Источники для прототипа
 
-[GitHub repository](https://github.com/righettod/poc-authz-testing)
+[GitHub репозиторий](https://github.com/righettod/poc-authz-testing)

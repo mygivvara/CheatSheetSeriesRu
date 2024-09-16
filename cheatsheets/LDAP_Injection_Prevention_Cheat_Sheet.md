@@ -1,149 +1,140 @@
-# LDAP Injection Prevention Cheat Sheet
+# Шпаргалка по предотвращению LDAP инъекций
 
-## Introduction
+## Введение
 
-The Lightweight Directory Access Protocol (LDAP) allows an application to remotely perform operations such as searching and modifying records in
-directories. LDAP injection results from inadequate input sanitization and validation and allows malicious users to glean restricted information using the
-directory service. For general information about LDAP please visit [lightweight directory access protocol (LDAP)](https://www.redhat.com/en/topics/security/what-is-ldap-authentication).
+Протокол легкого доступа к каталогам (LDAP) позволяет приложению удаленно выполнять операции, такие как поиск и изменение записей в каталогах. LDAP-инъекция возникает из-за недостаточной очистки и проверки входных данных, что позволяет злоумышленникам получать доступ к ограниченной информации с помощью сервиса каталога. Для получения общей информации о LDAP посетите [протокол легкого доступа к каталогам (LDAP)](https://www.redhat.com/en/topics/security/what-is-ldap-authentication).
 
-LDAP Injection is an attack used to exploit web based applications that construct LDAP statements based on user input. When an application fails to properly sanitize user input, it's possible to modify LDAP statements through techniques similar to [SQL Injection](https://owasp.org/www-community/attacks/SQL_Injection).
+LDAP-инъекция — это атака, используемая для эксплуатации веб-приложений, которые строят LDAP-запросы на основе пользовательского ввода. Когда приложение не очищает входные данные должным образом, возможно изменение LDAP-запросов с использованием техник, схожих с [SQL-инъекцией](https://owasp.org/www-community/attacks/SQL_Injection).
 
-This cheatsheet is focused on providing clear, simple, actionable guidance for preventing LDAP Injection flaws in your applications. [LDAP injection](https://owasp.org/www-community/attacks/LDAP_Injection) attacks are common due to two factors:
+Этот документ сосредоточен на предоставлении четких, простых и практических рекомендаций по предотвращению уязвимостей LDAP-инъекции в ваших приложениях. Атаки LDAP-инъекций распространены из-за двух факторов:
 
-1. The lack of safer, parameterized LDAP query interfaces
-2. The widespread use of LDAP to authenticate users to systems.
+1. Отсутствие безопасных параметризованных интерфейсов LDAP-запросов.
+2. Широкое использование LDAP для аутентификации пользователей в системах.
 
-LDAP injection attacks could result in the granting of permissions to unauthorized queries, and content modification inside the LDAP tree.
+Атаки LDAP-инъекций могут привести к предоставлению разрешений неавторизованным запросам и изменению содержимого внутри дерева LDAP.
 
-Primary Defenses:
+Основные методы защиты:
 
-- Escape all variables using the right LDAP encoding function
-- Use a framework that escapes automatically.
+- Экранируйте все переменные с помощью правильной функции кодирования LDAP.
+- Используйте фреймворк, который выполняет экранирование автоматически.
 
-Additional Defenses:
+Дополнительные методы защиты:
 
-- Least Privilege
-- Allow-List Input Validation
+- Принцип наименьших привилегий.
+- Проверка входных данных по белому списку.
 
-## Primary Defenses
+## Основные методы защиты
 
-### Defense Option 1: Escape all variables using the right LDAP encoding function
+### Метод защиты 1: Экранируйте все переменные с помощью правильной функции кодирования LDAP
 
-#### Distinguished Name Escaping
+#### Экранирование Distinguished Name
 
-The main way LDAP stores names is based on DN (distinguished name). You can think of this like a unique identifier. These are sometimes used to access resources, like a username.
+Основной способ хранения имен в LDAP основан на DN (Distinguished Name). Это можно рассматривать как уникальный идентификатор. Эти идентификаторы иногда используются для доступа к ресурсам, например, к имени пользователя.
 
-A DN might look like this
+DN может выглядеть следующим образом:
 
-`cn=Richard Feynman, ou=Physics Department, dc=Caltech, dc=edu`
+`cn=Richard Feynman, ou=Physics Department, dc=Caltech, dc=edu`
 
-or
+или
 
-`uid=inewton, ou=Mathematics Department, dc=Cambridge, dc=com`
+`uid=inewton, ou=Mathematics Department, dc=Cambridge, dc=com`
 
-A whitelist can be used to restrict input to a list of valid characters. Characters and character sequences that must be excluded from whitelists — including
-Java Naming and Directory Interface (JNDI) metacharacters and LDAP special characters — are listed in the following list.
+Можно использовать белый список для ограничения ввода допустимыми символами. Символы и последовательности символов, которые должны быть исключены из белого списка — включая метасимволы Java Naming and Directory Interface (JNDI) и специальные символы LDAP — перечислены в следующем списке.
 
-The [exhaustive list](https://ldapwiki.com/wiki/Wiki.jsp?page=DN%20Escape%20Values) is the following: `\ # + < > , ; " =` and leading or trailing spaces.
+[Полный список](https://ldapwiki.com/wiki/Wiki.jsp?page=DN%20Escape%20Values) включает: `\ # + < > , ; " =` и пробелы в начале или в конце строки.
 
-Some "special" characters that are allowed in Distinguished Names and do not need to be escaped include:
+Некоторые "специальные" символы, которые разрешены в Distinguished Names и не требуют экранирования, включают:
 
 ```text
 * ( ) . & - _ [ ] ` ~ | @ $ % ^ ? : { } ! '
 ```
 
-#### Search Filter Escaping
+#### Экранирование фильтров поиска
 
-Each DN points to exactly 1 entry, which can be thought of sort of like a row in a RDBMS. For each entry, there will be 1 or more attributes which are analogous to RDBMS columns. If you are interested in searching through LDAP for users with certain attributes, you may do so with search filters.
+Каждый DN указывает на ровно одну запись, которую можно представить себе как строку в РСУБД. Для каждой записи будет одна или несколько атрибутов, аналогичных столбцам в РСУБД. Если вы хотите искать пользователей в LDAP по определённым атрибутам, вы можете сделать это с помощью фильтров поиска.
 
-In a search filter, you can use standard boolean logic to get a list of users matching an arbitrary constraint. Search filters are written in Polish notation AKA prefix notation.
+В фильтре поиска вы можете использовать стандартную булеву логику для получения списка пользователей, соответствующих произвольному ограничению. Фильтры поиска пишутся в польской нотации, то есть префиксной нотации.
 
-Example:
+Пример:
 
 ```text
 (&(ou=Physics)(|
-(manager=cn=Freeman Dyson,ou=Physics,dc=Caltech,dc=edu)
-(manager=cn=Albert Einstein,ou=Physics,dc=Princeton,dc=edu)
+(manager=cn=Freeman Dyson,ou=Physics,dc=Caltech,dc=edu)
+(manager=cn=Albert Einstein,ou=Physics,dc=Princeton,dc=edu)
 ))
 ```
 
-When building LDAP queries in application code, you MUST escape any untrusted data that is added to any LDAP query. There are two forms of LDAP escaping. Encoding for LDAP Search and Encoding for LDAP DN (distinguished name). The proper escaping depends on whether you are sanitizing input for a search filter, or you are using a DN as a username-like credential for accessing some resource.
+При построении LDAP-запросов в коде приложения вы ДОЛЖНЫ экранировать любые ненадежные данные, добавляемые в LDAP-запрос. Существуют две формы экранирования LDAP: кодирование для LDAP Search и кодирование для LDAP DN (Distinguished Name). Правильное экранирование зависит от того, очищаете ли вы ввод для фильтра поиска или используете DN в качестве учетных данных, похожих на имя пользователя, для доступа к ресурсу.
 
-Some "special" characters that are allowed in search filters and must be escaped include:
+Некоторые "специальные" символы, которые разрешены в фильтрах поиска и должны быть экранированы, включают:
 
 ```text
 * ( ) \ NUL
 ```
 
-For more information on search filter escaping visit [RFC4515](https://datatracker.ietf.org/doc/html/rfc4515#section-3).
+Для получения дополнительной информации о экранировании фильтров поиска посетите [RFC4515](https://datatracker.ietf.org/doc/html/rfc4515#section-3).
 
-#### Safe Java Escaping Example
+#### Пример безопасного экранирования в Java
 
-The following solution uses a whitelist to sanitize user input so that the filter string contains only valid characters. In this code, userSN may contain
-only letters and spaces, whereas a password may contain only alphanumeric characters:
+Следующее решение использует белый список для очистки пользовательского ввода, чтобы строка фильтра содержала только допустимые символы. В этом коде `userSN` может содержать только буквы и пробелы, в то время как пароль может содержать только алфавитно-цифровые символы:
 
 ```java
-// String userSN = "Sherlock Holmes"; // Valid
-// String userPassword = "secret2"; // Valid
-// ... beginning of LDAPInjection.searchRecord()...
+// String userSN = "Sherlock Holmes"; // Действительно
+// String userPassword = "secret2"; // Действительно
+// ... начало LDAPInjection.searchRecord()...
 sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
 String base = "dc=example,dc=com";
 
 if (!userSN.matches("[\\w\\s]*") || !userPassword.matches("[\\w]*")) {
- throw new IllegalArgumentException("Invalid input");
+ throw new IllegalArgumentException("Недопустимый ввод");
 }
 
 String filter = "(&(sn = " + userSN + ")(userPassword=" + userPassword + "))";
-// ... remainder of LDAPInjection.searchRecord()... 
+// ... остальная часть LDAPInjection.searchRecord()... 
 ```
 
-When a database field such as a password must include special characters, it is critical to ensure that the authentic data is stored in sanitized form in the
-database and also that any user input is normalized before the validation or comparison takes place. Using characters that have special meanings in JNDI
-and LDAP in the absence of a comprehensive normalization and whitelisting-based routine is discouraged. Special characters must be transformed to
-sanitized, safe values before they are added to the whitelist expression against which input will be validated. Likewise, normalization of user input should
-occur before the validation step (source: [Prevent LDAP injection](https://wiki.sei.cmu.edu/confluence/spaces/flyingpdf/pdfpageexport.action?pageId=88487534)).
+Когда поле базы данных, такое как пароль, должно включать специальные символы, критически важно обеспечить, чтобы данные хранились в базе данных в очищенной форме и чтобы любой пользовательский ввод был нормализован перед валидацией или сравнением. Использование символов, имеющих специальное значение в JNDI и LDAP, в отсутствие комплексной нормализации и основанных на белом списке процедур не рекомендуется. Специальные символы должны быть преобразованы в очищенные, безопасные значения перед добавлением их в выражение белого списка, по которому будет производиться валидация ввода. Также нормализация пользовательского ввода должна происходить до этапа валидации (источник: [Предотвращение LDAP-инъекции](https://wiki.sei.cmu.edu/confluence/spaces/flyingpdf/pdfpageexport.action?pageId=88487534)).
 
-For further information visit [OWASP ESAPI Java Encoder Project which includes encodeForLDAP(String) and encodeForDN(String)](https://owasp.org/www-project-java-encoder/).
+Для получения дополнительной информации посетите [OWASP ESAPI Java Encoder Project, который включает encodeForLDAP(String) и encodeForDN(String)](https://owasp.org/www-project-java-encoder/).
 
-#### Safe C Sharp .NET TBA Example
+#### Пример безопасного экранирования в C# .NET
 
-[.NET AntiXSS](https://blogs.msdn.microsoft.com/securitytools/2010/09/30/antixss-4-0-released/) (now the Encoder class) has LDAP encoding functions including `Encoder.LdapFilterEncode(string)`, `Encoder.LdapDistinguishedNameEncode(string)` and `Encoder.LdapDistinguishedNameEncode(string, bool, bool)`.
+[.NET AntiXSS](https://blogs.msdn.microsoft.com/securitytools/2010/09/30/antixss-4-0-released/) (теперь класс Encoder) имеет функции кодирования LDAP, включая `Encoder.LdapFilterEncode(string)`, `Encoder.LdapDistinguishedNameEncode(string)` и `Encoder.LdapDistinguishedNameEncode(string, bool, bool)`.
 
-`Encoder.LdapFilterEncode` encodes input according to [RFC4515](https://tools.ietf.org/search/rfc4515) where unsafe values are converted to `\XX` where `XX` is the representation of the unsafe character.
+`Encoder.LdapFilterEncode` кодирует ввод в соответствии с [RFC4515](https://tools.ietf.org/search/rfc4515), где небезопасные значения преобразуются в `\XX`, где `XX` — это представление небезопасного символа.
 
-`Encoder.LdapDistinguishedNameEncode` encodes input according to [RFC2253](https://tools.ietf.org/html/rfc2253) where unsafe characters are converted to `#XX` where `XX` is the representation of the unsafe character and the comma, plus, quote, slash, less than and great than signs are escaped using slash notation (`\X`). In addition to this a space or octothorpe (`#`) at the beginning of the input string is `\` escaped as is a space at the end of a string.
+`Encoder.LdapDistinguishedNameEncode` кодирует ввод в соответствии с [RFC2253](https://tools.ietf.org/html/rfc2253), где небезопасные символы преобразуются в `#XX`, где `XX` — это представление небезопасного символа, а запятая, плюс, кавычка, косая черта, знак меньше и знак больше экранируются с использованием нотации косой черты (`\X`). Кроме того, пробел или октоторп (`#`) в начале строки ввода экранируются как `\`, а пробел в конце строки также экранируется.
 
-`LdapDistinguishedNameEncode(string, bool, bool)` is also provided so you may turn off the initial or final character escaping rules, for example if you are concatenating the escaped distinguished name fragment into the midst of a complete distinguished name.
+`LdapDistinguishedNameEncode(string, bool, bool)` также предоставляется, чтобы вы могли отключить правила экранирования начального или конечного символа, например, если вы объединяете экранированный фрагмент Distinguished Name в середину полного Distinguished Name.
 
-### Defense Option 2: Use Frameworks that Automatically Protect from LDAP Injection
+### Метод защиты 2: Используйте фреймворки, которые автоматически защищают от LDAP-инъекций
 
-#### Safe .NET Example
+#### Безопасный пример .NET
 
-We recommend using [LINQ to LDAP](https://www.nuget.org/packages/LinqToLdap/) (for .NET Framework 4.5 or lower [until it has been updated](https://github.com/madhatter22/LinqToLdap/issues/31)) in DotNet. It provides automatic LDAP encoding when building LDAP queries.
-Contact the [Readme file](https://github.com/madhatter22/LinqToLdap/blob/master/README.md) in the project repository.
+Рекомендуется использовать [LINQ to LDAP](https://www.nuget.org/packages/LinqToLdap/) (для .NET Framework 4.5 или ниже [до обновления](https://github.com/madhatter22/LinqToLdap/issues/31)) в DotNet. Он предоставляет автоматическое кодирование LDAP при построении LDAP-запросов.
+Смотрите [файл Readme](https://github.com/madhatter22/LinqToLdap/blob/master/README.md) в репозитории проекта.
 
-## Additional Defenses
+## Дополнительные методы защиты
 
-Beyond adopting one of the two primary defenses, we also recommend adopting all of these additional defenses in order to provide defense in depth. These additional defenses are:
+Помимо применения одного из двух основных методов защиты, рекомендуется также применять все дополнительные методы защиты для обеспечения многослойной защиты. Эти дополнительные методы защиты включают:
 
-- **Least Privilege**
-- **Allow-List Input Validation**
+- **Принцип наименьших привилегий**
+- **Проверка входных данных по белому списку**
 
-### Least Privilege
+### Принцип наименьших привилегий
 
-To minimize the potential damage of a successful LDAP injection attack, you should minimize the privileges assigned to the LDAP binding account in your environment.
+Чтобы минимизировать потенциальный ущерб от успешной атаки LDAP-инъекции, вы должны минимизировать привилегии, назначенные учетной записи LDAP в вашей среде.
 
-### Enabling Bind Authentication
+### Включение аутентификации Bind
 
-If LDAP protocol is configured with bind Authentication, attackers would not be able to perform LDAP injection attacks because of verification
-and authorization checks that are performed against valid credentials passed by the user.
-An attacker can still bypass bind authentication through an anonymous connection or by exploiting the use of unauthenticated bind: Anonymous Bind (LDAP) and Unauthenticated Bind (LDAP).
+Если протокол LDAP настроен с аутентификацией Bind, злоумышленники не смогут выполнять атаки LDAP-инъекций из-за проверок и авторизаций, которые выполняются по отношению к действительным учетным данным, предоставленным пользователем.
+Злоумышленник все еще может обойти аутентификацию Bind через анонимное соединение или используя неаутентифицированный Bind: Anonymous Bind (LDAP) и Unauthenticated Bind (LDAP).
 
-### Allow-List Input Validation
+### Проверка входных данных по белому списку
 
-Input validation can be used to detect unauthorized input before it is passed to the LDAP query. For more information please see the [Input Validation Cheat Sheet](Input_Validation_Cheat_Sheet.md).
+Проверка входных данных может использоваться для обнаружения неавторизованного ввода до того, как он будет передан в LDAP-запрос. Для получения дополнительной информации смотрите [шпаргалку по проверке входных данных](Input_Validation_Cheat_Sheet.md).
 
-## Related Articles
+## Связанные статьи
 
-- OWASP article on [LDAP Injection](https://owasp.org/www-community/attacks/LDAP_Injection) Vulnerabilities.
-- [OWASP Testing Guide](https://owasp.org/www-project-web-security-testing-guide/) article on how to [Test for LDAP Injection](https://owasp.org/www-project-web-security-testing-guide/stable/4-Web_Application_Security_Testing/07-Input_Validation_Testing/06-Testing_for_LDAP_Injection.html) Vulnerabilities.
+- Статья OWASP о [LDAP-инъекциях](https://owasp.org/www-community/attacks/LDAP_Injection).
+- Статья [OWASP Testing Guide](https://owasp.org/www-project-web-security-testing-guide/) о том, как [тестировать уязвимости LDAP-инъекций](https://owasp.org/www-project-web-security-testing-guide/stable/4-Web_Application_Security_Testing/07-Input_Validation_Testing/06-Testing_for_LDAP_Injection.html).

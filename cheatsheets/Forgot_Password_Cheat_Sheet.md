@@ -1,122 +1,122 @@
-# Forgot Password Cheat Sheet
+# Шпаргалка по восстановлению пароля
 
-## Introduction
+## Введение
 
-In order to implement a proper user management system, systems integrate a **Forgot Password** service that allows the user to request a password reset.
+Для реализации надлежащей системы управления пользователями системы интегрируют сервис **Восстановление пароля**, который позволяет пользователю запросить сброс пароля.
 
-Even though this functionality looks straightforward and easy to implement, it is a common source of vulnerabilities, such as the renowned [user enumeration attack](https://owasp.org/www-project-web-security-testing-guide/stable/4-Web_Application_Security_Testing/03-Identity_Management_Testing/04-Testing_for_Account_Enumeration_and_Guessable_User_Account.html).
+Хотя эта функция кажется простой и легкой для реализации, она часто является источником уязвимостей, таких как известная атака на [перечисление пользователей](https://owasp.org/www-project-web-security-testing-guide/stable/4-Web_Application_Security_Testing/03-Identity_Management_Testing/04-Testing_for_Account_Enumeration_and_Guessable_User_Account.html).
 
-The following short guidelines can be used as a quick reference to protect the forgot password service:
+Следующие краткие рекомендации можно использовать в качестве быстрого справочника для защиты сервиса восстановления пароля:
 
-- **Return a consistent message for both existent and non-existent accounts.**
-- **Ensure that the time taken for the user response message is uniform.**
-- **Use a side-channel to communicate the method to reset their password.**
-- **Use [URL tokens](#url-tokens) for the simplest and fastest implementation.**
-- **Ensure that generated tokens or codes are:**
-    - **Randomly generated using a cryptographically safe algorithm.**
-    - **Sufficiently long to protect against brute-force attacks.**
-    - **Stored securely.**
-    - **Single use and expire after an appropriate period.**
-- **Do not make a change to the account until a valid token is presented, such as locking out the account**
+- **Возвращайте согласованное сообщение для существующих и несуществующих учетных записей.**
+- **Убедитесь, что время ответа пользователя является одинаковым.**
+- **Используйте побочный канал для передачи метода сброса пароля.**
+- **Используйте [токены URL](#url-tokens) для самой простой и быстрой реализации.**
+- **Убедитесь, что сгенерированные токены или коды:**
+    - **Генерируются случайным образом с использованием криптографически безопасного алгоритма.**
+    - **Достаточно длинны для защиты от атак методом подбора.**
+    - **Хранятся безопасно.**
+    - **Однократного использования и истекают через соответствующий период.**
+- **Не вносите изменения в учетную запись, пока не будет представлен действительный токен, например, не блокируйте учетную запись.**
 
-This cheat sheet is focused on resetting users passwords. For guidance on resetting multifactor authentication (MFA), see the relevant section in the [Multifactor Authentication Cheat Sheet](Multifactor_Authentication_Cheat_Sheet.md#resetting-mfa).
+Эта шпаргалка сосредоточена на сбросе паролей пользователей. Для получения рекомендаций по сбросу многфакторной аутентификации (MFA) смотрите соответствующий раздел в [Шпаргалке по многфакторной аутентификации](Multifactor_Authentication_Cheat_Sheet.md#resetting-mfa).
 
-## Forgot Password Service
+## Сервис восстановления пароля
 
-The password reset process can be broken into two main steps, detailed in the following sections.
+Процесс сброса пароля можно разделить на два основных шага, которые подробно описаны в следующих разделах.
 
-### Forgot Password Request
+### Запрос на восстановление пароля
 
-When a user uses the forgot password service and inputs their username or email, the below should be followed to implement a secure process:
+Когда пользователь использует сервис восстановления пароля и вводит свое имя пользователя или электронную почту, необходимо следовать следующим рекомендациям для реализации безопасного процесса:
 
-- Return a consistent message for both existent and non-existent accounts.
-- Ensure that responses return in a consistent amount of time to prevent an attacker enumerating which accounts exist. This could be achieved by using asynchronous calls or by making sure that the same logic is followed, instead of using a quick exit method.
-- Implement protections against excessive automated submissions such as rate-limiting on a per-account basis, requiring a CAPTCHA, or other controls. Otherwise an attacker could make thousands of password reset requests per hour for a given account, flooding the user's intake system (e.g., email inbox or SMS) with useless requests.
-- Employ normal security measures, such as [SQL Injection Prevention methods](SQL_Injection_Prevention_Cheat_Sheet.md) and [Input Validation](Input_Validation_Cheat_Sheet.md).
+- Возвращайте согласованное сообщение для существующих и несуществующих учетных записей.
+- Убедитесь, что ответы возвращаются в согласованное время, чтобы предотвратить атаки на определение существующих учетных записей. Это можно достичь с помощью асинхронных вызовов или гарантией использования одинаковой логики, а не метода быстрого выхода.
+- Реализуйте защиту от чрезмерных автоматизированных запросов, таких как ограничение скорости на уровне каждой учетной записи, требование CAPTCHA или другие меры. В противном случае злоумышленник может отправить тысячи запросов на сброс пароля в час для данной учетной записи, заполняя систему получения пользователя (например, электронную почту или SMS) бесполезными запросами.
+- Применяйте обычные меры безопасности, такие как [методы предотвращения SQL-инъекций](SQL_Injection_Prevention_Cheat_Sheet.md) и [валидация ввода](Input_Validation_Cheat_Sheet.md).
 
-### User Resets Password
+### Сброс пароля пользователем
 
-Once the user has proved their identity by providing the token (sent via an email) or code (sent via SMS or other mechanisms), they should reset their password to a new secure one. In order to secure this step, the measures that should be taken are:
+После того как пользователь подтвердит свою личность, предоставив токен (отправленный по электронной почте) или код (отправленный по SMS или другим способом), он должен сбросить свой пароль на новый безопасный. Чтобы обеспечить безопасность этого шага, необходимо предпринять следующие меры:
 
-- The user should confirm the password they set by writing it twice.
-- Ensure that a secure password policy is in place, and is consistent with the rest of the application.
-- Update and store the password following [secure practices](Password_Storage_Cheat_Sheet.md).
-- Send the user an email informing them that their password has been reset (do not send the password in the email!).
-- Once they have set their new password, the user should then login through the usual mechanism. Don't automatically log the user in, as this introduces additional complexity to the authentication and session handling code, and increases the likelihood of introducing vulnerabilities.
-- Ask the user if they want to invalidate all of their existing sessions, or invalidate the sessions automatically.
+- Пользователь должен подтвердить установленный пароль, введя его дважды.
+- Убедитесь, что используется безопасная политика паролей, которая согласуется с остальной частью приложения.
+- Обновите и сохраните пароль в соответствии с [безопасными практиками](Password_Storage_Cheat_Sheet.md).
+- Отправьте пользователю электронное письмо с уведомлением о сбросе пароля (не отправляйте пароль в письме!).
+- После установки нового пароля пользователь должен войти в систему через обычный механизм. Не входите в систему автоматически, так как это добавляет дополнительную сложность к коду аутентификации и управления сеансами и увеличивает вероятность введения уязвимостей.
+- Спросите пользователя, хочет ли он аннулировать все свои существующие сеансы, или аннулируйте сеансы автоматически.
 
-## Methods
+## Методы
 
-In order to allow a user to request a password reset, you will need to have some way to identify the user, or a means to reach out to them through a side-channel.
+Для того чтобы предоставить пользователю возможность запросить сброс пароля, вам нужно иметь способ идентификации пользователя или средство связи с ним через побочный канал.
 
-This can be done through any of the following methods:
+Это можно сделать с помощью следующих методов:
 
-- [URL tokens](#url-tokens).
-- [PINs](#pins)
-- [Offline methods](#offline-methods)
-- [Security questions](#security-questions).
+- [Токены URL](#url-tokens).
+- [PIN-коды](#pins).
+- [Офлайн-методы](#offline-methods).
+- [Безопасностные вопросы](#security-questions).
 
-These methods can be used together to provide a greater degree of assurance that the user is who they claim to be. No matter what, you must ensure that a user always has a way to recover their account, even if that involves contacting the support team and proving their identity to staff.
+Эти методы можно использовать вместе, чтобы обеспечить более высокий уровень уверенности в том, что пользователь действительно тот, за кого себя выдает. В любом случае вы должны обеспечить, чтобы у пользователя всегда был способ восстановить свою учетную запись, даже если это включает обращение в службу поддержки и подтверждение своей личности сотрудникам.
 
-### General Security Practices
+### Общие практики безопасности
 
-It is essential to employ good security practices for the reset identifiers (tokens, codes, PINs, etc.). Some points don't apply to the [offline methods](#offline-methods), such as the lifetime restriction. All tokens and codes should be:
+Необходимо применять хорошие практики безопасности для идентификаторов сброса (токенов, кодов, PIN-кодов и т. д.). Некоторые пункты не применимы к [оффлайн-методам](#offline-methods), таким как ограничение срока действия. Все токены и коды должны быть:
 
-- Generated [cryptographically secure random number generator](Cryptographic_Storage_Cheat_Sheet.md#secure-random-number-generation).
-    - It is also possible to use JSON Web Tokens (JWTs) in place of random tokens, although this can introduce additional vulnerability, such as those discussed in the [JSON Web Token Cheat Sheet](JSON_Web_Token_for_Java_Cheat_Sheet.md).
-- Long enough to protect against brute-force attacks.
-- Linked to an individual user in the database.
-- Invalidated after they have been used.
-- Stored in a secure manner, as discussed in the [Password Storage Cheat Sheet](Password_Storage_Cheat_Sheet.md).
+- Сгенерированы с использованием [криптографически безопасного генератора случайных чисел](Cryptographic_Storage_Cheat_Sheet.md#secure-random-number-generation).
+    - Также можно использовать JSON Web Tokens (JWT) вместо случайных токенов, хотя это может ввести дополнительные уязвимости, такие как те, которые обсуждаются в [Чек-листе по JSON Web Token](JSON_Web_Token_for_Java_Cheat_Sheet.md).
+- Достаточной длины для защиты от атак методом подбора.
+- Привязаны к конкретному пользователю в базе данных.
+- Аннулированы после использования.
+- Хранятся безопасно, как обсуждается в [Чек-листе по хранению паролей](Password_Storage_Cheat_Sheet.md).
 
-### URL Tokens
+### Токены URL
 
-URL tokens are passed in the query string of the URL, and are typically sent to the user via email. The basic overview of the process is as follows:
+Токены URL передаются в строке запроса URL и обычно отправляются пользователю по электронной почте. Основной обзор процесса выглядит следующим образом:
 
-1. Generate a token to the user and attach it in the URL query string.
-2. Send this token to the user via email.
-   - Don't rely on the [Host](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Host) header while creating the reset URLs to avoid [Host Header Injection](https://owasp.org/www-project-web-security-testing-guide/stable/4-Web_Application_Security_Testing/07-Input_Validation_Testing/17-Testing_for_Host_Header_Injection) attacks. The URL should be either be hard-coded, or should be validated against a list of trusted domains.
-   - Ensure that the URL is using HTTPS.
-3. The user receives the email, and browses to the URL with the attached token.
-   - Ensure that the reset password page adds the [Referrer Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy) tag with the `noreferrer` value in order to avoid [referrer leakage](https://portswigger.net/kb/issues/00500400_cross-domain-referer-leakage).
-   - Implement appropriate protection to prevent users from brute-forcing tokens in the URL, such as rate limiting.
-4. If required, perform any additional validation steps such as requiring the user to answer [security questions](#security-questions).
-5. Let the user create a new password and confirm it. Ensure that the same password policy used elsewhere in the application is applied.
+1. Сгенерируйте токен для пользователя и прикрепите его к строке запроса URL.
+2. Отправьте этот токен пользователю по электронной почте.
+   - Не полагайтесь на заголовок [Host](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Host) при создании URL для сброса, чтобы избежать атак [Host Header Injection](https://owasp.org/www-project-web-security-testing-guide/stable/4-Web_Application_Security_Testing/07-Input_Validation_Testing/17-Testing_for_Host_Header_Injection). URL должен быть жестко закодирован или проверен на соответствие списку доверенных доменов.
+   - Убедитесь, что URL использует HTTPS.
+3. Пользователь получает электронное письмо и переходит по URL с прикрепленным токеном.
+   - Убедитесь, что страница сброса пароля добавляет тег [Referrer Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy) со значением `noreferrer`, чтобы избежать [утечки реферера](https://portswigger.net/kb/issues/00500400_cross-domain-referer-leakage).
+   - Реализуйте соответствующую защиту, чтобы предотвратить перебор токенов в URL, например, ограничение частоты запросов.
+4. При необходимости выполните дополнительные шаги проверки, такие как требование ответа пользователя на [безопасностные вопросы](#security-questions).
+5. Позвольте пользователю создать новый пароль и подтвердить его. Убедитесь, что применяется та же политика паролей, что и в остальной части приложения.
 
-*Note:* URL tokens can follow on the same behavior of the [PINs](#pins) by creating a restricted session from the token. Decision should be made based on the needs and the expertise of the developer.
+*Примечание:* Токены URL могут следовать тому же поведению, что и [PIN-коды](#pins), создавая ограниченную сессию на основе токена. Решение должно быть принято в зависимости от потребностей и опыта разработчика.
 
-### PINs
+### PIN-коды
 
-PINs are numbers (between 6 and 12 digits) that are sent to the user through a side-channel such as SMS.
+PIN-коды — это числа (от 6 до 12 цифр), которые отправляются пользователю через побочный канал, такой как SMS.
 
-1. Generate a PIN.
-2. Send it to the user via SMS or another mechanism.
-   - Breaking the PIN up with spaces makes it easier for the user to read and enter.
-3. The user then enters the PIN along with their username on the password reset page.
-4. Create a limited session from that PIN that only permits the user to reset their password.
-5. Let the user create a new password and confirm it. Ensure that the same password policy used elsewhere in the application is applied.
+1. Сгенерируйте PIN-код.
+2. Отправьте его пользователю по SMS или другим способом.
+   - Разделение PIN-кода пробелами облегчает его чтение и ввод пользователем.
+3. Пользователь вводит PIN-код вместе с именем пользователя на странице сброса пароля.
+4. Создайте ограниченную сессию на основе этого PIN-кода, которая разрешает пользователю только сброс пароля.
+5. Позвольте пользователю создать новый пароль и подтвердить его. Убедитесь, что применяется та же политика паролей, что и в остальной части приложения.
 
-### Offline Methods
+### Офлайн-методы
 
-Offline methods differ from other methods by allowing the user to reset their password without requesting a special identifier (such as a token or PIN) from the backend. However, authentication still needs to be conducted by the backend to ensure that the request is legitimate. Offline methods provide a certain identifier either on registration, or when the user wishes to configure it.
+Офлайн-методы отличаются от других методов тем, что позволяют пользователю сбросить пароль без запроса специального идентификатора (такого как токен или PIN-код) от сервера. Тем не менее, аутентификация по-прежнему должна выполняться сервером, чтобы убедиться, что запрос является законным. Офлайн-методы предоставляют определенный идентификатор либо при регистрации, либо когда пользователь желает его настроить.
 
-These identifiers should be stored offline and in a secure fashion (*e.g.* password managers), and the backend should properly follow the [general security practices](#general-security-practices). Some implementations are built on [hardware OTP tokens](Multifactor_Authentication_Cheat_Sheet.md#hardware-otp-tokens), [certificates](Multifactor_Authentication_Cheat_Sheet.md#certificates), or any other implementation that could be used inside of an enterprise. These are out of scope for this cheat sheet.
+Эти идентификаторы должны храниться офлайн и безопасным образом (например, в менеджерах паролей), а сервер должен строго следовать [общим практикам безопасности](#general-security-practices). Некоторые реализации основаны на [аппаратных OTP токенах](Multifactor_Authentication_Cheat_Sheet.md#hardware-otp-tokens), [сертификатах](Multifactor_Authentication_Cheat_Sheet.md#certificates) или других решениях, которые могут использоваться в корпоративной среде. Эти методы не рассматриваются в данном чек-листе.
 
-#### Backup Codes
+#### Резервные коды
 
-Backup codes should be provided to the user upon registering where the user should store them offline in a secure place (such as their password manager). Some companies that implement this method are [Google](https://support.google.com/accounts/answer/1187538), [GitHub](https://help.github.com/en/github/authenticating-to-github/recovering-your-account-if-you-lose-your-2fa-credentials), and [Auth0](https://auth0.com/docs/mfa/guides/reset-user-mfa#recovery-codes).
+Резервные коды должны предоставляться пользователю при регистрации, и пользователь должен хранить их офлайн в безопасном месте (например, в менеджере паролей). Некоторые компании, которые реализуют этот метод, это [Google](https://support.google.com/accounts/answer/1187538), [GitHub](https://help.github.com/en/github/authenticating-to-github/recovering-your-account-if-you-lose-your-2fa-credentials) и [Auth0](https://auth0.com/docs/mfa/guides/reset-user-mfa#recovery-codes).
 
-While implementing this method, the following practices should be followed:
+При реализации этого метода следует соблюдать следующие практики:
 
-- Minimum length of 8 digits, 12 for improved security.
-- A user should have multiple recovery codes at any given time to ensure that one of them works (most services provide the user with ten backup codes).
-- A process should be implemented to allow the user to invalidate all existing recovery codes, in case they are compromised by a third party.
-- Rate limiting and other protections should be implemented to prevent an attacker from brute-forcing the backup codes.
+- Минимальная длина 8 цифр, 12 для повышения безопасности.
+- У пользователя должно быть несколько резервных кодов в любой момент времени, чтобы один из них сработал (большинство сервисов предоставляют пользователю десять резервных кодов).
+- Должен быть реализован процесс, позволяющий пользователю аннулировать все существующие резервные коды, если они были скомпрометированы третьей стороной.
+- Необходимо реализовать ограничение частоты и другие защиты, чтобы предотвратить перебор резервных кодов злоумышленником.
 
-### Security Questions
+### Безопасностные вопросы
 
-Security questions should not be used as the sole mechanism for resetting passwords due to their answers frequently being easily guessable or obtainable by attackers. However, they can provide an additional layer of security when combined with the other methods discussed in this cheat sheet. If they are used, then ensure that secure questions are chosen as discussed in the [Security Questions cheat sheet](Choosing_and_Using_Security_Questions_Cheat_Sheet.md).
+Безопасностные вопросы не следует использовать в качестве единственного механизма для сброса паролей, так как их ответы часто легко угадываются или могут быть получены злоумышленниками. Тем не менее, они могут предоставить дополнительный уровень безопасности, когда используются в сочетании с другими методами, обсужденными в этом чек-листе. Если вы решите использовать их, убедитесь, что выбраны безопасные вопросы, как обсуждается в [Шпаргалке по выбору и использованию контрольных вопросов](Choosing_and_Using_Security_Questions_Cheat_Sheet.md).
 
-## Account Lockout
+## Блокировка учетных записей
 
-Accounts should not be locked out in response to a forgotten password attack, as this can be used to deny access to users with known usernames. For more details on account lockouts, see the [Authentication Cheat Sheet](Authentication_Cheat_Sheet.md).
+Учетные записи не следует блокировать в ответ на атаку на забытый пароль, так как это может быть использовано для отказа в доступе пользователям с известными именами пользователей. Для получения дополнительной информации о блокировке учетных записей смотрите [Шпаргалку по аутентификации](Authentication_Cheat_Sheet.md).

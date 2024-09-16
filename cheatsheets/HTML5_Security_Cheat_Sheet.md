@@ -1,191 +1,191 @@
-# HTML5 Security Cheat Sheet
+# Шпаргалка по безопасности HTML5
 
-## Introduction
+## Введение
 
-The following cheat sheet serves as a guide for implementing HTML 5 in a secure fashion.
+Эта шпаргалка служит руководством по безопасной реализации HTML5.
 
-## Communication APIs
+## API для коммуникации
 
-### Web Messaging
+### Веб-сообщения
 
-Web Messaging (also known as Cross Domain Messaging) provides a means of messaging between documents from different origins in a way that is generally safer than the multiple hacks used in the past to accomplish this task. However, there are still some recommendations to keep in mind:
+Веб-сообщения (также известные как междоменные сообщения) предоставляют способ обмена сообщениями между документами из разных источников, что обычно безопаснее, чем множество хака, используемых ранее для этой задачи. Тем не менее, есть несколько рекомендаций, которые следует учитывать:
 
-- When posting a message, explicitly state the expected origin as the second argument to `postMessage` rather than `*` in order to prevent sending the message to an unknown origin after a redirect or some other means of the target window's origin changing.
-- The receiving page should **always**:
-    - Check the `origin` attribute of the sender to verify the data is originating from the expected location.
-    - Perform input validation on the `data` attribute of the event to ensure that it's in the desired format.
-- Don't assume you have control over the `data` attribute. A single [Cross Site Scripting](Cross_Site_Scripting_Prevention_Cheat_Sheet.md) flaw in the sending page allows an attacker to send messages of any given format.
-- Both pages should only interpret the exchanged messages as **data**. Never evaluate passed messages as code (e.g. via `eval()`) or insert it to a page DOM (e.g. via `innerHTML`), as that would create a DOM-based XSS vulnerability. For more information see [DOM based XSS Prevention Cheat Sheet](DOM_based_XSS_Prevention_Cheat_Sheet.md).
-- To assign the data value to an element, instead of using a insecure method like `element.innerHTML=data;`, use the safer option: `element.textContent=data;`
-- Check the origin properly exactly to match the FQDN(s) you expect. Note that the following code: `if(message.origin.indexOf(".owasp.org")!=-1) { /* ... */ }` is very insecure and will not have the desired behavior as `owasp.org.attacker.com` will match.
-- If you need to embed external content/untrusted gadgets and allow user-controlled scripts (which is highly discouraged), please check the information on [sandboxed frames](HTML5_Security_Cheat_Sheet.md#sandboxed-frames).
+- При отправке сообщения явно указывайте ожидаемый источник в качестве второго аргумента для `postMessage`, а не `*`, чтобы предотвратить отправку сообщения на неизвестный источник после перенаправления или другого изменения источника целевого окна.
+- Получающая страница **всегда** должна:
+    - Проверять атрибут `origin` отправителя, чтобы убедиться, что данные поступают из ожидаемого источника.
+    - Выполнять проверку входных данных на атрибуте `data` события, чтобы убедиться, что данные имеют нужный формат.
+- Не предполагавайте, что у вас есть контроль над атрибутом `data`. Единственный [флэш Cross Site Scripting](Cross_Site_Scripting_Prevention_Cheat_Sheet.md) на странице отправителя позволяет злоумышленнику отправлять сообщения в любом формате.
+- Обе страницы должны интерпретировать передаваемые сообщения только как **данные**. Никогда не оценивайте переданные сообщения как код (например, с помощью `eval()`) или не вставляйте их в DOM страницы (например, с помощью `innerHTML`), так как это создаст уязвимость DOM-based XSS. Для получения дополнительной информации см. [Шпаргалка по предотвращению DOM-based XSS](DOM_based_XSS_Prevention_Cheat_Sheet.md).
+- Для присвоения значения данных элементу, вместо использования небезопасного метода, такого как `element.innerHTML=data;`, используйте более безопасный вариант: `element.textContent=data;`
+- Тщательно проверяйте происхождение, чтобы оно точно совпадало с ожидаемыми FQDN. Обратите внимание, что следующий код: `if(message.origin.indexOf(".owasp.org")!=-1) { /* ... */ }` является очень небезопасным и не будет иметь желаемого поведения, так как `owasp.org.attacker.com` будет совпадать.
+- Если вам нужно встроить внешний контент/ненадежные гаджеты и разрешить пользовательские скрипты (что крайне не рекомендуется), пожалуйста, ознакомьтесь с информацией о [песочницах](HTML5_Security_Cheat_Sheet.md#sandboxed-frames).
 
-### Cross Origin Resource Sharing
+### Междоменный доступ к ресурсам
 
-- Validate URLs passed to `XMLHttpRequest.open`. Current browsers allow these URLs to be cross domain; this behavior can lead to code injection by a remote attacker. Pay extra attention to absolute URLs.
-- Ensure that URLs responding with `Access-Control-Allow-Origin: *` do not include any sensitive content or information that might aid attacker in further attacks. Use the `Access-Control-Allow-Origin` header only on chosen URLs that need to be accessed cross-domain. Don't use the header for the whole domain.
-- Allow only selected, trusted domains in the `Access-Control-Allow-Origin` header. Prefer allowing specific domains over blocking or allowing any domain (do not use `*` wildcard nor blindly return the `Origin` header content without any checks).
-- Keep in mind that CORS does not prevent the requested data from going to an unauthorized location. It's still important for the server to perform usual [CSRF](Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.md) prevention.
-- While the [Fetch Standard](https://fetch.spec.whatwg.org/#http-cors-protocol) recommends a pre-flight request with the `OPTIONS` verb, current implementations might not perform this request, so it's important that "ordinary" (`GET` and `POST`) requests perform any access control necessary.
-- Discard requests received over plain HTTP with HTTPS origins to prevent mixed content bugs.
-- Don't rely only on the Origin header for Access Control checks. Browser always sends this header in CORS requests, but may be spoofed outside the browser. Application-level protocols should be used to protect sensitive data.
+- Проверьте URL, передаваемые в `XMLHttpRequest.open`. Современные браузеры позволяют этим URL быть междоменными; это поведение может привести к инъекциям кода удаленным злоумышленником. Особое внимание уделите абсолютным URL.
+- Убедитесь, что URL, отвечающие `Access-Control-Allow-Origin: *`, не содержат чувствительного контента или информации, которая может помочь злоумышленнику в последующих атаках. Используйте заголовок `Access-Control-Allow-Origin` только на выбранных URL, которым требуется доступ из другого домена. Не используйте заголовок для всего домена.
+- Разрешайте только выбранные, доверенные домены в заголовке `Access-Control-Allow-Origin`. Предпочтительнее разрешать конкретные домены, чем блокировать или разрешать любой домен (не используйте `*` и не возвращайте содержимое заголовка `Origin` без проверки).
+- Помните, что CORS не предотвращает передачу запрашиваемых данных на несанкционированное место. Важно, чтобы сервер выполнял обычную проверку [CSRF](Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.md).
+- Хотя [Стандарт Fetch](https://fetch.spec.whatwg.org/#http-cors-protocol) рекомендует предварительный запрос с методом `OPTIONS`, текущие реализации могут не выполнять этот запрос, поэтому важно, чтобы "обычные" (`GET` и `POST`) запросы выполняли необходимое управление доступом.
+- Отбрасывайте запросы, полученные по обычному HTTP, при наличии HTTPS-источников, чтобы предотвратить ошибки смешанного контента.
+- Не полагайтесь только на заголовок Origin для проверки доступа. Браузер всегда отправляет этот заголовок в запросах CORS, но он может быть подделан вне браузера. Протоколы на уровне приложения должны использоваться для защиты чувствительных данных.
 
 ### WebSockets
 
-- Drop backward compatibility in implemented client/servers and use only protocol versions above hybi-00. Popular Hixie-76 version (hiby-00) and older are outdated and insecure.
-- The recommended version supported in latest versions of all current browsers is [RFC 6455](http://tools.ietf.org/html/rfc6455) (supported by Firefox 11+, Chrome 16+, Safari 6, Opera 12.50, and IE10).
-- While it's relatively easy to tunnel TCP services through WebSockets (e.g. VNC, FTP), doing so enables access to these tunneled services for the in-browser attacker in case of a Cross Site Scripting attack. These services might also be called directly from a malicious page or program.
-- The protocol doesn't handle authorization and/or authentication. Application-level protocols should handle that separately in case sensitive data is being transferred.
-- Process the messages received by the websocket as data. Don't try to assign it directly to the DOM nor evaluate as code. If the response is JSON, never use the insecure `eval()` function; use the safe option JSON.parse() instead.
-- Endpoints exposed through the `ws://` protocol are easily reversible to plain text. Only `wss://` (WebSockets over SSL/TLS) should be used for protection against Man-In-The-Middle attacks.
-- Spoofing the client is possible outside a browser, so the WebSockets server should be able to handle incorrect/malicious input. Always validate input coming from the remote site, as it might have been altered.
-- When implementing servers, check the `Origin:` header in the Websockets handshake. Though it might be spoofed outside a browser, browsers always add the Origin of the page that initiated the Websockets connection.
-- As a WebSockets client in a browser is accessible through JavaScript calls, all Websockets communication can be spoofed or hijacked through [Cross Site Scripting](https://owasp.org/www-community/attacks/xss/). Always validate data coming through a WebSockets connection.
+- Откажитесь от поддержки старых версий протокола на клиентах/серверах и используйте только версии протокола выше hybi-00. Популярная версия Hixie-76 (hiby-00) и более старые устарели и небезопасны.
+- Рекомендуемая версия, поддерживаемая в последних версиях всех современных браузеров, - [RFC 6455](http://tools.ietf.org/html/rfc6455) (поддерживается Firefox 11+, Chrome 16+, Safari 6, Opera 12.50 и IE10).
+- Хотя относительно легко пробрасывать TCP-сервисы через WebSockets (например, VNC, FTP), это позволяет злоумышленнику в браузере получить доступ к этим проброшенным сервисам в случае атаки Cross Site Scripting. Эти сервисы также могут быть вызваны напрямую с вредоносной страницы или программы.
+- Протокол не обрабатывает авторизацию и/или аутентификацию. Протоколы на уровне приложения должны обрабатывать это отдельно в случае передачи чувствительных данных.
+- Обрабатывайте сообщения, полученные через WebSocket, как данные. Не пытайтесь присвоить их напрямую DOM или оценивать как код. Если ответ - JSON, никогда не используйте небезопасную функцию `eval()`; используйте безопасный вариант JSON.parse().
+- Точки доступа, открытые через протокол `ws://`, легко могут быть преобразованы в простой текст. Используйте только `wss://` (WebSockets через SSL/TLS) для защиты от атак типа Man-In-The-Middle.
+- Подделка клиента возможна вне браузера, поэтому сервер WebSockets должен быть способен обрабатывать некорректные/вредоносные входные данные. Всегда проверяйте входные данные, поступающие с удаленного сайта, так как они могли быть изменены.
+- При реализации серверов проверяйте заголовок `Origin:` в рукопожатии WebSockets. Хотя он может быть подделан вне браузера, браузеры всегда добавляют Origin страницы, которая инициировала соединение WebSockets.
+- Так как клиент WebSockets в браузере доступен через вызовы JavaScript, все коммуникации WebSockets могут быть подделаны или перехвачены через [Cross Site Scripting](https://owasp.org/www-community/attacks/xss/). Всегда проверяйте данные, поступающие через соединение WebSockets.
 
-### Server-Sent Events
+### События, отправленные сервером
 
-- Validate URLs passed to the `EventSource` constructor, even though only same-origin URLs are allowed.
-- As mentioned before, process the messages (`event.data`) as data and never evaluate the content as HTML or script code.
-- Always check the origin attribute of the message (`event.origin`) to ensure the message is coming from a trusted domain. Use an allow-list approach.
+- Проверяйте URL, передаваемые в конструктор `EventSource`, даже если разрешены только URL того же источника.
+- Как упоминалось ранее, обрабатывайте сообщения (`event.data`) как данные и никогда не оценивайте их содержимое как HTML или скриптовый код.
+- Всегда проверяйте атрибут происхождения сообщения (`event.origin`), чтобы убедиться, что сообщение поступает из доверенного домена. Используйте подход с белым списком.
 
-## Storage APIs
+## API для хранения
 
-### Local Storage
+### Локальное хранилище
 
-- Also known as Offline Storage, Web Storage. Underlying storage mechanism may vary from one user agent to the next. In other words, any authentication your application requires can be bypassed by a user with local privileges to the machine on which the data is stored. Therefore, it's recommended to avoid storing any sensitive information in local storage where authentication would be assumed.
-- Due to the browser's security guarantees it is appropriate to use local storage where access to the data is not assuming authentication or authorization.
-- Use the object sessionStorage instead of localStorage if persistent storage is not needed. sessionStorage object is available only to that window/tab until the window is closed.
-- A single [Cross Site Scripting](https://owasp.org/www-community/attacks/xss/) can be used to steal all the data in these objects, so again it's recommended not to store sensitive information in local storage.
-- A single [Cross Site Scripting](https://owasp.org/www-community/attacks/xss/) can be used to load malicious data into these objects too, so don't consider objects in these to be trusted.
-- Pay extra attention to "localStorage.getItem" and "setItem" calls implemented in HTML5 page. It helps in detecting when developers build solutions that put sensitive information in local storage, which can be a severe risk if authentication or authorization to that data is incorrectly assumed.
-- Do not store session identifiers in local storage as the data is always accessible by JavaScript. Cookies can mitigate this risk using the `httpOnly` flag.
-- There is no way to restrict the visibility of an object to a specific path like with the attribute path of HTTP Cookies, every object is shared within an origin and protected with the Same Origin Policy. Avoid hosting multiple applications on the same origin, all of them would share the same localStorage object, use different subdomains instead.
+- Также известно как Offline Storage, Web Storage. Основной механизм хранения может варьироваться от одного пользовательского агента к другому. Другими словами, любая аутентификация, требуемая вашим приложением, может быть обойдена пользователем с локальными привилегиями на машине, на которой хранятся данные. Поэтому рекомендуется избегать хранения чувствительной информации в локальном хранилище, где предполагается аутентификация.
+- Благодаря гарантиям безопасности браузера подходяще использовать локальное хранилище, когда доступ к данным не предполагает аутентификации или авторизации.
+- Используйте объект sessionStorage вместо localStorage, если постоянное хранилище не требуется. Объект sessionStorage доступен только для этого окна/вкладки до тех пор, пока окно не будет закрыто.
+- Один [Cross Site Scripting](https://owasp.org/www-community/attacks/xss/) может быть использован для кражи всех данных в этих объектах, поэтому снова рекомендуется не хранить чувствительную информацию в локальном хранилище.
+- Один [Cross Site Scripting](https://owasp.org/www-community/attacks/xss/) может быть использован для загрузки вредоносных данных в эти объекты, поэтому не рассматривайте объекты в них как доверенные.
+- Особое внимание уделяйте вызовам "localStorage.getItem" и "setItem", реализованным на странице HTML5. Это поможет обнаружить случаи, когда разработчики создают решения, которые помещают чувствительную информацию в локальное хранилище, что может быть серьезным риском, если аутентификация или авторизация к этим данным предполагается неверно.
+- Не храните идентификаторы сеансов в локальном хранилище, так как данные всегда доступны через JavaScript. Cookies могут смягчить этот риск с помощью флага `httpOnly`.
+- Нет способа ограничить видимость объекта до конкретного пути, как это делается с атрибутом path HTTP Cookies, каждый объект делится внутри источника и защищен Политикой одного источника. Избегайте размещения нескольких приложений на одном источнике, все они будут делиться одним и тем же объектом localStorage, используйте вместо этого разные субдомены.
 
-### Client-side databases
+### Клиентские базы данных
 
-- On November 2010, the W3C announced Web SQL Database (relational SQL database) as a deprecated specification. A new standard Indexed Database API or IndexedDB (formerly WebSimpleDB) is actively developed, which provides key-value database storage and methods for performing advanced queries.
-- Underlying storage mechanisms may vary from one user agent to the next. In other words, any authentication your application requires can be bypassed by a user with local privileges to the machine on which the data is stored. Therefore, it's recommended not to store any sensitive information in local storage.
-- If utilized, WebDatabase content on the client side can be vulnerable to SQL injection and needs to have proper validation and parameterization.
-- Like Local Storage, a single [Cross Site Scripting](https://owasp.org/www-community/attacks/xss/) can be used to load malicious data into a web database as well. Don't consider data in these to be trusted.
+- В ноябре 2010 года W3C объявил Web SQL Database (реляционная SQL база данных) устаревшей спецификацией. Новый стандарт Indexed Database API или IndexedDB (ранее WebSimpleDB) активно разрабатывается, и предоставляет хранилище ключ-значение и методы для выполнения расширенных запросов.
+- Основные механизмы хранения могут варьироваться от одного пользовательского агента к другому. Другими словами, любая аутентификация, требуемая вашим приложением, может быть обойдена пользователем с локальными привилегиями на машине, на которой хранятся данные. Поэтому рекомендуется не хранить чувствительную информацию в локальном хранилище.
+- Если используется, контент WebDatabase на стороне клиента может быть уязвим к SQL-инъекциям и требует надлежащей проверки и параметризации.
+- Как и локальное хранилище, один [Cross Site Scripting](https://owasp.org/www-community/attacks/xss/) может быть использован для загрузки вредоносных данных в веб-базу данных. Не рассматривайте данные в этих базах как доверенные.
 
-## Geolocation
+## Геолокация
 
-- The [Geolocation API](https://www.w3.org/TR/2021/WD-geolocation-20211124/#security) requires that user agents ask for the user's permission before calculating location. Whether or how this decision is remembered varies from browser to browser. Some user agents require the user to visit the page again in order to turn off the ability to get the user's location without asking, so for privacy reasons, it's recommended to require user input before calling `getCurrentPosition` or `watchPosition`.
+- [API Геолокации](https://www.w3.org/TR/2021/WD-geolocation-20211124/#security) требует, чтобы пользовательские агенты запрашивали разрешение пользователя перед вычислением местоположения. Как это решение запоминается, варьируется от браузера к браузеру. Некоторые пользовательские агенты требуют, чтобы пользователь снова посетил страницу, чтобы отключить возможность получения местоположения пользователя без запроса, поэтому по соображениям конфиденциальности рекомендуется требовать ввода пользователя перед вызовом `getCurrentPosition` или `watchPosition`.
 
 ## Web Workers
 
-- Web Workers are allowed to use `XMLHttpRequest` object to perform in-domain and Cross Origin Resource Sharing requests. See relevant section of this Cheat Sheet to ensure CORS security.
-- While Web Workers don't have access to DOM of the calling page, malicious Web Workers can use excessive CPU for computation, leading to Denial of Service condition or abuse Cross Origin Resource Sharing for further exploitation. Ensure code in all Web Workers scripts is not malevolent. Don't allow creating Web Worker scripts from user supplied input.
-- Validate messages exchanged with a Web Worker. Do not try to exchange snippets of JavaScript for evaluation e.g. via `eval()` as that could introduce a [DOM Based XSS](DOM_based_XSS_Prevention_Cheat_Sheet.md) vulnerability.
+- Web Workers могут использовать объект `XMLHttpRequest` для выполнения запросов в домене и междоменных запросов. Смотрите соответствующий раздел этой Шпаргалки, чтобы обеспечить безопасность CORS.
+- Хотя Web Workers не имеют доступа к DOM вызывающей страницы, вредоносные Web Workers могут использовать чрезмерное количество процессорного времени для вычислений, что может привести к отказу в обслуживании или злоупотреблению Cross Origin Resource Sharing для дальнейшей эксплуатации. Убедитесь, что код во всех скриптах Web Workers не является зловредным. Не разрешайте создание скриптов Web Worker из входных данных пользователя.
+- Проверяйте сообщения, обмененные с Web Worker. Не пытайтесь обмениваться фрагментами JavaScript для оценки, например, с помощью `eval()`, так как это может создать [DOM Based XSS](DOM_based_XSS_Prevention_Cheat_Sheet.md) уязвимость.
 
 ## Tabnabbing
 
-Attack is described in detail in this [article](https://owasp.org/www-community/attacks/Reverse_Tabnabbing).
+Атака описана в [этой статье](https://owasp.org/www-community/attacks/Reverse_Tabnabbing).
 
-To summarize, it's the capacity to act on parent page's content or location from a newly opened page via the back link exposed by the **opener** JavaScript object instance.
+Вкратце, это способность действовать на содержимое или местоположение родительской страницы из вновь открытой страницы через ссылку "назад", которую предоставляет объект **opener** JavaScript.
 
-It applies to an HTML link or a JavaScript `window.open` function using the attribute/instruction `target` to specify a [target loading location](https://www.w3schools.com/tags/att_a_target.asp) that does not replace the current location and then makes the current window/tab available.
+Это относится к HTML-ссылке или функции JavaScript `window.open`, использующим атрибут/инструкцию `target`, чтобы указать [место загрузки](https://www.w3schools.com/tags/att_a_target.asp), которое не заменяет текущее местоположение, а затем делает текущее окно/вкладку доступным.
 
-To prevent this issue, the following actions are available:
+Чтобы предотвратить эту проблему, доступны следующие действия:
 
-Cut the back link between the parent and the child pages:
+Отключите ссылку "назад" между родительскими и дочерними страницами:
 
-- For HTML links:
-    - To cut this back link, add the attribute `rel="noopener"` on the tag used to create the link from the parent page to the child page. This attribute value cuts the link, but depending on the browser, lets referrer information be present in the request to the child page.
-    - To also remove the referrer information use this attribute value: `rel="noopener noreferrer"`.
-- For the JavaScript `window.open` function, add the values `noopener,noreferrer` in the [windowFeatures](https://developer.mozilla.org/en-US/docs/Web/API/Window/open) parameter of the `window.open` function.
+- Для HTML-ссылок:
+    - Чтобы отключить эту ссылку, добавьте атрибут `rel="noopener"` в тег, используемый для создания ссылки с родительской страницы на дочернюю страницу. Значение этого атрибута отключает ссылку, но в зависимости от браузера может оставить информацию о реферере в запросе к дочерней странице.
+    - Чтобы также удалить информацию о реферере, используйте значение атрибута: `rel="noopener noreferrer"`.
+- Для функции JavaScript `window.open`, добавьте значения `noopener,noreferrer` в параметр [windowFeatures](https://developer.mozilla.org/en-US/docs/Web/API/Window/open) функции `window.open`.
 
-As the behavior using the elements above is different between the browsers, either use an HTML link or JavaScript to open a window (or tab), then use this configuration to maximize the cross supports:
+Так как поведение при использовании указанных элементов различается между браузерами, используйте HTML-ссылку или JavaScript для открытия окна (или вкладки), а затем используйте эту конфигурацию для максимальной кросс-браузерной поддержки:
 
-- For [HTML links](https://www.scaler.com/topics/html/html-links/), add the attribute `rel="noopener noreferrer"` to every link.
-- For JavaScript, use this function to open a window (or tab):
+- Для [HTML-ссылок](https://www.scaler.com/topics/html/html-links/), добавьте атрибут `rel="noopener noreferrer"` ко всем ссылкам.
+- Для JavaScript используйте эту функцию для открытия окна (или вкладки):
 
-``` javascript
-function openPopup(url, name, windowFeatures){
-  //Open the popup and set the opener and referrer policy instruction
+```javascript
+function openPopup(url, name, windowFeatures) {
+  // Откройте всплывающее окно и установите инструкции по политике opener и реферера
   var newWindow = window.open(url, name, 'noopener,noreferrer,' + windowFeatures);
-  //Reset the opener link
+  // Сбросьте ссылку opener
   newWindow.opener = null;
 }
 ```
 
-- Add the HTTP response header `Referrer-Policy: no-referrer` to every HTTP response sent by the application ([Header Referrer-Policy information](https://owasp.org/www-project-secure-headers/). This configuration will ensure that no referrer information is sent along with requests from the page.
+- Добавьте заголовок HTTP-ответа `Referrer-Policy: no-referrer` ко всем HTTP-ответам, отправляемым приложением ([Информация о заголовке Referrer-Policy](https://owasp.org/www-project-secure-headers/)). Эта конфигурация обеспечит отсутствие информации о реферере в запросах со страницы.
 
-Compatibility matrix:
+Матрица совместимости:
 
 - [noopener](https://caniuse.com/#search=noopener)
 - [noreferrer](https://caniuse.com/#search=noreferrer)
 - [referrer-policy](https://caniuse.com/#feat=referrer-policy)
 
-## Sandboxed frames
+## Сэндбоксированные фреймы
 
-- Use the `sandbox` attribute of an `iframe` for untrusted content.
-- The `sandbox` attribute of an `iframe` enables restrictions on content within an `iframe`. The following restrictions are active when the `sandbox` attribute is set:
-    1. All markup is treated as being from a unique origin.
-    2. All forms and scripts are disabled.
-    3. All links are prevented from targeting other browsing contexts.
-    4. All features that trigger automatically are blocked.
-    5. All plugins are disabled.
+- Используйте атрибут `sandbox` у `iframe` для ненадежного контента.
+- Атрибут `sandbox` у `iframe` включает ограничения на контент внутри `iframe`. При установке атрибута `sandbox` действуют следующие ограничения:
+    1. Все разметки рассматриваются как относящиеся к уникальному источнику.
+    2. Все формы и скрипты отключены.
+    3. Все ссылки не могут нацеливаться на другие контексты просмотра.
+    4. Все функции, которые срабатывают автоматически, заблокированы.
+    5. Все плагины отключены.
 
-It is possible to have a [fine-grained control](https://html.spec.whatwg.org/multipage/iframe-embed-object.html#attr-iframe-sandbox) over `iframe` capabilities using the value of the `sandbox` attribute.
+Можно получить [тонкую настройку](https://html.spec.whatwg.org/multipage/iframe-embed-object.html#attr-iframe-sandbox) возможностей `iframe`, используя значение атрибута `sandbox`.
 
-- In old versions of user agents where this feature is not supported, this attribute will be ignored. Use this feature as an additional layer of protection or check if the browser supports sandboxed frames and only show the untrusted content if supported.
-- Apart from this attribute, to prevent Clickjacking attacks and unsolicited framing it is encouraged to use the header `X-Frame-Options` which supports the `deny` and `same-origin` values. Other solutions like framebusting `if(window!==window.top) { window.top.location=location;}` are not recommended.
+- В старых версиях пользовательских агентов, где эта функция не поддерживается, этот атрибут будет игнорироваться. Используйте эту функцию как дополнительный слой защиты или проверьте, поддерживает ли браузер сэндбоксированные фреймы, и показывайте ненадежный контент только в случае поддержки.
+- Помимо этого атрибута, для предотвращения атак Clickjacking и нежелательного фрейминга рекомендуется использовать заголовок `X-Frame-Options`, который поддерживает значения `deny` и `same-origin`. Другие решения, такие как framebusting (`if(window!==window.top) { window.top.location=location;}`), не рекомендуются.
 
-## Credential and Personally Identifiable Information (PII) Input hints
+## Подсказки по вводу учетных данных и персонально идентифицируемой информации (PII)
 
-- Protect the input values from being cached by the browser.
+- Защищайте значения ввода от кэширования браузером.
 
-> Access a financial account from a public computer. Even though one is logged-off, the next person who uses the machine can log-in because the browser autocomplete functionality. To mitigate this, we tell the input fields not to assist in any way.
+> Доступ к финансовому счету с общего компьютера. Даже если вы вышли из системы, следующий пользователь, использующий машину, может войти в систему из-за функции автозаполнения браузера. Чтобы смягчить это, мы говорим полям ввода не помогать в этом.
 
 ```html
 <input type="text" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></input>
 ```
 
-Text areas and input fields for PII (name, email, address, phone number) and login credentials (username, password) should be prevented from being stored in the browser. Use these HTML5 attributes to prevent the browser from storing PII from your form:
+Текстовые области и поля ввода для PII (имя, электронная почта, адрес, номер телефона) и учетных данных для входа (имя пользователя, пароль) должны предотвращать хранение в браузере. Используйте эти атрибуты HTML5, чтобы предотвратить хранение PII в вашей форме:
 
 - `spellcheck="false"`
 - `autocomplete="off"`
 - `autocorrect="off"`
 - `autocapitalize="off"`
 
-## Offline Applications
+## Оффлайн-приложения
 
-- Whether the user agent requests permission from the user to store data for offline browsing and when this cache is deleted, varies from one browser to the next. Cache poisoning is an issue if a user connects through insecure networks, so for privacy reasons it is encouraged to require user input before sending any `manifest` file.
-- Users should only cache trusted websites and clean the cache after browsing through open or insecure networks.
+- Порядок, в котором пользовательский агент запрашивает разрешение у пользователя на хранение данных для оффлайн-просмотра и когда этот кэш удаляется, варьируется от одного браузера к другому. Отравление кэша представляет проблему, если пользователь подключается через небезопасные сети, поэтому по соображениям конфиденциальности рекомендуется требовать ввода пользователя перед отправкой любого файла `manifest`.
+- Пользователи должны кэшировать только доверенные веб-сайты и очищать кэш после просмотра через открытые или небезопасные сети.
 
-## Progressive Enhancements and Graceful Degradation Risks
+## Прогрессивные улучшения и риски плавной деградации
 
-- The best practice now is to determine the capabilities that a browser supports and augment with some type of substitute for capabilities that are not directly supported. This may mean an onion-like element, e.g. falling through to a Flash Player if the `<video>` tag is unsupported, or it may mean additional scripting code from various sources that should be code reviewed.
+- Лучшая практика на данный момент — определить возможности, которые поддерживает браузер, и дополнить их некоторым заменителем для возможностей, которые не поддерживаются напрямую. Это может означать использование элемента, подобного луковице, например, переход к Flash Player, если тег `<video>` не поддерживается, или это может означать дополнительный скриптовый код из различных источников, который должен быть проверен на предмет безопасности.
 
-## HTTP Headers to enhance security
+## HTTP заголовки для повышения безопасности
 
-Consult the project [OWASP Secure Headers](https://owasp.org/www-project-secure-headers/) in order to obtains the list of HTTP security headers that an application should use to enable defenses at browser level.
+Обратитесь к проекту [OWASP Secure Headers](https://owasp.org/www-project-secure-headers/), чтобы получить список HTTP заголовков безопасности, которые приложение должно использовать для включения защит на уровне браузера.
 
-## WebSocket implementation hints
+## Рекомендации по реализации WebSocket
 
-In addition to the elements mentioned above, this is the list of areas for which caution must be taken during the implementation.
+В дополнение к вышеупомянутым элементам, приведен список областей, к которым нужно проявлять осторожность при реализации.
 
-- Access filtering through the "Origin" HTTP request header
-- Input / Output validation
-- Authentication
-- Authorization
-- Access token explicit invalidation
-- Confidentiality and Integrity
+- Фильтрация доступа через HTTP заголовок "Origin"
+- Валидация ввода / вывода
+- Аутентификация
+- Авторизация
+- Явная аннулизация токенов доступа
+- Конфиденциальность и целостность
 
-The section below will propose some implementation hints for every area and will go along with an application example showing all the points described.
+Ниже будут предложены некоторые рекомендации по реализации для каждой области, а также приведен пример приложения, демонстрирующий все описанные пункты.
 
-The complete source code of the example application is available [here](https://github.com/righettod/poc-websocket).
+Полный исходный код примера приложения доступен [здесь](https://github.com/righettod/poc-websocket).
 
-### Access filtering
+### Фильтрация доступа
 
-During a websocket channel initiation, the browser sends the **Origin** HTTP request header that contains the source domain initiation for the request to handshake. Even if this header can be spoofed in a forged HTTP request (not browser based), it cannot be overridden or forced in a browser context. It then represents a good candidate to apply filtering according to an expected value.
+Во время инициации канала WebSocket браузер отправляет HTTP заголовок **Origin**, который содержит исходный домен для запроса на установление соединения. Хотя этот заголовок можно подделать в поддельном HTTP запросе (не на базе браузера), его нельзя переопределить или принудительно изменить в контексте браузера. Поэтому он представляет собой хороший кандидат для применения фильтрации в соответствии с ожидаемым значением.
 
-An example of an attack using this vector, named *Cross-Site WebSocket Hijacking (CSWSH)*, is described [here](https://www.christian-schneider.net/CrossSiteWebSocketHijacking.html).
+Пример атаки с использованием этого вектора, называемый *Cross-Site WebSocket Hijacking (CSWSH)*, описан [здесь](https://www.christian-schneider.net/CrossSiteWebSocketHijacking.html).
 
-The code below defines a configuration that applies filtering based on an "allowlist" of origins. This ensures that only allowed origins can establish a full handshake:
+Код ниже определяет конфигурацию, которая применяет фильтрацию на основе "белого списка" источников. Это гарантирует, что только разрешенные источники могут установить полное соединение:
 
-``` java
+```java
 import org.owasp.encoder.Encode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -195,8 +195,8 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Setup handshake rules applied to all WebSocket endpoints of the application.
- * Use to setup the Access Filtering using "Origin" HTTP header as input information.
+ * Настройка правил рукопожатия, применяемых ко всем конечным точкам WebSocket приложения.
+ * Используется для настройки фильтрации доступа с использованием HTTP заголовка "Origin" в качестве входной информации.
  *
  * @see "http://docs.oracle.com/javaee/7/api/index.html?javax/websocket/server/
  * ServerEndpointConfig.Configurator.html"
@@ -205,12 +205,12 @@ import java.util.List;
 public class EndpointConfigurator extends ServerEndpointConfig.Configurator {
 
     /**
-     * Logger
+     * Логгер
      */
     private static final Logger LOG = LoggerFactory.getLogger(EndpointConfigurator.class);
 
     /**
-     * Get the expected source origins from a JVM property in order to allow external configuration
+     * Получение ожидаемых исходных доменов из свойства JVM для возможности внешней конфигурации
      */
     private static final List<String> EXPECTED_ORIGINS =  Arrays.asList(System.getProperty("source.origins")
                                                           .split(";"));
@@ -223,10 +223,10 @@ public class EndpointConfigurator extends ServerEndpointConfig.Configurator {
         boolean isAllowed = EXPECTED_ORIGINS.contains(originHeaderValue);
         String safeOriginValue = Encode.forHtmlContent(originHeaderValue);
         if (isAllowed) {
-            LOG.info("[EndpointConfigurator] New handshake request received from {} and was accepted.",
+            LOG.info("[EndpointConfigurator] Новый запрос на рукопожатие получен от {} и был принят.",
                       safeOriginValue);
         } else {
-            LOG.warn("[EndpointConfigurator] New handshake request received from {} and was rejected !",
+            LOG.warn("[EndpointConfigurator] Новый запрос на рукопожатие получен от {} и был отклонен!",
                       safeOriginValue);
         }
         return isAllowed;
@@ -235,19 +235,19 @@ public class EndpointConfigurator extends ServerEndpointConfig.Configurator {
 }
 ```
 
-### Authentication and Input/Output validation
+### Аутентификация и валидация ввода/вывода
 
-When using websocket as communication channel, it's important to use an authentication method allowing the user to receive an access *Token* that is not automatically sent by the browser and then must be explicitly sent by the client code during each exchange.
+При использовании WebSocket в качестве канала связи важно применять метод аутентификации, который позволяет пользователю получать токен доступа, который не отправляется автоматически браузером и затем должен быть явно отправлен клиентским кодом при каждом обмене.
 
-HMAC digests are the simplest method, and [JSON Web Token](https://jwt.io/introduction/) is a good feature rich alternative, because it allows the transport of access ticket information in a stateless and not alterable way. Moreover, it defines a validity timeframe. You can find additional information about JWT hardening on this [cheat sheet](JSON_Web_Token_for_Java_Cheat_Sheet.md).
+HMAC дайджесты являются самым простым методом, а [JSON Web Token](https://jwt.io/introduction/) является хорошей альтернативой с богатыми возможностями, так как он позволяет передавать информацию о доступе в безгосударственном и неизменяемом виде. Более того, он определяет срок действия токена. Дополнительную информацию о усилении безопасности JWT можно найти в этой [шпаргалке](JSON_Web_Token_for_Java_Cheat_Sheet.md).
 
-[JSON Validation Schema](http://json-schema.org/) are used to define and validate the expected content in input and output messages.
+[JSON Validation Schema](http://json-schema.org/) используются для определения и проверки ожидаемого содержания во входных и выходных сообщениях.
 
-The code below defines the complete authentication messages flow handling:
+Ниже представлен код, который определяет полный поток обработки сообщений аутентификации:
 
-**Authentication Web Socket endpoint** - Provide a WS endpoint that enables authentication exchange
+**Точка подключения WebSocket для аутентификации** - Обеспечивает WS конечную точку, которая позволяет обмениваться данными для аутентификации
 
-``` java
+```java
 import org.owasp.pocwebsocket.configurator.EndpointConfigurator;
 import org.owasp.pocwebsocket.decoder.AuthenticationRequestDecoder;
 import org.owasp.pocwebsocket.encoder.AuthenticationResponseEncoder;
@@ -263,7 +263,7 @@ import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
 /**
- * Class in charge of managing the client authentication.
+ * Класс, ответственный за управление аутентификацией клиента.
  *
  * @see "http://docs.oracle.com/javaee/7/api/javax/websocket/server/ServerEndpointConfig.Configurator.html"
  * @see "http://svn.apache.org/viewvc/tomcat/trunk/webapps/examples/WEB-INF/classes/websocket/"
@@ -274,60 +274,60 @@ decoders = {AuthenticationRequestDecoder.class})
 public class AuthenticationEndpoint {
 
     /**
-     * Logger
+     * Логгер
      */
     private static final Logger LOG = LoggerFactory.getLogger(AuthenticationEndpoint.class);
 
     /**
-     * Handle the beginning of an exchange
+     * Обработка начала обмена
      *
-     * @param session Exchange session information
+     * @param session Информация о сессии обмена
      */
     @OnOpen
     public void start(Session session) {
-        //Define connection idle timeout and message limits in order to mitigate as much as possible
-        //DOS attacks using massive connection opening or massive big messages sending
-        int msgMaxSize = 1024 * 1024;//1 MB
-        session.setMaxIdleTimeout(60000);//1 minute
+        // Определение тайм-аута бездействия соединения и ограничений на размер сообщений для минимизации
+        // атак типа DOS, связанных с массовым открытием соединений или отправкой больших сообщений
+        int msgMaxSize = 1024 * 1024; // 1 МБ
+        session.setMaxIdleTimeout(60000); // 1 минута
         session.setMaxTextMessageBufferSize(msgMaxSize);
         session.setMaxBinaryMessageBufferSize(msgMaxSize);
-        //Log exchange start
-        LOG.info("[AuthenticationEndpoint] Session {} started", session.getId());
-        //Affect a new message handler instance in order to process the exchange
+        // Логирование начала обмена
+        LOG.info("[AuthenticationEndpoint] Сессия {} началась", session.getId());
+        // Присвоение нового обработчика сообщений для обработки обмена
         session.addMessageHandler(new AuthenticationMessageHandler(session.getBasicRemote()));
-        LOG.info("[AuthenticationEndpoint] Session {} message handler affected for processing",
+        LOG.info("[AuthenticationEndpoint] Обработчик сообщений для сессии {} назначен для обработки",
                   session.getId());
     }
 
     /**
-     * Handle error case
+     * Обработка ошибок
      *
-     * @param session Exchange session information
-     * @param thr     Error details
+     * @param session Информация о сессии обмена
+     * @param thr     Подробности об ошибке
      */
     @OnError
     public void onError(Session session, Throwable thr) {
-        LOG.error("[AuthenticationEndpoint] Error occur in session {}", session.getId(), thr);
+        LOG.error("[AuthenticationEndpoint] Ошибка в сессии {}", session.getId(), thr);
     }
 
     /**
-     * Handle close event
+     * Обработка события закрытия
      *
-     * @param session     Exchange session information
-     * @param closeReason Exchange closing reason
+     * @param session     Информация о сессии обмена
+     * @param closeReason Причина закрытия обмена
      */
     @OnClose
     public void onClose(Session session, CloseReason closeReason) {
-        LOG.info("[AuthenticationEndpoint] Session {} closed: {}", session.getId(),
+        LOG.info("[AuthenticationEndpoint] Сессия {} закрыта: {}", session.getId(),
                   closeReason.getReasonPhrase());
     }
 
 }
 ```
 
-**Authentication message handler** - Handle all authentication requests
+**Обработчик сообщений аутентификации** - Обработка всех запросов на аутентификацию
 
-``` java
+```java
 import org.owasp.pocwebsocket.enumeration.AccessLevel;
 import org.owasp.pocwebsocket.util.AuthenticationUtils;
 import org.owasp.pocwebsocket.vo.AuthenticationRequest;
@@ -342,26 +342,25 @@ import javax.websocket.RemoteEndpoint;
 import java.io.IOException;
 
 /**
- * Handle authentication message flow
+ * Обрабатывает поток сообщений аутентификации
  */
 public class AuthenticationMessageHandler implements MessageHandler.Whole<AuthenticationRequest> {
 
     private static final Logger LOG = LoggerFactory.getLogger(AuthenticationMessageHandler.class);
 
     /**
-     * Reference to the communication channel with the client
+     * Ссылка на канал связи с клиентом
      */
     private RemoteEndpoint.Basic clientConnection;
 
     /**
-     * Constructor
+     * Конструктор
      *
-     * @param clientConnection Reference to the communication channel with the client
+     * @param clientConnection Ссылка на канал связи с клиентом
      */
     public AuthenticationMessageHandler(RemoteEndpoint.Basic clientConnection) {
         this.clientConnection = clientConnection;
     }
-
 
     /**
      * {@inheritDoc}
@@ -370,52 +369,52 @@ public class AuthenticationMessageHandler implements MessageHandler.Whole<Authen
     public void onMessage(AuthenticationRequest message) {
         AuthenticationResponse response = null;
         try {
-            //Authenticate
+            // Аутентификация
             String authenticationToken = "";
             String accessLevel = this.authenticate(message.getLogin(), message.getPassword());
             if (accessLevel != null) {
-                //Create a simple JSON token representing the authentication profile
+                // Создание простого JSON токена, представляющего профиль аутентификации
                 authenticationToken = AuthenticationUtils.issueToken(message.getLogin(), accessLevel);
             }
-            //Build the response object
+            // Формирование объекта ответа
             String safeLoginValue = Encode.forHtmlContent(message.getLogin());
             if (!authenticationToken.isEmpty()) {
-                response = new AuthenticationResponse(true, authenticationToken, "Authentication succeed !");
-                LOG.info("[AuthenticationMessageHandler] User {} authentication succeed.", safeLoginValue);
+                response = new AuthenticationResponse(true, authenticationToken, "Аутентификация успешна!");
+                LOG.info("[AuthenticationMessageHandler] Пользователь {} аутентифицирован успешно.", safeLoginValue);
             } else {
-                response = new AuthenticationResponse(false, authenticationToken, "Authentication failed !");
-                LOG.warn("[AuthenticationMessageHandler] User {} authentication failed.", safeLoginValue);
+                response = new AuthenticationResponse(false, authenticationToken, "Ошибка аутентификации!");
+                LOG.warn("[AuthenticationMessageHandler] Ошибка аутентификации пользователя {}.", safeLoginValue);
             }
         } catch (Exception e) {
-            LOG.error("[AuthenticationMessageHandler] Error occur in authentication process.", e);
-            //Build the response object indicating that authentication fail
-            response = new AuthenticationResponse(false, "", "Authentication failed !");
+            LOG.error("[AuthenticationMessageHandler] Ошибка в процессе аутентификации.", e);
+            // Формирование объекта ответа, указывающего на сбой аутентификации
+            response = new AuthenticationResponse(false, "", "Ошибка аутентификации!");
         } finally {
-            //Send response
+            // Отправка ответа
             try {
                 this.clientConnection.sendObject(response);
             } catch (IOException | EncodeException e) {
-                LOG.error("[AuthenticationMessageHandler] Error occur in response object sending.", e);
+                LOG.error("[AuthenticationMessageHandler] Ошибка при отправке объекта ответа.", e);
             }
         }
     }
 
     /**
-     * Authenticate the user
+     * Аутентификация пользователя
      *
-     * @param login    User login
-     * @param password User password
-     * @return The access level if the authentication succeed or NULL if the authentication failed
+     * @param login    Логин пользователя
+     * @param password Пароль пользователя
+     * @return Уровень доступа, если аутентификация прошла успешно, или NULL, если аутентификация не удалась
      */
     private String authenticate(String login, String password) {
-      ....
+        ...
     }
 }
 ```
 
-**Utility class to manage JWT** - Handle the issuing and the validation of the access token. Simple JWT has been used for the example (focus was made here on the global WS endpoint implementation) here without extra hardening (see this [cheat sheet](JSON_Web_Token_for_Java_Cheat_Sheet.md) to apply extra hardening on the JWT)
+**Утилитный класс для управления JWT** - Обработка выдачи и проверки токенов доступа. В примере использован простой JWT, здесь сосредоточено внимание на реализации глобальной WS конечной точки, без дополнительного усиления безопасности (см. эту [шпаргалку](JSON_Web_Token_for_Java_Cheat_Sheet.md) для применения дополнительных мер защиты JWT)
 
-``` java
+```java
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
@@ -428,34 +427,38 @@ import java.util.Calendar;
 import java.util.Locale;
 
 /**
- * Utility class to manage the authentication JWT token
+ * Утилитный класс для управления JWT токенами аутентификации
  */
 public class AuthenticationUtils {
 
     /**
-     * Build a JWT token for a user
+     * Создает JWT токен для пользователя
      *
-     * @param login       User login
-     * @param accessLevel Access level of the user
-     * @return The Base64 encoded JWT token
-     * @throws Exception If any error occur during the issuing
+     * @param login       Логин пользователя
+     * @param accessLevel Уровень доступа пользователя
+     * @return Закодированный в Base64 JWT токен
+     * @throws Exception Если возникает ошибка при создании токена
      */
     public static String issueToken(String login, String accessLevel) throws Exception {
-        //Issue a JWT token with validity of 30 minutes
+        // Создание JWT токена с действительностью 30 минут
         Algorithm algorithm = Algorithm.HMAC256(loadSecret());
         Calendar c = Calendar.getInstance();
         c.add(Calendar.MINUTE, 30);
-        return JWT.create().withIssuer("WEBSOCKET-SERVER").withSubject(login).withExpiresAt(c.getTime())
-                  .withClaim("access_level", accessLevel.trim().toUpperCase(Locale.US)).sign(algorithm);
+        return JWT.create()
+                  .withIssuer("WEBSOCKET-SERVER")
+                  .withSubject(login)
+                  .withExpiresAt(c.getTime())
+                  .withClaim("access_level", accessLevel.trim().toUpperCase(Locale.US))
+                  .sign(algorithm);
     }
 
     /**
-     * Verify the validity of the provided JWT token
+     * Проверяет действительность предоставленного JWT токена
      *
-     * @param token JWT token encoded to verify
-     * @return The verified and decoded token with user authentication and
-     * authorization (access level) information
-     * @throws Exception If any error occur during the token validation
+     * @param token Закодированный JWT токен для проверки
+     * @return Проверенный и декодированный токен с информацией о пользователе и
+     * авторизации (уровень доступа)
+     * @throws Exception Если возникает ошибка при проверке токена
      */
     public static DecodedJWT validateToken(String token) throws Exception {
         Algorithm algorithm = Algorithm.HMAC256(loadSecret());
@@ -464,11 +467,11 @@ public class AuthenticationUtils {
     }
 
     /**
-     * Load the JWT secret used to sign token using a byte array for secret storage in order
-     * to avoid persistent string in memory
+     * Загружает секрет JWT, используемый для подписи токена, используя байтовый массив для хранения секрета
+     * с целью избегания постоянного хранения строки в памяти
      *
-     * @return The secret as byte array
-     * @throws IOException If any error occur during the secret loading
+     * @return Секрет в виде байтового массива
+     * @throws IOException Если возникает ошибка при загрузке секрета
      */
     private static byte[] loadSecret() throws IOException {
         return Files.readAllBytes(Paths.get("src", "main", "resources", "jwt-secret.txt"));
@@ -476,7 +479,7 @@ public class AuthenticationUtils {
 }
 ```
 
-**JSON schema of the input and output authentication message** - Define the expected structure of the input and output messages from the authentication endpoint point of view
+**JSON схема входного и выходного сообщения аутентификации** - Определяет ожидаемую структуру входных и выходных сообщений с точки зрения конечной точки аутентификации.
 
 ```json
 {
@@ -484,46 +487,46 @@ public class AuthenticationUtils {
     "title": "AuthenticationRequest",
     "type": "object",
     "properties": {
-    "login": {
-        "type": "string",
-        "pattern": "^[a-zA-Z]{1,10}$"
-    },
-    "password": {
-        "type": "string"
-    }
+        "login": {
+            "type": "string",
+            "pattern": "^[a-zA-Z]{1,10}$"
+        },
+        "password": {
+            "type": "string"
+        }
     },
     "required": [
-    "login",
-    "password"
+        "login",
+        "password"
     ]
 }
 
 {
-"$schema": "http://json-schema.org/schema#",
-"title": "AuthenticationResponse",
-"type": "object",
-"properties": {
-    "isSuccess;": {
-    "type": "boolean"
+    "$schema": "http://json-schema.org/schema#",
+    "title": "AuthenticationResponse",
+    "type": "object",
+    "properties": {
+        "isSuccess": {
+            "type": "boolean"
+        },
+        "token": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9+/=\\._-]{0,500}$"
+        },
+        "message": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9!\\s]{0,100}$"
+        }
     },
-    "token": {
-    "type": "string",
-    "pattern": "^[a-zA-Z0-9+/=\\._-]{0,500}$"
-    },
-    "message": {
-    "type": "string",
-    "pattern": "^[a-zA-Z0-9!\\s]{0,100}$"
-    }
-},
-"required": [
-    "isSuccess",
-    "token",
-    "message"
-]
+    "required": [
+        "isSuccess",
+        "token",
+        "message"
+    ]
 }
 ```
 
-**Authentication message decoder and encoder** - Perform the JSON serialization/deserialization and the input/output validation using dedicated JSON Schema. It makes it possible to systematically ensure that all messages received and sent by the endpoint strictly respect the expected structure and content.
+**Декодер и кодировщик сообщений аутентификации** - Выполняет сериализацию/десериализацию JSON и проверку входных/выходных данных с использованием специальной JSON-схемы. Это позволяет систематически обеспечивать, чтобы все сообщения, полученные и отправленные конечной точкой, строго соответствовали ожидаемой структуре и содержимому.
 
 ``` java
 import com.fasterxml.jackson.databind.JsonNode;
@@ -542,23 +545,23 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * Decode JSON text representation to an AuthenticationRequest object
+ * Декодирует текстовое представление JSON в объект AuthenticationRequest
  * <p>
- * As there's one instance of the decoder class by endpoint session so we can use the
- * JsonSchema as decoder instance variable.
+ * Поскольку существует один экземпляр класса декодера на сеанс конечной точки, можно использовать
+ * JsonSchema в качестве переменной экземпляра декодера.
  */
 public class AuthenticationRequestDecoder implements Decoder.Text<AuthenticationRequest> {
 
     /**
-     * JSON validation schema associated to this type of message
+     * JSON-схема проверки, связанная с этим типом сообщения
      */
     private JsonSchema validationSchema = null;
 
     /**
-     * Initialize decoder and associated JSON validation schema
+     * Инициализирует декодер и связанную JSON-схему проверки
      *
-     * @throws IOException If any error occur during the object creation
-     * @throws ProcessingException If any error occur during the schema loading
+     * @throws IOException Если возникает ошибка при создании объекта
+     * @throws ProcessingException Если возникает ошибка при загрузке схемы
      */
     public AuthenticationRequestDecoder() throws IOException, ProcessingException {
         JsonNode node = JsonLoader.fromFile(
@@ -572,22 +575,21 @@ public class AuthenticationRequestDecoder implements Decoder.Text<Authentication
     @Override
     public AuthenticationRequest decode(String s) throws DecodeException {
         try {
-            //Validate the provided representation against the dedicated schema
-            //Use validation mode with report in order to enable further inspection/tracing
-            //of the error details
-            //Moreover the validation method "validInstance()" generate a NullPointerException
-            //if the representation do not respect the expected schema
-            //so it's more proper to use the validation method with report
+            // Проверка предоставленного представления по отношению к специальной схеме
+            // Используйте режим проверки с отчетом, чтобы включить дальнейшее исследование/отслеживание
+            // деталей ошибок
+            // Более того, метод проверки "validInstance()" генерирует NullPointerException
+            // если представление не соответствует ожидаемой схеме
+            // поэтому правильнее использовать метод проверки с отчетом
             ProcessingReport validationReport = this.validationSchema.validate(JsonLoader.fromString(s),
                                                                                true);
-            //Ensure there no error
+            // Убедитесь, что нет ошибок
             if (!validationReport.isSuccess()) {
-                //Simply reject the message here: Don't care about error details...
-                throw new DecodeException(s, "Validation of the provided representation failed !");
+                // Просто отклоните сообщение здесь: не обращая внимания на детали ошибок...
+                throw new DecodeException(s, "Проверка предоставленного представления не удалась!");
             }
         } catch (IOException | ProcessingException e) {
-            throw new DecodeException(s, "Cannot validate the provided representation to a"
-                                      + " JSON valid representation !", e);
+            throw new DecodeException(s, "Не удалось проверить предоставленное представление на валидность JSON!", e);
         }
 
         return new Gson().fromJson(s, AuthenticationRequest.class);
@@ -600,19 +602,19 @@ public class AuthenticationRequestDecoder implements Decoder.Text<Authentication
     public boolean willDecode(String s) {
         boolean canDecode = false;
 
-        //If the provided JSON representation is empty/null then we indicate that
-        //representation cannot be decoded to our expected object
+        // Если предоставленное JSON-представление пустое/нулевое, то мы указываем, что
+        // представление не может быть декодировано в наш ожидаемый объект
         if (s == null || s.trim().isEmpty()) {
             return canDecode;
         }
 
-        //Try to cast the provided JSON representation to our object to validate at least
-        //the structure (content validation is done during decoding)
+        // Попробуйте преобразовать предоставленное JSON-представление в наш объект, чтобы проверить хотя бы
+        // структуру (проверка содержания проводится во время декодирования)
         try {
             AuthenticationRequest test = new Gson().fromJson(s, AuthenticationRequest.class);
             canDecode = (test != null);
         } catch (Exception e) {
-            //Ignore explicitly any casting error...
+            // Явно игнорируйте любые ошибки преобразования...
         }
 
         return canDecode;
@@ -623,7 +625,7 @@ public class AuthenticationRequestDecoder implements Decoder.Text<Authentication
      */
     @Override
     public void init(EndpointConfig config) {
-        //Not used
+        // Не используется
     }
 
     /**
@@ -631,7 +633,7 @@ public class AuthenticationRequestDecoder implements Decoder.Text<Authentication
      */
     @Override
     public void destroy() {
-        //Not used
+        // Не используется
     }
 }
 ```
@@ -653,23 +655,23 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * Encode AuthenticationResponse object to JSON text representation.
+ * Кодирует объект AuthenticationResponse в текстовое представление JSON.
  * <p>
- * As there one instance of the encoder class by endpoint session so we can use
- * the JsonSchema as encoder instance variable.
+ * Поскольку существует один экземпляр класса кодировщика на сеанс конечной точки, можно использовать
+ * JsonSchema в качестве переменной экземпляра кодировщика.
  */
 public class AuthenticationResponseEncoder implements Encoder.Text<AuthenticationResponse> {
 
     /**
-     * JSON validation schema associated to this type of message
+     * JSON-схема проверки, связанная с этим типом сообщения
      */
     private JsonSchema validationSchema = null;
 
     /**
-     * Initialize encoder and associated JSON validation schema
+     * Инициализирует кодировщик и связанную JSON-схему проверки
      *
-     * @throws IOException If any error occur during the object creation
-     * @throws ProcessingException If any error occur during the schema loading
+     * @throws IOException Если возникает ошибка при создании объекта
+     * @throws ProcessingException Если возникает ошибка при загрузке схемы
      */
     public AuthenticationResponseEncoder() throws IOException, ProcessingException {
         JsonNode node = JsonLoader.fromFile(
@@ -682,25 +684,24 @@ public class AuthenticationResponseEncoder implements Encoder.Text<Authenticatio
      */
     @Override
     public String encode(AuthenticationResponse object) throws EncodeException {
-        //Generate the JSON representation
+        // Генерирует представление JSON
         String json = new Gson().toJson(object);
         try {
-            //Validate the generated representation against the dedicated schema
-            //Use validation mode with report in order to enable further inspection/tracing
-            //of the error details
-            //Moreover the validation method "validInstance()" generate a NullPointerException
-            //if the representation do not respect the expected schema
-            //so it's more proper to use the validation method with report
+            // Проверяет сгенерированное представление по отношению к специальной схеме
+            // Используйте режим проверки с отчетом, чтобы включить дальнейшее исследование/отслеживание
+            // деталей ошибок
+            // Более того, метод проверки "validInstance()" генерирует NullPointerException
+            // если представление не соответствует ожидаемой схеме
+            // поэтому правильнее использовать метод проверки с отчетом
             ProcessingReport validationReport = this.validationSchema.validate(JsonLoader.fromString(json),
                                                                                 true);
-            //Ensure there no error
+            // Убедитесь, что нет ошибок
             if (!validationReport.isSuccess()) {
-                //Simply reject the message here: Don't care about error details...
-                throw new EncodeException(object, "Validation of the generated representation failed !");
+                // Просто отклоните сообщение здесь: не обращая внимания на детали ошибок...
+                throw new EncodeException(object, "Проверка сгенерированного представления не удалась!");
             }
         } catch (IOException | ProcessingException e) {
-            throw new EncodeException(object, "Cannot validate the generated representation to a"+
-                                              " JSON valid representation !", e);
+            throw new EncodeException(object, "Не удалось проверить сгенерированное представление на валидность JSON!", e);
         }
 
         return json;
@@ -711,7 +712,7 @@ public class AuthenticationResponseEncoder implements Encoder.Text<Authenticatio
      */
     @Override
     public void init(EndpointConfig config) {
-        //Not used
+        // Не используется
     }
 
     /**
@@ -719,25 +720,25 @@ public class AuthenticationResponseEncoder implements Encoder.Text<Authenticatio
      */
     @Override
     public void destroy() {
-        //Not used
+        // Не используется
     }
 
 }
 ```
 
-Note that the same approach is used in the messages handling part of the POC. All messages exchanged between the client and the server are systematically validated using the same way, using dedicated JSON schemas linked to messages dedicated Encoder/Decoder (serialization/deserialization).
+Обратите внимание, что тот же подход используется в части обработки сообщений POC. Все сообщения, обмененные между клиентом и сервером, систематически проверяются таким же способом, с использованием выделенных JSON-схем, связанных с кодировщиками/декодировщиками сообщений (сериализация/десериализация).
 
-### Authorization and access token explicit invalidation
+### Авторизация и явное аннулирование токена доступа
 
-Authorization information is stored in the access token using the JWT *Claim* feature (in the POC the name of the claim is *access_level*). Authorization is validated when a request is received and before any other action using the user input information.
+Информация об авторизации хранится в токене доступа с использованием функции JWT *Claim* (в POC имя этого утверждения — *access_level*). Авторизация проверяется при получении запроса и перед выполнением любых других действий, использующих информацию от пользователя.
 
-The access token is passed with every message sent to the message endpoint and a denylist is used in order to allow the user to request an explicit token invalidation.
+Токен доступа передается с каждым сообщением, отправленным в конечную точку сообщений, и используется черный список, чтобы позволить пользователю запросить явную аннулирование токена.
 
-Explicit token invalidation is interesting from a user's point of view because, often when tokens are used, the validity timeframe of the token is relatively long (it's common to see a valid timeframe superior to 1 hour) so it's important to allow a user to have a way to indicate to the system "OK, I have finished my exchange with you, so you can close our exchange session and cleanup associated links".
+Явная аннулирование токена интересно с точки зрения пользователя, поскольку, когда используются токены, срок их действия часто довольно длинный (обычно срок действия превышает 1 час), поэтому важно предоставить пользователю способ сообщить системе "Хорошо, я завершил обмен с вами, так что вы можете закрыть нашу сессию обмена и очистить связанные ссылки".
 
-It also helps the user to revoke itself of current access if a malicious concurrent access is detected using the same token (case of token stealing).
+Это также помогает пользователю отозвать текущий доступ, если обнаружен злонамеренный одновременный доступ с использованием того же токена (случай кражи токена).
 
-**Token denylist** - Maintain a temporary list using memory and time limited Caching of hashes of token that are not allowed to be used anymore
+**Черный список токенов** - Поддерживайте временный список, используя кэширование в памяти с ограничением по времени для хэшей токенов, которые больше не могут использоваться
 
 ``` java
 import org.apache.commons.jcs.JCS;
@@ -749,19 +750,18 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 /**
- * Utility class to manage the access token that have been declared as no
- * more usable (explicit user logout)
+ * Утилитный класс для управления токенами доступа, которые были объявлены как больше не подлежащие использованию (явный выход пользователя)
  */
 public class AccessTokenBlocklistUtils {
     /**
-     * Message content send by user that indicate that the access token that
-     * come along the message must be block-listed for further usage
+     * Содержимое сообщения, отправленного пользователем, которое указывает, что токен доступа,
+     * сопровождающий сообщение, должен быть добавлен в черный список для дальнейшего использования
      */
     public static final String MESSAGE_ACCESS_TOKEN_INVALIDATION_FLAG = "INVALIDATE_TOKEN";
 
     /**
-     * Use cache to store block-listed token hash in order to avoid memory exhaustion and be consistent
-     * because token are valid 30 minutes so the item live in cache 60 minutes
+     * Используйте кэш для хранения хэшей токенов в черном списке, чтобы избежать исчерпания памяти и быть последовательным,
+     * поскольку токены действительны 30 минут, элементы остаются в кэше 60 минут
      */
     private static final CacheAccess<String, String> TOKEN_CACHE;
 
@@ -769,15 +769,15 @@ public class AccessTokenBlocklistUtils {
         try {
             TOKEN_CACHE = JCS.getInstance("default");
         } catch (CacheException e) {
-            throw new RuntimeException("Cannot init token cache !", e);
+            throw new RuntimeException("Не удалось инициализировать кэш токенов!", e);
         }
     }
 
     /**
-     * Add token into the denylist
+     * Добавить токен в черный список
      *
-     * @param token Token for which the hash must be added
-     * @throws NoSuchAlgorithmException If SHA256 is not available
+     * @param token Токен, хэш которого должен быть добавлен
+     * @throws NoSuchAlgorithmException Если SHA256 недоступен
      */
     public static void addToken(String token) throws NoSuchAlgorithmException {
         if (token != null && !token.trim().isEmpty()) {
@@ -789,11 +789,11 @@ public class AccessTokenBlocklistUtils {
     }
 
     /**
-     * Check if a token is present in the denylist
+     * Проверить, присутствует ли токен в черном списке
      *
-     * @param token Token for which the presence of the hash must be verified
-     * @return TRUE if token is block-listed
-     * @throws NoSuchAlgorithmException If SHA256 is not available
+     * @param token Токен, присутствие хэша которого необходимо проверить
+     * @return TRUE, если токен в черном списке
+     * @throws NoSuchAlgorithmException Если SHA256 недоступен
      */
     public static boolean isBlocklisted(String token) throws NoSuchAlgorithmException {
         boolean exists = false;
@@ -805,11 +805,11 @@ public class AccessTokenBlocklistUtils {
     }
 
     /**
-     * Compute the SHA256 hash of a token
+     * Вычислить SHA256 хэш токена
      *
-     * @param token Token for which the hash must be computed
-     * @return The hash encoded in HEX
-     * @throws NoSuchAlgorithmException If SHA256 is not available
+     * @param token Токен, для которого необходимо вычислить хэш
+     * @return Хэш в HEX-кодировке
+     * @throws NoSuchAlgorithmException Если SHA256 недоступен
      */
     private static String computeHash(String token) throws NoSuchAlgorithmException {
         String hashHex = null;
@@ -824,7 +824,7 @@ public class AccessTokenBlocklistUtils {
 }
 ```
 
-**Message handling** - Process a request from a user to add a message in the list. Show a authorization validation approach example
+**Обработка сообщений** - Обработка запроса от пользователя на добавление сообщения в список. Пример подхода к проверке авторизации.
 
 ``` java
 import com.auth0.jwt.interfaces.Claim;
@@ -845,21 +845,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Handle message flow
+ * Обработка потока сообщений
  */
 public class MessageHandler implements javax.websocket.MessageHandler.Whole<MessageRequest> {
 
     private static final Logger LOG = LoggerFactory.getLogger(MessageHandler.class);
 
     /**
-     * Reference to the communication channel with the client
+     * Ссылка на канал связи с клиентом
      */
     private RemoteEndpoint.Basic clientConnection;
 
     /**
-     * Constructor
+     * Конструктор
      *
-     * @param clientConnection Reference to the communication channel with the client
+     * @param clientConnection Ссылка на канал связи с клиентом
      */
     public MessageHandler(RemoteEndpoint.Basic clientConnection) {
         this.clientConnection = clientConnection;
@@ -873,30 +873,30 @@ public class MessageHandler implements javax.websocket.MessageHandler.Whole<Mess
     public void onMessage(MessageRequest message) {
         MessageResponse response = null;
         try {
-            /*Step 1: Verify the token*/
+            /*Шаг 1: Проверка токена*/
             String token = message.getToken();
-            //Verify if is it in the block list
+            // Проверка наличия токена в черном списке
             if (AccessTokenBlocklistUtils.isBlocklisted(token)) {
-                throw new IllegalAccessException("Token is in the block list !");
+                throw new IllegalAccessException("Токен находится в черном списке!");
             }
 
-            //Verify the signature of the token
+            // Проверка подписи токена
             DecodedJWT decodedToken = AuthenticationUtils.validateToken(token);
 
-            /*Step 2: Verify the authorization (access level)*/
+            /*Шаг 2: Проверка авторизации (уровень доступа)*/
             Claim accessLevel = decodedToken.getClaim("access_level");
             if (accessLevel == null || AccessLevel.valueOf(accessLevel.asString()) == null) {
-                throw new IllegalAccessException("Token have an invalid access level claim !");
+                throw new IllegalAccessException("Токен содержит недопустимый уровень доступа!");
             }
 
-            /*Step 3: Do the expected processing*/
-            //Init the list of the messages for the current user
+            /*Шаг 3: Выполнение ожидаемой обработки*/
+            // Инициализация списка сообщений для текущего пользователя
             if (!MessageUtils.MESSAGES_DB.containsKey(decodedToken.getSubject())) {
                 MessageUtils.MESSAGES_DB.put(decodedToken.getSubject(), new ArrayList<>());
             }
 
-            //Add message to the list of message of the user if the message is a not a token invalidation
-            //order otherwise add the token to the block list
+            // Добавление сообщения в список сообщений пользователя, если это не запрос на аннулирование токена
+            // В противном случае добавление токена в черный список
             if (AccessTokenBlocklistUtils.MESSAGE_ACCESS_TOKEN_INVALIDATION_FLAG
                 .equalsIgnoreCase(message.getContent().trim())) {
                 AccessTokenBlocklistUtils.addToken(message.getToken());
@@ -904,7 +904,7 @@ public class MessageHandler implements javax.websocket.MessageHandler.Whole<Mess
                 MessageUtils.MESSAGES_DB.get(decodedToken.getSubject()).add(message.getContent());
             }
 
-            //According to the access level of user either return only is message or return all message
+            // В зависимости от уровня доступа пользователя возвращать только его сообщения или все сообщения
             List<String> messages = new ArrayList<>();
             if (accessLevel.asString().equals(AccessLevel.USER.name())) {
                 MessageUtils.MESSAGES_DB.get(decodedToken.getSubject())
@@ -914,72 +914,70 @@ public class MessageHandler implements javax.websocket.MessageHandler.Whole<Mess
                 v.forEach(s -> messages.add(String.format("(%s): %s", k, s))));
             }
 
-            //Build the response object indicating that exchange succeed
+            // Формирование объекта ответа, указывающего на успешное завершение обмена
             if (AccessTokenBlocklistUtils.MESSAGE_ACCESS_TOKEN_INVALIDATION_FLAG
                 .equalsIgnoreCase(message.getContent().trim())) {
-                response = new MessageResponse(true, messages, "Token added to the block list");
-            }else{
+                response = new MessageResponse(true, messages, "Токен добавлен в черный список");
+            } else {
                 response = new MessageResponse(true, messages, "");
             }
 
         } catch (Exception e) {
-            LOG.error("[MessageHandler] Error occur in exchange process.", e);
-            //Build the response object indicating that exchange fail
-            //We send the error detail on client because ware are in POC (it will not the case in a real app)
-            response = new MessageResponse(false, new ArrayList<>(), "Error occur during exchange: "
+            LOG.error("[MessageHandler] Ошибка в процессе обмена.", e);
+            // Формирование объекта ответа, указывающего на ошибку обмена
+            // Мы отправляем детали ошибки клиенту, потому что это POC (в реальном приложении это не так)
+            response = new MessageResponse(false, new ArrayList<>(), "Ошибка в процессе обмена: "
                        + e.getMessage());
         } finally {
-            //Send response
+            // Отправка ответа
             try {
                 this.clientConnection.sendObject(response);
             } catch (IOException | EncodeException e) {
-                LOG.error("[MessageHandler] Error occur in response object sending.", e);
+                LOG.error("[MessageHandler] Ошибка при отправке объекта ответа.", e);
             }
         }
     }
 }
 ```
 
-### Confidentiality and Integrity
+### Конфиденциальность и Целостность
 
-If the raw version of the protocol is used (protocol `ws://`) then the transferred data is exposed to eavesdropping and potential on-the-fly alteration.
+Если используется исходная версия протокола (протокол `ws://`), то передаваемые данные подвержены перехвату и потенциальной изменению в процессе передачи.
 
-Example of capture using [Wireshark](https://www.wireshark.org/) and searching for password exchanges in the stored PCAP file, not printable characters has been explicitly removed from the command result:
+Пример захвата с помощью [Wireshark](https://www.wireshark.org/) и поиска обменов паролями в сохраненном файле PCAP, символы, не печатаемые в командном результате, были явно удалены:
 
 ``` shell
 $ grep -aE '(password)' capture.pcap
 {"login":"bob","password":"bob123"}
 ```
 
-There is a way to check, at WebSocket endpoint level, if the channel is secure by calling the method `isSecure()` on the *session* object instance.
+Существует способ проверки на уровне WebSocket конечной точки, является ли канал защищенным, вызвав метод `isSecure()` на объекте *session*.
 
-Example of implementation in the method of the endpoint in charge of setup of the session and affects the message handler:
+Пример реализации в методе конечной точки, отвечающей за установку сеанса и воздействующей на обработчик сообщений:
 
 ``` java
 /**
- * Handle the beginning of an exchange
+ * Обработка начала обмена
  *
- * @param session Exchange session information
+ * @param session Информация о сеансе обмена
  */
 @OnOpen
 public void start(Session session) {
     ...
-    //Affect a new message handler instance in order to process the exchange only if the channel is secured
+    // Присвоить новый экземпляр обработчика сообщений для обработки обмена только в случае, если канал защищен
     if(session.isSecure()) {
         session.addMessageHandler(new AuthenticationMessageHandler(session.getBasicRemote()));
-    }else{
-        LOG.info("[AuthenticationEndpoint] Session {} do not use a secure channel so no message handler " +
-                 "was affected for processing and session was explicitly closed !", session.getId());
-        try{
-            session.close(new CloseReason(CloseReason.CloseCodes.CANNOT_ACCEPT,"Insecure channel used !"));
-        }catch(IOException e){
-            LOG.error("[AuthenticationEndpoint] Session {} cannot be explicitly closed !", session.getId(),
-                      e);
+    } else {
+        LOG.info("[AuthenticationEndpoint] Сеанс {} не использует защищенный канал, поэтому обработчик сообщений " +
+                 "не был назначен для обработки, и сеанс был явно закрыт!", session.getId());
+        try {
+            session.close(new CloseReason(CloseReason.CloseCodes.CANNOT_ACCEPT, "Использован небезопасный канал!"));
+        } catch (IOException e) {
+            LOG.error("[AuthenticationEndpoint] Сеанс {} не может быть явно закрыт!", session.getId(), e);
         }
-
     }
-    LOG.info("[AuthenticationEndpoint] Session {} message handler affected for processing", session.getId());
+    LOG.info("[AuthenticationEndpoint] Обработчик сообщений назначен для обработки сеанса {}", session.getId());
 }
 ```
 
-Expose WebSocket endpoints only on [wss://](https://kaazing.com/html5-websocket-security-is-strong/) protocol (WebSockets over SSL/TLS) in order to ensure *Confidentiality* and *Integrity* of the traffic like using HTTP over SSL/TLS to secure HTTP exchanges.
+Открывайте WebSocket конечные точки только на протоколе [wss://](https://kaazing.com/html5-websocket-security-is-strong/) (WebSocket через SSL/TLS), чтобы обеспечить *Конфиденциальность* и *Целостность* трафика, как и использование HTTP через SSL/TLS для защиты HTTP обменов.

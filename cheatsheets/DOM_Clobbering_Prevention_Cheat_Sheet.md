@@ -1,57 +1,56 @@
-# DOM Clobbering Prevention Cheat Sheet
+# Шпаргалка по предотвращению DOM Clobbering
 
-## Introduction
+## Введение
 
-[DOM Clobbering](https://domclob.xyz/domc_wiki/#overview) is a type of code-reuse, HTML-only injection attack, where attackers confuse a web application by injecting HTML elements whose `id` or `name` attribute matches the name of security-sensitive variables or browser APIs, such as variables used for fetching remote content (e.g., script src), and overshadow their value.
+[DOM Clobbering](https://domclob.xyz/domc_wiki/#overview) — это тип HTML-инъекции и атаки с повторным использованием кода, при которой злоумышленники вводят HTML-элементы, атрибуты `id` или `name` которых совпадают с именами переменных, используемых для выполнения важных операций безопасности или браузерных API, таких как переменные для получения удаленного контента (например, src скрипта), и тем самым переопределяют их значения.
 
-It is particularly relevant when script injection is not possible, e.g., when filtered by HTML sanitizers, or mitigated by disallowing or controlling script execution. In these scenarios, attackers may still inject non-script HTML markups into webpages and transform the initially secure markup into executable code, achieving [Cross-Site Scripting (XSS)](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html).
+Это особенно актуально, когда инъекция скриптов невозможна, например, когда она блокируется HTML-санитайзерами или предотвращается контролем выполнения скриптов. В таких сценариях злоумышленники могут по-прежнему внедрять HTML-разметку в веб-страницы и превращать изначально безопасную разметку в исполняемый код, достигая [межсайтового скриптинга (XSS)](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html).
 
-**This cheat sheet is a list of guidelines, secure coding patterns, and practices to prevent or restrict the impact of DOM Clobbering in your web application.**
+**Эта шпаргалка представляет собой список руководств, безопасных практик и шаблонов программирования для предотвращения или ограничения воздействия DOM Clobbering на ваше веб-приложение.**
 
-## Background
+## Основы
 
-Before we dive into DOM Clobbering, let's refresh our knowledge with some basic Web background.
+Прежде чем углубиться в DOM Clobbering, освежим в памяти основные сведения о веб-технологиях.
 
-When a webpage is loaded, the browser creates a [DOM tree](https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model/Introduction) that represents the structure and content of the page, and JavaScript code has read and write access to this tree.
+Когда загружается веб-страница, браузер создает [DOM-дерево](https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model/Introduction), представляющее структуру и содержание страницы. JavaScript имеет доступ на чтение и запись к этому дереву.
 
-When creating the DOM tree, browsers also create an attribute for (some) named HTML elements on `window` and `document` objects. Named HTML elements are those having an `id` or `name` attribute. For example, the markup:
+При создании DOM-дерева браузеры также создают атрибуты для (некоторых) именованных HTML-элементов в объектах `window` и `document`. Именованными HTML-элементами являются те, у которых есть атрибут `id` или `name`. Например, разметка:
 
 ```html
 <form id=x></a>
 ```
 
-will lead to browsers creating references to that form element with the attribute `x` of `window` and `document`:
+приведет к тому, что браузеры создадут ссылки на этот элемент формы с атрибутом `x` в объектах `window` и `document`:
 
 ```js
 var obj1 = document.getElementById('x');
 var obj2 = document.x;
 var obj3 = document.x;
 var obj4 = window.x;
-var obj5 = x; // by default, objects belong to the global Window, so x is same as window.x
+var obj5 = x; // по умолчанию объекты принадлежат глобальному объекту Window, поэтому x равен window.x
 console.log(
  obj1 === obj2 && obj2 === obj3 &&
  obj3 === obj4 && obj4 === obj5
 ); // true
 ```
 
-When accessing an attribute of `window` and `document` objects, named HTML element references come before lookups of built-in APIs and other attributes on `window` and `document` that developers have defined, also known as [named property accesses](https://html.spec.whatwg.org/multipage/nav-history-apis.html#named-access-on-the-window-object). Developers unaware of such behavior may use the content of window/document attributes for sensitive operations, such as URLs for fetching remote content, and attackers can exploit it by injecting markups with colliding names. Similarly to custom attributes/variables, built-in browser APIs may be overshadowed by DOM Clobbering.
+При доступе к атрибутам объектов `window` и `document`, ссылки на именованные HTML-элементы обрабатываются до поиска встроенных API и других атрибутов `window` и `document`, что называется [доступом по именованному свойству](https://html.spec.whatwg.org/multipage/nav-history-apis.html#named-access-on-the-window-object). Разработчики, не осведомленные о таком поведении, могут использовать содержимое атрибутов `window`/`document` для выполнения чувствительных операций, таких как получение URL для загрузки удаленного контента, что может быть использовано злоумышленниками путем внедрения разметки с пересекающимися именами. DOM Clobbering может также затронуть встроенные API браузера, вызывая их переопределение.
 
-If attackers are able to inject (non-script) HTML markup in the DOM tree,
-it can change the value of a variable that the web application relies on due to named property accesses, causing it to malfunction, expose sensitive data, or execute attacker-controlled scripts. DOM Clobbering works by taking advantage of this (legacy) behaviour, causing a namespace collision between the execution environment (i.e., `window` and `document` objects), and JavaScript code.
+Если злоумышленники могут внедрить (не скриптовую) HTML-разметку в DOM-дерево, это может изменить значение переменной, на которую полагается веб-приложение, из-за доступа к именованным свойствам, что приведет к сбою, утечке данных или выполнению скриптов, контролируемых злоумышленником. DOM Clobbering использует это (устаревшее) поведение, создавая конфликт имен между средой выполнения (т.е. объектами `window` и `document`) и кодом JavaScript.
 
-### Example Attack 1
+### Пример атаки 1
 
 ```javascript
 let redirectTo = window.redirectTo || '/profile/';
 location.assign(redirectTo);
 ```
 
-The attacker can:
+Злоумышленник может:
 
-- inject the markup `<a id=redirectTo href='javascript:alert(1)'` and obtain XSS.
-- inject the markup `<a id=redirectTo href='phishing.com'` and obtain open redirect.
+- внедрить разметку `<a id=redirectTo href='javascript:alert(1)'` и получить XSS.
+- внедрить разметку `<a id=redirectTo href='phishing.com'` и выполнить открытый редирект.
 
-### Example Attack 2
+### Пример атаки 2
 
 ```javascript
 var script = document.createElement('script');
@@ -60,55 +59,55 @@ s.src = src;
 document.body.appendChild(s);
 ```
 
-The attacker can inject the markup `<a id=config><a id=config name=url href='malicious.js'>` to load additional JavaScript code, and obtain arbitrary client-side code execution.
+Злоумышленник может внедрить разметку `<a id=config><a id=config name=url href='malicious.js'>`, чтобы загрузить дополнительный JavaScript-код и выполнить произвольный клиентский код.
 
-## Summary of Guidelines
+## Сводка руководств
 
-For quick reference, below is the summary of guidelines discussed next.
+Для быстрой справки ниже приведена сводка обсуждаемых далее руководств.
 
-|    | **Guidelines**                                                | Description                                                               |
-|----|---------------------------------------------------------------|---------------------------------------------------------------------------|
-| \# 1  | Use HTML Sanitizers                                           | [link](#1-html-sanitization)                                              |
-| \# 2  | Use Content-Security Policy                                   | [link](#2-content-security-policy)                                        |
-| \# 3  | Freeze Sensitive DOM Objects                                  | [link](#3-freezing-sensitive-dom-objects)                                 |
-| \# 4  | Validate All Inputs to DOM Tree                               | [link](#4-validate-all-inputs-to-dom-tree)                                |
-| \# 5  | Use Explicit Variable Declarations                            | [link](#5-use-explicit-variable-declarations)                             |
-| \# 6  | Do Not Use Document and Window for Global Variables           | [link](#6-do-not-use-document-and-window-for-global-variables)            |
-| \# 7  | Do Not Trust Document Built-in APIs Before Validation         | [link](#7-do-not-trust-document-built-in-apis-before-validation)          |
-| \# 8  | Enforce Type Checking                                         | [link](#8-enforce-type-checking)                                          |
-| \# 9  | Use Strict Mode                                               | [link](#9-use-strict-mode)                                                |
-| \# 10 | Apply Browser Feature Detection                               | [link](#10-apply-browser-feature-detection)                               |
-| \# 11 | Limit Variables to Local Scope                                | [link](#11-limit-variables-to-local-scope)                                |
-| \# 12 | Use Unique Variable Names In Production                       | [link](#12-use-unique-variable-names-in-production)                       |
-| \# 13 | Use Object-oriented Programming Techniques like Encapsulation | [link](#13-use-object-oriented-programming-techniques-like-encapsulation) |
+|    | **Руководства**                                                | Описание                                                                 |
+|----|---------------------------------------------------------------|-------------------------------------------------------------------------|
+| \# 1  | Используйте HTML-санитайзеры                                  | [ссылка](#1-html-sanitization)                                           |
+| \# 2  | Используйте Политику Безопасности Содержимого (CSP)           | [ссылка](#2-content-security-policy)                                     |
+| \# 3  | Замораживайте чувствительные DOM-объекты                      | [ссылка](#3-freezing-sensitive-dom-objects)                              |
+| \# 4  | Проверяйте все данные, вводимые в DOM-дерево                  | [ссылка](#4-validate-all-inputs-to-dom-tree)                             |
+| \# 5  | Используйте явные объявления переменных                       | [ссылка](#5-use-explicit-variable-declarations)                          |
+| \# 6  | Не используйте `document` и `window` для глобальных переменных | [ссылка](#6-do-not-use-document-and-window-for-global-variables)         |
+| \# 7  | Не доверяйте встроенным API `document` до валидации            | [ссылка](#7-do-not-trust-document-built-in-apis-before-validation)       |
+| \# 8  | Применяйте проверку типов                                      | [ссылка](#8-enforce-type-checking)                                       |
+| \# 9  | Используйте строгий режим                                      | [ссылка](#9-use-strict-mode)                                             |
+| \# 10 | Применяйте обнаружение возможностей браузера                   | [ссылка](#10-apply-browser-feature-detection)                            |
+| \# 11 | Ограничьте переменные локальной областью видимости             | [ссылка](#11-limit-variables-to-local-scope)                             |
+| \# 12 | Используйте уникальные имена переменных в продакшене           | [ссылка](#12-use-unique-variable-names-in-production)                    |
+| \# 13 | Используйте объектно-ориентированные техники программирования, такие как инкапсуляция | [ссылка](#13-use-object-oriented-programming-techniques-like-encapsulation) |
 
-## Mitigation Techniques
+## Техники смягчения угроз
 
-### \#1: HTML Sanitization
+### \#1: Санитизация HTML
 
-Robust HTML sanitizers can prevent or restrict the risk of DOM Clobbering. They can do so in multiple ways. For example:
+Надежные HTML-санитайзеры могут предотвратить или ограничить риск DOM Clobbering различными способами. Например:
 
-- completely remove named properties like `id` and `name`. While effective, this may hinder the usability when named properties are needed for legitimate functionalties.
-- namespace isolation, which can be, for example, prefixing the value of named properties by a constant string to limit the risk of naming collisions.
-- dynamically checking if named properties of the input mark has collisions with the existing DOM tree, and if that is the case, then remove named properties of the input markup.
+- полное удаление именованных свойств, таких как `id` и `name`. Хотя это эффективно, такое решение может мешать использованию именованных свойств для законных функциональных задач.
+- изоляция пространств имен, например, добавление префикса к значению именованных свойств, чтобы уменьшить риск коллизий имен.
+- динамическая проверка наличия коллизий именованных свойств введенной разметки с существующим DOM-деревом и удаление этих свойств при обнаружении коллизий.
 
-OWASP recommends [DOMPurify](https://github.com/cure53/DOMPurify) or the [Sanitizer API](https://developer.mozilla.org/en-US/docs/Web/API/HTML_Sanitizer_API) for HTML sanitization.
+OWASP рекомендует использовать [DOMPurify](https://github.com/cure53/DOMPurify) или [Sanitizer API](https://developer.mozilla.org/en-US/docs/Web/API/HTML_Sanitizer_API) для санитизации HTML.
 
-#### DOMPurify Sanitizer
+#### Санитайзер DOMPurify
 
-By default, DOMPurify removes all clobbering collisions with **built-in** APIs and properties (using the enabled-by-default `SANITIZE_DOM` configuration option). ]
+По умолчанию DOMPurify удаляет все коллизии с **встроенными** API и свойствами (благодаря включенной по умолчанию опции `SANITIZE_DOM`).
 
-To be protected against clobbering of custom variables and properties as well, you need to enable the `SANITIZE_NAMED_PROPS` config:
+Чтобы защититься также от коллизий пользовательских переменных и свойств, необходимо включить настройку `SANITIZE_NAMED_PROPS`:
 
 ```js
 var clean = DOMPurify.sanitize(dirty, {SANITIZE_NAMED_PROPS: true});
 ```
 
-This would isolate the namespace of named properties and JavaScript variables by prefixing them with `user-content-` string.
+Это изолирует пространство имен для именованных свойств и JavaScript-переменных, добавив к ним строку `user-content-`.
 
 #### Sanitizer API
 
-The new browser-built-in [Sanitizer API](https://developer.mozilla.org/en-US/docs/Web/API/HTML_Sanitizer_API) does not prevent DOM Clobbering it its [default setting](https://wicg.github.io/sanitizer-api/#dom-clobbering), but can be configured to remove named properties:
+Новый встроенный в браузер [Sanitizer API](https://developer.mozilla.org/en-US/docs/Web/API/HTML_Sanitizer_API) не предотвращает DOM Clobbering в [настройках по умолчанию](https://wicg.github.io/sanitizer-api/#dom-clobbering), но может быть настроен для удаления именованных свойств:
 
 ```js
 const sanitizerInstance = new Sanitizer({
@@ -120,74 +119,74 @@ const sanitizerInstance = new Sanitizer({
 containerDOMElement.setHTML(input, {sanitizer: sanitizerInstance});
 ```
 
-### \#2: Content-Security Policy
+### \#2: Политика безопасности контента (CSP)
 
-[Content-Security Policy (CSP)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy) is a set of rules that tell the browser which resources are allowed to be loaded on a web page. By restricting the sources of JavaScript files (e.g., with the [script-src](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src) directive), CSP can prevent malicious code from being injected into the page.
+[Политика безопасности контента (CSP)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy) — это набор правил, которые указывают браузеру, какие ресурсы разрешено загружать на веб-странице. CSP может предотвратить инъекцию вредоносного кода путем ограничения источников JavaScript-файлов (например, с помощью директивы [script-src](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src)).
 
-**Note:** CSP can only mitigate **some varints** of DOM clobbering attacks, such as when attackers attempt to load new scripts by clobbering script sources, but not when already-present code can be abused for code execution, e.g., clobbering the parameters of code evaluation constructs like `eval()`.
+**Примечание:** CSP может смягчить **некоторые варианты** атак DOM Clobbering, например, когда злоумышленники пытаются загрузить новые скрипты через переопределение источников скриптов. Однако это не предотвратит использование уже существующего кода, который может быть использован для выполнения команд, например, через переопределение параметров конструкций, таких как `eval()`.
 
-### \#3: Freezing Sensitive DOM Objects
+### \#3: Замораживание чувствительных объектов DOM
 
-A simple way to mitigate DOM Clobbering against individual objects could be to freeze sensitive DOM objects and their properties, e.g., via [Object.freeze()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/freeze) method.
+Простой способ предотвратить DOM Clobbering для отдельных объектов — это заморозить чувствительные DOM-объекты и их свойства с помощью метода [Object.freeze()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/freeze).
 
-**Note:** Freezing object properties prevents them from being overwritten by named DOM elements. But, determining all objects and object properties that need to be frozen may be not be easy, limiting the usefulness of this approach.
+**Примечание:** Замораживание свойств объекта предотвращает их перезапись именованными элементами DOM. Однако определить все объекты и их свойства, которые необходимо заморозить, может быть сложно, что ограничивает полезность этого подхода.
 
-## Secure Coding Guidelines
+## Рекомендации по безопасному программированию
 
-DOM Clobbering can be avoided by defensive programming and adhering to a few coding patterns and guidelines.
+DOM Clobbering можно избежать с помощью защитного программирования и соблюдения нескольких шаблонов и руководств по кодированию.
 
-### \#4: Validate All Inputs to DOM Tree
+### \#4: Проверяйте все данные перед их добавлением в DOM-дерево
 
-Before inserting any markup into the webpage's DOM tree, sanitize `id` and `name` attributes (see [HTML sanitization](#html-sanitization)).
+Прежде чем вставлять разметку в DOM-дерево страницы, санитизируйте атрибуты `id` и `name` (см. раздел [Санитизация HTML](#html-sanitization)).
 
-### \#5: Use Explicit Variable Declarations
+### \#5: Используйте явные объявления переменных
 
-When initializing varibles, always use a variable declarator like `var`, `let` or `const`, which prevents clobbering of the variable.
+При инициализации переменных всегда используйте объявление переменных с помощью `var`, `let` или `const`, чтобы предотвратить их перезапись.
 
-**Note:** Declaring a variable with `let` does not create a property on `window`, unlike `var`. Therefore, `window.VARNAME` can still be clobbered (assuming `VARNAME` is the name of the variable).
+**Примечание:** Объявление переменной с `let` не создает свойства в `window`, в отличие от `var`. Поэтому переменная `window.VARNAME` все еще может быть переопределена (если `VARNAME` — это имя переменной).
 
-### \#6: Do Not Use Document and Window for Global Variables
+### \#6: Не используйте `document` и `window` для глобальных переменных
 
-Avoid using objects like `document` and `window` for storing global variables, because they can be easily manipulated. (see, e.g., [here](https://domclob.xyz/domc_wiki/indicators/patterns.html#do-not-use-document-for-global-variables)).
+Избегайте использования объектов `document` и `window` для хранения глобальных переменных, так как они легко поддаются манипуляциям (см., например, [здесь](https://domclob.xyz/domc_wiki/indicators/patterns.html#do-not-use-document-for-global-variables)).
 
-### \#7: Do Not Trust Document Built-in APIs Before Validation
+### \#7: Не доверяйте встроенным API `document` до валидации
 
-Document properties, including built-in ones, are always overshadowed by DOM Clobbering, even right after they are assigned a value.
+Свойства объекта `document`, включая встроенные, всегда могут быть переопределены с помощью DOM Clobbering, даже сразу после их присвоения значения.
 
-**Hint:** This is due to the so-called [named property visibility algorithm](https://webidl.spec.whatwg.org/#legacy-platform-object-abstract-ops), where named HTML element references come before lookups of built-in APIs and other attributes on `document`.
+**Подсказка:** Это связано с так называемым [алгоритмом видимости именованных свойств](https://webidl.spec.whatwg.org/#legacy-platform-object-abstract-ops), при котором ссылки на именованные HTML-элементы обрабатываются до обращения к встроенным API и другим атрибутам `document`.
 
-### \#8: Enforce Type Checking
+### \#8: Применяйте проверку типов
 
-Always check the type of Document and Window properties before using them in sensitive operations, e.g., using the [instance of](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/instanceof) operator.
+Всегда проверяйте типы свойств `document` и `window` перед их использованием в чувствительных операциях, например, с помощью оператора [instance of](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/instanceof).
 
-**Hint:** When an object is clobbered, it would refer to an [HTMLElement](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement) instance, which may not be the expected type.
+**Подсказка:** Когда объект переопределен, он будет ссылаться на экземпляр [HTMLElement](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement), что может не соответствовать ожидаемому типу.
 
-### \#9: Use Strict Mode
+### \#9: Используйте строгий режим
 
-Use `strict` mode to prevent unintended global variable creation, and to [raise an error](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Errors/Read-only) when read-only properties are attempted to be over-written.
+Используйте `strict` режим, чтобы предотвратить непреднамеренное создание глобальных переменных и [вызывать ошибку](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Errors/Read-only), когда попытка перезаписать свойства с правами только для чтения.
 
-### \#10: Apply Browser Feature Detection
+### \#10: Применяйте обнаружение возможностей браузера
 
-Instead of relying on browser-specific features or properties, use feature detection to determine whether a feature is supported before using it. This can help prevent errors and DOM Clobbering that might arise when using those features in unsupported browsers.
+Вместо того, чтобы полагаться на специфические для браузера функции или свойства, используйте обнаружение возможностей браузера, чтобы определить, поддерживается ли функция, перед ее использованием. Это поможет предотвратить ошибки и DOM Clobbering, которые могут возникнуть при использовании этих функций в неподдерживаемых браузерах.
 
-**Hint:** Unsupported feature APIs can act as an undefined variable/property in unsupported browsers, making them clobberable.
+**Подсказка:** Неподдерживаемые API функций могут вести себя как неопределенные переменные/свойства в неподдерживаемых браузерах, что делает их уязвимыми для DOM Clobbering.
 
-### \#11: Limit Variables to Local Scope
+### \#11: Ограничьте переменные локальной областью видимости
 
-Global variables are more prone to being overwritten by DOM Clobbering. Whenever possible, use local variables and object properties.
+Глобальные переменные более подвержены перезаписи с помощью DOM Clobbering. По возможности используйте локальные переменные и свойства объектов.
 
-### \#12: Use Unique Variable Names In Production
+### \#12: Используйте уникальные имена переменных в продакшене
 
-Using unique variable names may help prevent naming collisions that could lead to accidental overwrites.
+Использование уникальных имен переменных может помочь предотвратить коллизии имен, которые могут привести к случайным перезаписям.
 
-### \#13: Use Object-oriented Programming Techniques like Encapsulation
+### \#13: Используйте объектно-ориентированные техники программирования, такие как инкапсуляция
 
-Encapsulating variables and functions within objects or classes can help prevent them from being overwritten. By making them private, they cannot be accessed from outside the object, making them less prone to DOM Clobbering.
+Инкапсуляция переменных и функций внутри объектов или классов может помочь предотвратить их перезапись. Сделав их приватными, вы предотвращаете доступ к ним извне объекта, что снижает риск DOM Clobbering.
 
-## References
+## Ссылки
 
 - [domclob.xyz](https://domclob.xyz)
 - [PortSwigger: DOM Clobbering Strikes Back](https://portswigger.net/research/dom-clobbering-strikes-back)
-- [Blogpost: XSS in GMail’s AMP4Email](https://research.securitum.com/xss-in-amp4email-dom-clobbering/)
+- [Блог: XSS в AMP4Email от GMail](https://research.securitum.com/xss-in-amp4email-dom-clobbering/)
 - [HackTricks: DOM Clobbering](https://book.hacktricks.xyz/pentesting-web/xss-cross-site-scripting/dom-clobbering)
 - [HTMLHell: DOM Clobbering](https://www.htmhell.dev/adventcalendar/2022/12/)

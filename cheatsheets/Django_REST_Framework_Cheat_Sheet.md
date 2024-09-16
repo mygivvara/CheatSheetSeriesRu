@@ -1,48 +1,48 @@
-# Django REST Framework (DRF) Cheat Sheet
+# Шпаргалка по безопасности для Django REST Framework (DRF)
 
-## Introduction
+## Введение
 
-This *Cheat sheet* intends to provide quick basic Django REST Framework security tips for developers.
+Эта шпаргалка предоставляет основные советы по безопасности для разработчиков, работающих с Django REST Framework (DRF). DRF упрощает разработку API с использованием Django, но требует внимания к мерам безопасности для защиты вашего приложения.
 
-The Django REST framework abstracts developers from quite a bit of tedious work and provides the means to build APIs quickly and with ease using Django. New developers, those unfamiliar with the inner workings of Django, likely need a basic set of guidelines to secure fundamental aspects of their application. The intended purpose of this doc is to be that guide.
+## Настройки
 
-## Settings
-
-All the Django REST Framework (DRF) configuration is done under the
-namespace REST_FRAMEWORK, usually in the settings.py file. From a security perspective, the most relevant ones are:
+Конфигурация DRF осуществляется через пространство имен `REST_FRAMEWORK`, обычно в файле `settings.py`. Основные настройки включают:
 
 ### DEFAULT_AUTHENTICATION_CLASSES
 
-A list of authentication classes that determines the default set of authenticators used when accessing the request.user or request.auth properties. In other words, what classes should be used to identify which user is authenticated.
-
-Defaults are 'rest_framework.authentication.SessionAuthentication', 'rest_framework.authentication.BasicAuthentication', that means that by default it checks the session and basic authentication for the user.
+- **Описание**: Указывает классы аутентификации, которые используются для определения аутентифицированных пользователей.
+- **По умолчанию**: `'rest_framework.authentication.SessionAuthentication'`, `'rest_framework.authentication.BasicAuthentication'`
+- **Рекомендация**: Убедитесь, что в этот список включены соответствующие классы аутентификации для вашего приложения.
 
 ### DEFAULT_PERMISSION_CLASSES
 
-A list of permission classes that determines the default set of permissions checked at the start of a view.
-
-Permission must be granted by every class in the list. Default is 'rest_framework.permissions.AllowAny'18, that means that by **default every view allows access to everybody.**
+- **Описание**: Определяет настройки разрешений по умолчанию для представлений.
+- **По умолчанию**: `'rest_framework.permissions.AllowAny'` (что позволяет доступ ко всем)
+- **Рекомендация**: Настройте эту настройку, чтобы ограничить доступ по мере необходимости.
 
 ### DEFAULT_THROTTLE_CLASSES
 
-A list of throttle classes that determines the default set of throttles checked at the start of a view.
-**Default is empty**, that means that by default there is no throttling in place.
+- **Описание**: Указывает классы ограничения частоты запросов.
+- **По умолчанию**: Пусто (по умолчанию нет ограничения частоты)
+- **Рекомендация**: Настройте ограничение частоты, чтобы предотвратить злоупотребления и атаки отказа в обслуживании (DoS).
 
 ### DEFAULT_PAGINATION_CLASS
 
-The default class to use for queryset pagination. **Pagination is disabled by default.** Lack of proper pagination could lead to Denial of Service (DoS) in cases where there’s a lot of data.
+- **Описание**: Определяет класс пагинации для запросов.
+- **По умолчанию**: Пагинация отключена.
+- **Рекомендация**: Настройте пагинацию, чтобы избежать проблем с отказом в обслуживании (DoS) при большом объеме данных.
 
 ## OWASP API Security Top 10
 
-The [OWASP API Security Top 10](https://owasp.org/www-project-api-security/) is a list of the most critical security risks for APIs, developed by the [Open Web Application Security Project (OWASP)](https://owasp.org/). It is intended to help organizations identify and prioritize the most significant risks to their APIs, so that they can implement appropriate controls to mitigate those risks.
+Список [OWASP API Security Top 10](https://owasp.org/www-project-api-security/) представляет собой перечень наиболее критичных рисков безопасности для API, разработанный [Open Web Application Security Project (OWASP)](https://owasp.org/). Он предназначен для помощи организациям в выявлении и приоритизации самых значительных рисков для их API, чтобы можно было внедрить соответствующие меры контроля.
 
-This section is based on this. Your approach to securing your web API should be to start at the top threat A1 below and work down, this will ensure that any time spent on security will be spent most effectively spent and cover the top threats first and lesser threats afterwards. After covering the top 10 it is generally advisable to assess for other threats or get a professionally completed Penetration Test.
+Этот раздел основан на этом списке. Ваш подход к защите веб-API должен начинаться с самого важного риска A1 ниже и двигаться вниз, чтобы гарантировать, что время, затраченное на безопасность, будет потрачено наиболее эффективно и сначала охватит самые важные угрозы, а затем менее значительные.
 
-### API1:2019 Broken Object Level Authorization
+### API1:2019 Broken Object Level Authorization (Неисправная авторизация на уровне объектов)
 
-When using object-level permissions:
+При использовании разрешений на уровне объектов:
 
-DO: Validate that the object can be accessed by the user using the method `.check_object_permissions(request, obj)`. Example:
+**ДЕЛАЙТЕ:** Проверьте, что объект может быть доступен пользователю, используя метод `.check_object_permissions(request, obj)`. Пример:
 
 ```python
 def get_object(self):
@@ -51,154 +51,156 @@ def get_object(self):
     return obj
 ```
 
-DO NOT: Override the method `get_object()` without checking if the request should have access to that object.
+**НЕ ДЕЛАЙТЕ:** Переопределяйте метод `get_object()`, не проверяя, должен ли запрос иметь доступ к этому объекту.
 
-### API2:2019 Broken User Authentication
+### API2:2019 Broken User Authentication (Неисправная аутентификация пользователя)
 
-DO: Use the setting value DEFAULT_AUTHENTICATION_CLASSES with the correct classes for your project.
+**ДЕЛАЙТЕ:** Используйте значение настройки `DEFAULT_AUTHENTICATION_CLASSES` с правильными классами для вашего проекта.
 
-DO: Have authentication on every non-public API endpoint.
+**ДЕЛАЙТЕ:** Обеспечьте наличие аутентификации на каждом не публичном API-эндпоинте.
 
-DO NOT: Overwrite the authentication class on a class-based (variable `authentication_classes`) or function-based (decorator `authentication_classes`) view unless you are confident about the change and understand the impact.
+**НЕ ДЕЛАЙТЕ:** Переопределяйте класс аутентификации в представлении на основе класса (переменная `authentication_classes`) или функции (декоратор `authentication_classes`), если вы не уверены в изменении и не понимаете его последствия.
 
-### API3:2019 Excessive Data Exposure
+### API3:2019 Excessive Data Exposure (Избыточное раскрытие данных)
 
-DO: Review the serializer and the information you are displaying.
+**ДЕЛАЙТЕ:** Проверьте сериализатор и информацию, которую вы отображаете.
 
-If the serializer is inheriting from ModelSerializer DO NOT use the exclude Meta property.
+Если сериализатор наследуется от `ModelSerializer`, **НЕ ДЕЛАЙТЕ:** Используйте свойство `exclude` в `Meta`.
 
-DO NOT: Display more information that the minimum required.
+**НЕ ДЕЛАЙТЕ:** Отображайте больше информации, чем минимум, необходимый для работы.
 
-### API4:2019 Lack of Resources & Rate Limiting
+### API4:2019 Lack of Resources & Rate Limiting (Отсутствие ограничения ресурсов и частоты запросов)
 
-DO: Configure the setting DEFAULT_THROTTLE_CLASSES.
+**ДЕЛАЙТЕ:** Настройте настройку `DEFAULT_THROTTLE_CLASSES`.
 
-DO NOT: Overwrite the throttle class on a class-based (variable `throttle_classes`) or function-based (decorator `throttle_classes`) view unless you are confident about the change and understand the impact.
+**НЕ ДЕЛАЙТЕ:** Переопределяйте класс ограничения частоты в представлении на основе класса (переменная `throttle_classes`) или функции (декоратор `throttle_classes`), если вы не уверены в изменении и не понимаете его последствия.
 
-EXTRA: If possible rate limiting should also be done with a WAF or similar. DRF should be the last layer of rate limiting.
+**ДОПОЛНИТЕЛЬНО:** Если возможно, ограничение частоты запросов также должно выполняться с помощью WAF или аналогичного решения. DRF должен быть последним уровнем ограничения частоты.
 
-### API5:2019 Broken Function Level Authorization
+### API5:2019 Broken Function Level Authorization (Неисправная авторизация на уровне функций)
 
-DO: Change the default value (`'rest_framework.permissions.AllowAny'`) of DEFAULT_PERMISSION_CLASSES.
+**ДЕЛАЙТЕ:** Измените значение по умолчанию (`'rest_framework.permissions.AllowAny'`) настройки `DEFAULT_PERMISSION_CLASSES`.
 
-DO NOT: Use `rest_framework.permissions.AllowAny` except for public API endpoints.
+**НЕ ДЕЛАЙТЕ:** Используйте `rest_framework.permissions.AllowAny`, кроме как для публичных API-эндпоинтов.
 
-DO: Use the setting value DEFAULT_PERMISSION_CLASSES with the correct classes for your project.
+**ДЕЛАЙТЕ:** Используйте значение настройки `DEFAULT_PERMISSION_CLASSES` с правильными классами для вашего проекта.
 
-DO NOT: Overwrite the authorization class on a class-based (variable `permission_classes`) or function-based (decorator `permission_classes`) view unless you are confident about the change and understand the impact.
+**НЕ ДЕЛАЙТЕ:** Переопределяйте класс авторизации в представлении на основе класса (переменная `permission_classes`) или функции (декоратор `permission_classes`), если вы не уверены в изменении и не понимаете его последствия.
 
-### API6:2019 Mass Assignment
+### API6:2019 Mass Assignment (Масс-ассигнование)
 
-When using ModelForms:
+При использовании `ModelForms`:
 
-DO: Use Meta.fields (allowlist approach).
+**ДЕЛАЙТЕ:** Используйте `Meta.fields` (подход с белым списком).
 
-DO NOT: Use Meta.exclude (denylist approach).
+**НЕ ДЕЛАЙТЕ:** Используйте `Meta.exclude` (подход с черным списком).
 
-DO NOT: Use `ModelForms.Meta.fields = "__all__"`
+**НЕ ДЕЛАЙТЕ:** Используйте `ModelForms.Meta.fields = "__all__"`
 
-### API7:2019 Security Misconfiguration
+### API7:2019 Security Misconfiguration (Неправильная конфигурация безопасности)
 
-DO: Setup Django settings `DEBUG` and `DEBUG_PROPAGATE_EXCEPTIONS` to False.
+**ДЕЛАЙТЕ:** Установите значения `DEBUG` и `DEBUG_PROPAGATE_EXCEPTIONS` в `False`.
 
-DO: Setup Django setting `SECRET_KEY` to a random value. Never hardcode secrets.
+**ДЕЛАЙТЕ:** Установите значение `SECRET_KEY` на случайное значение. Никогда не хардкодьте секреты.
 
-DO: Have a repeatable hardening process leading to fast and easy deployment of a properly locked down environment.
+**ДЕЛАЙТЕ:** Иметь повторяемый процесс жесткой настройки, который обеспечивает быструю и легкую развертку правильно настроенной среды.
 
-DO: Have an automated process to continuously assess the effectiveness of the configuration and settings in all environments.
+**ДЕЛАЙТЕ:** Иметь автоматизированный процесс для постоянной оценки эффективности конфигурации и настроек во всех средах.
 
-DO: Ensure API can only be accessed by the specified HTTP verbs. All other HTTP verbs should be disabled.
+**ДЕЛАЙТЕ:** Убедитесь, что API доступен только через указанные HTTP-методы. Все другие HTTP-методы должны быть отключены.
 
-DO NOT: Use default passwords
+**НЕ ДЕЛАЙТЕ:** Используйте стандартные пароли.
 
-### API8:2019 Injection
+### API8:2019 Injection (Внедрение)
 
-DO: Validate, filter, and sanitize all client-provided data, or other data coming from integrated systems.
+**ДЕЛАЙТЕ:** Валидируйте, фильтруйте и очищайте все данные, предоставляемые клиентом, или другие данные, поступающие из интегрированных систем.
 
 #### SQLi
 
-DO: Use parametrized queries.
+**ДЕЛАЙТЕ:** Используйте параметризованные запросы.
 
-TRY NOT TO: Use dangerous methods like `raw()`, `extra()` and custom SQL (via `cursor.execute()`).
+**ПОПРОБУЙТЕ НЕ:** Использовать опасные методы, такие как `raw()`, `extra()` и пользовательский SQL (через `cursor.execute()`).
 
-DO NOT: Add user input to dangerous methods (`raw()`, `extra()`, `cursor.execute()`).
+**НЕ ДЕЛАЙТЕ:** Добавляйте пользовательский ввод в опасные методы (`raw()`, `extra()`, `cursor.execute()`).
 
 #### RCE
 
-DO NOT: Add user input to dangerous methods (`eval()`, `exec()` and `execfile()`).
+**НЕ ДЕЛАЙТЕ:** Добавляйте пользовательский ввод в опасные методы (`eval()`, `exec()` и `execfile()`).
 
-DO NOT: Load user-controlled pickle files. This includes the pandas method `pandas.read_pickle()`.
+**НЕ ДЕЛАЙТЕ:** Загружайте файлы pickle, контролируемые пользователем. Это включает метод `pandas.read_pickle()`.
 
-DO NOT: Load user-controlled YAML files using the method `load()`.
+**НЕ ДЕЛАЙТЕ:** Загружайте файлы YAML, контролируемые пользователем, используя метод `load()`.
 
-DO: Use the `Loader=yaml.SafeLoader` for YAML files.
+**ДЕЛАЙТЕ:** Используйте `Loader=yaml.SafeLoader` для файлов YAML.
 
-### API9:2019 Improper Assets Management
+### API9:2019 Improper Assets Management (Неправильное управление активами)
 
-DO: Have an inventory of all API hosts and document important aspects of each one of them, focusing on the API environment (e.g., production, staging, test, development), who should have network access to the host (e.g., public, internal, partners) and the API version.
+**ДЕЛАЙТЕ:** Иметь инвентаризацию всех хостов API и документировать важные аспекты каждого из них, с акцентом на среду API (например, продакшн, staging, тестирование, разработка), кто должен иметь сетевой доступ к хосту (например, публичный, внутренний, партнеры) и версию API.
 
-DO: Document all aspects of your API such as authentication, errors, redirects, rate limiting, cross-origin resource sharing (CORS) policy and endpoints, including their parameters, requests, and responses.
+**ДЕЛАЙТЕ:** Документируйте все аспекты вашего API, такие как аутентификация, ошибки, перенаправления, политика CORS и конечные точки, включая их параметры, запросы и ответы.
 
-### API10:2019 Insufficient Logging & Monitoring
+### API10:2019 Insufficient Logging & Monitoring (Недостаточное ведение журналов и мониторинг)
 
-DO: Log all failed authentication attempts, denied access, and input validation errors with sufficient user context to identify suspicious or malicious accounts.
+**ДЕЛАЙТЕ:** Логируйте все неудачные попытки аутентификации, отказ в доступе и ошибки проверки ввода с достаточным контекстом пользователя для идентификации подозрительных или вредоносных аккаунтов.
 
-DO: Create logs in a format suited to be consumed by a log management solution and should include enough detail to identify the malicious actor.
+**ДЕЛАЙТЕ:** Соз
 
-DO: Handle logs as sensitive data, and their integrity should be guaranteed at rest and transit.
+давайте журналы в формате, подходящем для использования системой управления журналами, и включайте достаточные детали для идентификации злоумышленника.
 
-DO: Configure a monitoring system to continuously monitor the infrastructure, network, and the API functioning.
+**ДЕЛАЙТЕ:** Обращайтесь с журналами как с конфиденциальными данными, и их целостность должна быть гарантирована в состоянии покоя и при передаче.
 
-DO: Use a Security Information and Event Management (SIEM) system to aggregate and manage logs from all components of the API stack and hosts.
+**ДЕЛАЙТЕ:** Настройте систему мониторинга для постоянного мониторинга инфраструктуры, сети и функционирования API.
 
-DO: Configure custom dashboards and alerts, enabling suspicious activities to be detected and responded to earlier.
+**ДЕЛАЙТЕ:** Используйте систему управления информацией и событиями безопасности (SIEM) для агрегирования и управления журналами из всех компонентов стека API и хостов.
 
-DO: Establish effective monitoring and alerting so suspicious activities are detected and responded to in a timely fashion.
+**ДЕЛАЙТЕ:** Настройте пользовательские панели инструментов и оповещения, позволяя обнаруживать подозрительную активность и реагировать на нее ранее.
 
-DO NOT: Log generic error messages such as: Log.Error("Error was thrown"); rather log the stack trace, error message and user ID who caused the error.
+**ДЕЛАЙТЕ:** Установите эффективное мониторинг и оповещение, чтобы подозрительная активность обнаруживалась и на нее реагировали своевременно.
 
-DO NOT: Log sensitive data such as user's passwords, API Tokens or PII.
+**НЕ ДЕЛАЙТЕ:** Логируйте общие сообщения об ошибках, такие как: Log.Error("Произошла ошибка"); вместо этого логируйте трассировку стека, сообщение об ошибке и идентификатор пользователя, который вызвал ошибку.
 
-## Other security Risks
+**НЕ ДЕЛАЙТЕ:** Логируйте конфиденциальные данные, такие как пароли пользователей, токены API или личную информацию.
 
-Below is a list of security risks for APIs not discussed in the OWASP API Security Top 10.
+## Другие риски безопасности
 
-### Business Logic Bugs
+Ниже приведен список рисков безопасности для API, не обсуждаемых в OWASP API Security Top 10.
 
-Any application in any technology can contain business logic errors that result in security bugs. Business logic bugs are difficult to impossible to detect using automated tools. The best ways to prevent business logic security bugs are to do threat model, security design review, code review, pair program and write unit tests.
+### Ошибки бизнес-логики
 
-### Secret Management
+Любое приложение на любой технологии может содержать ошибки бизнес-логики, которые приводят к проблемам с безопасностью. Ошибки бизнес-логики трудно или невозможно обнаружить с помощью автоматизированных инструментов. Лучшие способы предотвращения ошибок безопасности бизнес-логики включают моделирование угроз, обзор дизайна безопасности, код-ревью, парное программирование и написание модульных тестов.
 
-Secrets should never be hardcoded. The best practice is to use a Secret Manager. For more information review OWASP [Secrets Management Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html)
+### Управление секретами
 
-## Updating Django and DRF and Having a Process for Updating Dependencies
+Секреты никогда не должны быть закодированы в коде. Лучшей практикой является использование менеджера секретов. Для получения дополнительной информации ознакомьтесь со [Шпаргалкой по управлению секретами](https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html).
 
-An concern with every application, including Python applications, is that dependencies can have vulnerabilities.
+## Обновление Django и DRF и процесс обновления зависимостей
 
-One good practice is to audit the dependencies your project is using.
+Одной из проблем каждого приложения, включая приложения на Python, является то, что зависимости могут содержать уязвимости.
 
-In general, it is important to have a process for updating dependencies. An example process might define three mechanisms for triggering an update of response:
+Хорошей практикой является аудит зависимостей, используемых вашим проектом.
 
-- Every month/quarter dependencies in general are updated.
-- Every week important security vulnerabilities are considered and potentially trigger an update.
-- In EXCEPTIONAL conditions, emergency updates may need to be applied.
+В целом, важно иметь процесс обновления зависимостей. Примером процесса может быть определение трех механизмов для запуска обновления:
 
-The Django Security team has a information on [How Django discloses security issues](https://docs.djangoproject.com/en/4.1/internals/security/#how-django-discloses-security-issues).
+- Каждый месяц/квартал обновляются зависимости в целом.
+- Каждую неделю рассматриваются важные уязвимости в безопасности и, при необходимости, инициируется обновление.
+- В ИСКЛЮЧИТЕЛЬНЫХ условиях могут потребоваться экстренные обновления.
 
-Finally, an important aspect when considering if a new dependency should be added or not to the project is the "Security Health" of the library. How often it's updated? Does it have known vulnerabilities? Does it have an active community? etc. Some tools can help with this task (E.g. [Snyk Advisor](https://snyk.io/advisor/python))
+Команда безопасности Django предоставляет информацию о [том, как Django раскрывает проблемы безопасности](https://docs.djangoproject.com/en/4.1/internals/security/#how-django-discloses-security-issues).
 
-## SAST Tools
+Наконец, важный аспект при рассмотрении добавления новой зависимости в проект — это "Безопасность библиотеки". Как часто она обновляется? Есть ли известные уязвимости? Есть ли активное сообщество? и т. д. Некоторые инструменты могут помочь в этой задаче (например, [Snyk Advisor](https://snyk.io/advisor/python)).
 
-There are several excellent open-source static analysis security tools for Python that are worth considering, including:
+## Инструменты SAST
 
-Bandit – [Bandit](https://bandit.readthedocs.io/en/latest/) is a tool designed to find common security issues in Python. To do this Bandit processes each file, builds an Abstract Syntax Tree (AST) from it, and runs appropriate plugins against the AST nodes. Once Bandit has finished scanning all the files it generates a report. Bandit was originally developed within the OpenStack Security Project and later rehomed to PyCQA.
+Существует несколько отличных инструментов статического анализа безопасности для Python, которые стоит рассмотреть, включая:
 
-Semgrep – [Semgrep](https://semgrep.dev/) is a fast, open-source, static analysis engine for finding bugs, detecting vulnerabilities in third-party dependencies, and enforcing code standards. Developed by “Return To Corporation” (usually referred to as r2c) and open-source contributors. It works based on rules, which can focus on security, language best practices, or something else. Creating a rule is easy and semgrep is very powerful. For Django there are 29 rules.
+- **Bandit** – [Bandit](https://bandit.readthedocs.io/en/latest/) — это инструмент, предназначенный для нахождения общих проблем безопасности в Python. Для этого Bandit обрабатывает каждый файл, строит абстрактное синтаксическое дерево (AST) и запускает соответствующие плагины против узлов AST. После завершения сканирования всех файлов Bandit генерирует отчет. Bandit изначально был разработан в рамках проекта OpenStack Security и позже был перенесен в PyCQA.
 
-PyCharm Security – [Pycharm-security](https://pycharm-security.readthedocs.io/en/latest/index.html) is a plugin for PyCharm, or JetBrains IDEs with the Python plugin. The plugin looks at Python code for common security vulnerabilities and suggests fixes. It can also be executed from a Docker container. It has about 40 checks and some are Django specific.
+- **Semgrep** – [Semgrep](https://semgrep.dev/) — это быстрый, открытый статический анализатор для нахождения ошибок, обнаружения уязвимостей в сторонних зависимостях и соблюдения стандартов кода. Разработан компанией "Return To Corporation" (обычно называемой r2c) и участниками с открытым исходным кодом. Он работает на основе правил, которые могут быть сосредоточены на безопасности, лучших практиках языка или чем-то еще. Создать правило легко, и Semgrep очень мощный. Для Django имеется 29 правил.
 
-## Related Articles and References
+- **PyCharm Security** – [Pycharm-security](https://pycharm-security.readthedocs.io/en/latest/index.html) — это плагин для PyCharm или IDE от JetBrains с поддержкой Python. Плагин проверяет код Python на наличие общих уязвимостей в области безопасности и предлагает исправления. Его также можно выполнять из контейнера Docker. Он имеет около 40 проверок, некоторые из которых специфичны для Django.
 
-- [Django REST Framework (DRF) Secure Code Guidelines](https://openaccess.uoc.edu/handle/10609/147246)
-- [Django’s security policies](https://docs.djangoproject.com/en/4.1/internals/security/)
-- [Security in Django](https://docs.djangoproject.com/en/4.1/topics/security/)
+## Связанные статьи и ссылки
+
+- [Безопасные руководящие принципы для Django REST Framework (DRF)](https://openaccess.uoc.edu/handle/10609/147246)
+- [Политики безопасности Django](https://docs.djangoproject.com/en/4.1/internals/security/)
+- [Безопасность в Django](https://docs.djangoproject.com/en/4.1/topics/security/)

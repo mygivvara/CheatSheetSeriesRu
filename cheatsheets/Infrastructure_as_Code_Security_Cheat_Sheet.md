@@ -4,50 +4,50 @@ Licensed under the Creative Commons Attribution-ShareAlike 3.0 Unported License
 SPDX-License-Identifier: CC-BY-SA-3.0
 --->
 
-# Infrastructure as Code Security Cheatsheet
+# Руководство по безопасности Infrastructure as Code
 
-## Introduction
+## Введение
 
-Infrastructure as code (IaC), also known as software-defined infrastructure, allows the configuration and deployment of infrastructure components faster with consistency by allowing them to be defined as a code and also enables repeatable deployments across environments.
+Infrastructure as Code (IaC), также известная как программно определенная инфраструктура, позволяет быстрее настраивать и развертывать инфраструктурные компоненты с консистентностью, позволяя определять их как код, а также обеспечивает повторяемость развертываний между средами.
 
-### Security best practices
+### Лучшие практики безопасности
 
-Here are some of the security best practices for IaC that can be easily integrated into the Software Development Lifecycle:
+Вот некоторые лучшие практики безопасности для IaC, которые можно легко интегрировать в жизненный цикл разработки программного обеспечения:
 
-### Develop and Distribute
+### Разработка и Распространение
 
-- IDE plugins - Leverage standard security plug-ins in the integrated development environment (IDE) which helps in the early detection of potential risks and drastically reduces the time to address any issues later in the development cycle. Plugins such as TFLint, Checkov, Docker Linter, docker-vulnerability-extension, Security Scan, Contrast Security, etc., help in the security assessment of the IaC.
-- Threat modelling - Build the threat modelling landscape earlier in the development cycle to ensure there is enough visibility of the high-risk, high-volume aspects of the code and flexibility to include security throughout to ensure the assets are safely managed.
-- Managing secrets -  Secrets are confidential data and information such as application tokens required for authentication, passwords, and SSH (Secure Shell) keys. The problem is not the secrets, but where you store them. If you are using a simple text file or SCMs like Git, then the secrets can be easily exposed. Open-source tools such as truffleHog, git-secrets, GitGuardian and similar can be utilized to detect such vulnerable management of secrets. See the [Secrets Management Cheat Sheet](Secrets_Management_Cheat_Sheet.md) for more information.
-- Version control - Version control is the practice of tracking and managing changes to software code. Ensure all the changes to the IaC are tracked with the right set of information that helps in any revert operation. The important part is that you’re checking in those changes alongside the features they support and not separately. A feature’s infrastructure requirements should be a part of a feature’s branch or merge request. Git is generally used as the source code version control system.
-- Principle of least privilege - define the access management policies based on the principle of least privilege with the following priority items:
-  
-    - Defining who is and is not authorized to create/update/run/delete the scripts and inventory.
-    - Limiting the permissions of authorized IaC users to what is necessary to perform their tasks. The IaC scripts should ensure that the permissions granted to the various resources it creates are limited to what is required for them to perform their work.
+- **Плагины IDE** - Используйте стандартные плагины безопасности в интегрированной среде разработки (IDE), которые помогают в раннем обнаружении потенциальных рисков и значительно сокращают время на устранение проблем в дальнейшем цикле разработки. Плагины, такие как TFLint, Checkov, Docker Linter, docker-vulnerability-extension, Security Scan, Contrast Security и другие, помогают в оценке безопасности IaC.
+- **Моделирование угроз** - Создайте ландшафт моделирования угроз раньше в цикле разработки, чтобы обеспечить достаточную видимость высоких рисков и объема кода, а также гибкость для включения безопасности на протяжении всего процесса для безопасного управления активами.
+- **Управление секретами** - Секреты - это конфиденциальные данные и информация, такие как токены приложений, требуемые для аутентификации, пароли и ключи SSH (Secure Shell). Проблема не в самих секрете, а в том, где вы их храните. Если вы используете простой текстовый файл или системы управления версиями, такие как Git, то секреты могут быть легко раскрыты. Открытые инструменты, такие как truffleHog, git-secrets, GitGuardian и аналогичные, могут быть использованы для обнаружения уязвимого управления секретами. См. [Шпаргалку по по управлению секретами](Secrets_Management_Cheat_Sheet.md) для получения дополнительной информации.
+- **Управление версиями** - Управление версиями - это практика отслеживания и управления изменениями в исходном коде программного обеспечения. Убедитесь, что все изменения в IaC отслеживаются с правильным набором информации, что помогает в любых операциях отката. Важно проверять эти изменения вместе с функциями, которые они поддерживают, а не отдельно. Требования к инфраструктуре функции должны быть частью ветки функции или запроса на слияние. Git обычно используется как система управления версиями исходного кода.
+- **Принцип наименьших привилегий** - Определите политики управления доступом на основе принципа наименьших привилегий с учетом следующих приоритетов:
 
-- Static analysis - Analyzes code in isolation, identifying risks, misconfigurations, and compliance faults only relevant to the IaC itself. Tools such as kubescan, Snyk, Coverity etc, can be leveraged for static analysis of IaC.
-- Open Source dependency check - Analyzes the open source dependencies such as OS packages, libraries, etc., to identify potential risks. Tools such as BlackDuck, Snyk, WhiteSource Bolt for GitHub, and similar can be leveraged for open source dependency analysis of IaC.
-- Container image scan - Image scanning refers to the process of analyzing the contents and the build process of a container image in order to detect security issues, vulnerabilities or potential risks. Open-source tools such as Dagda, Clair, Trivy, Anchore, etc., can be leveraged for container image analysis.
-CI/CD pipeline and Consolidated reporting - enabling the security checks to be made available in the CI/CD pipeline enables the analysis of each of the code changes, excludes the need for manual intervention, and enables maintaining the history of compliance. Along with consolidated reporting, these integrations enhance the speed of development of a secure IaC codebase. Open-source tools such as Jenkins, etc., can be leveraged to build the CI/CD pipelines, and DefectDojo and OWASP Glue can help in tying the checks together and visualizing the check results in a single dashboard.
-- Artifact signing - Digital signing of artifacts at build time and validation of the signed data before use protects artifacts from tampering between build and runtime, thus ensuring the integrity and provenance of an artifact. Open-source tools such as TUF helps in the digital signing of artifacts.
+    - Определение, кто уполномочен создавать/обновлять/запускать/удалять скрипты и инвентарь, а кто нет.
+    - Ограничение прав авторизованных пользователей IaC до того, что необходимо для выполнения их задач. Скрипты IaC должны обеспечивать, чтобы права, предоставленные различным ресурсам, которые они создают, были ограничены тем, что необходимо для их работы.
 
-### Deploy
+- **Статический анализ** - Анализирует код в изоляции, выявляя риски, неправильные конфигурации и ошибки соответствия, которые относятся только к IaC. Инструменты, такие как kubescan, Snyk, Coverity и другие, могут быть использованы для статического анализа IaC.
+- **Проверка зависимостей с открытым исходным кодом** - Анализирует зависимости с открытым исходным кодом, такие как пакеты ОС, библиотеки и т. д., чтобы выявить потенциальные риски. Инструменты, такие как BlackDuck, Snyk, WhiteSource Bolt для GitHub и аналогичные, могут быть использованы для анализа зависимостей с открытым исходным кодом в IaC.
+- **Сканирование образов контейнеров** - Сканирование образов относится к процессу анализа содержимого и процесса сборки образа контейнера для обнаружения проблем безопасности, уязвимостей или потенциальных рисков. Открытые инструменты, такие как Dagda, Clair, Trivy, Anchore и другие, могут быть использованы для анализа образов контейнеров.
+- **CI/CD pipeline и консолидированное отчетность** - Включение проверок безопасности в CI/CD pipeline позволяет анализировать каждое изменение кода, исключает необходимость ручного вмешательства и поддерживает историю соблюдения требований. Вместе с консолидированным отчетом такие интеграции увеличивают скорость разработки безопасной базы кода IaC. Открытые инструменты, такие как Jenkins и другие, могут быть использованы для построения CI/CD pipeline, а DefectDojo и OWASP Glue могут помочь связать проверки и визуализировать результаты проверок на одной панели управления.
+- **Подпись артефактов** - Цифровая подпись артефактов во время сборки и проверка подписанных данных перед использованием защищает артефакты от подделки между сборкой и временем выполнения, тем самым обеспечивая целостность и происхождение артефакта. Открытые инструменты, такие как TUF, помогают в цифровой подписи артефактов.
 
-- Inventory management:
-    - Commissioning - whenever a resource is deployed, ensure the resource is labeled, tracked and logged as part of the inventory management.
-    - Decommissioning - whenever a resource deletion is initiated, ensure the underlying configurations are erased, data is securely deleted and the resource is completely removed from the runtime as well as from the inventory management.
-    - Tagging - It is essential to tag cloud assets properly. During IaC operations, untagged assets are most likely to result in ghost resources that make it difficult to detect, visualize, and gain observability within the cloud environment and can affect the posture causing a drift. These ghost resources can add to billing costs, make maintenance difficult, and affect the reliability. The only solution to this is careful tagging and monitoring for untagged resources.
-- Dynamic analysis - Dynamic analysis helps in evaluating any existing environments and services that it will interoperate with or run on. This helps in uncovering potential risks due to the interoperability. Open-source tools such as ZAP, Burp, GVM, etc., can be leveraged for dynamic analysis.
+### Развертывание
 
-### Runtime
+- **Управление инвентарем**:
+    - **Комиссия** - при развертывании ресурса убедитесь, что ресурс помечен, отслеживается и регистрируется в рамках управления инвентарем.
+    - **Деактивация** - при инициации удаления ресурса убедитесь, что базовые конфигурации стираются, данные безопасно удаляются, а ресурс полностью удаляется как из рабочей среды, так и из управления инвентарем.
+    - **Тегирование** - Крайне важно правильно тегировать облачные активы. Во время операций IaC, не помеченные активы скорее всего приведут к появлению «призрачных» ресурсов, которые трудно обнаружить, визуализировать и получить видимость в облачной среде, что может повлиять на безопасность, вызывая отклонения. Эти призрачные ресурсы могут увеличить затраты на выставление счетов, усложнить обслуживание и повлиять на надежность. Единственным решением является тщательное тегирование и мониторинг нетегированных ресурсов.
+- **Динамический анализ** - Динамический анализ помогает оценить любые существующие среды и службы, с которыми IaC будет взаимодействовать или на которых будет работать. Это помогает выявить потенциальные риски из-за совместимости. Открытые инструменты, такие как ZAP, Burp, GVM и другие, могут быть использованы для динамического анализа.
 
-- Immutability of infrastructure - The idea behind immutable infrastructure is to build the infrastructure components to an exact set of specifications. No deviation, no changes. If a change to a specification is required, then a whole new set of infrastructure is provisioned based on the updated requirements, and the previous infrastructure is taken out of service as obsolete.
-- Logging - Keeping a record is a critical aspect to keeping an eye on risks. You should enable logging - both security logs and audit logs - while provisioning infrastructure, as they help assess the security risks related to sensitive assets. They also assist in analyzing the root cause of incidents and in identifying potential threats. Open-source tools such as ELK, etc., can be leveraged for log analysis.
-- Monitoring - Continuous monitoring assists in looking out for any security and compliance violations, helps in identifying attacks and also provides alerts upon such incidents. Certain solutions also incorporate new technologies like AI to identify potential threats early. Open-source tools such as Prometheus, Grafana, etc., can be leveraged for monitoring of cloud infrastructure.
-- Runtime threat detection: Implementing a runtime threat detection solution helps in recognizing unexpected application behavior and alerts on threats at runtime. Open-source tools such as Falco, etc., can be leveraged for runtime threat detection. Certain application such as Contrast (Contrast Community Edition) can also detect OWASP Top 10 attacks on the application during runtime and help block them in order to protect and secure the application.
+### Время выполнения
 
-## References
+- **Невозможность изменения инфраструктуры** - Идея неизменяемой инфраструктуры заключается в создании компонентов инфраструктуры в точном соответствии с заданными спецификациями. Никаких отклонений, никаких изменений. Если требуется изменение спецификации, то создается новый набор инфраструктуры на основе обновленных требований, а предыдущая инфраструктура выводится из эксплуатации как устаревшая.
+- **Логирование** - Ведение записей является критическим аспектом для мониторинга рисков. Необходимо включить логирование - как логирование безопасности, так и аудита - во время развертывания инфраструктуры, так как это помогает оценивать риски безопасности, связанные с чувствительными активами. Оно также помогает в анализе коренных причин инцидентов и в выявлении потенциальных угроз. Открытые инструменты, такие как ELK и другие, могут быть использованы для анализа логов.
+- **Мониторинг** - Непрерывный мониторинг помогает выявлять нарушения безопасности и соблюдения требований, помогает в обнаружении атак и также предоставляет уведомления при таких инцидентах. Некоторые решения также включают новые технологии, такие как ИИ, для раннего обнаружения потенциальных угроз. Открытые инструменты, такие как Prometheus, Grafana и другие, могут быть использованы для мониторинга облачной инфраструктуры.
+- **Обнаружение угроз в реальном времени** - Реализация решения для обнаружения угроз в реальном времени помогает распознавать неожиданное поведение приложений и предупреждает о угрозах во время выполнения. Открытые инструменты, такие как Falco и другие, могут быть использованы для обнаружения угроз в реальном времени. Некоторые приложения, такие как Contrast (Contrast Community Edition), также могут обнаруживать атаки OWASP Top 10 на приложение во время выполнения и помогать блокировать их, чтобы защитить и обезопасить приложение.
 
-- Securing Infrastructure as code: <https://www.opcito.com/blogs/securing-infrastructure-as-code>
-- Infrastructure as code security: <https://dzone.com/articles/infrastructure-as-code-security>
-- Shifting cloud security left with infrastructure as code: <https://securityboulevard.com/2020/04/shifting-cloud-security-left-with-infrastructure-as-code/>
+## Ссылки
+
+- Безопасность Infrastructure as Code: <https://www.opcito.com/blogs/securing-infrastructure-as-code>
+- Безопасность Infrastructure as Code: <https://dzone.com/articles/infrastructure-as-code-security>
+- Перенос безопасности облака влево с помощью Infrastructure as Code: <https://securityboulevard.com/2020/04/shifting-cloud-security-left-with-infrastructure-as-code/>

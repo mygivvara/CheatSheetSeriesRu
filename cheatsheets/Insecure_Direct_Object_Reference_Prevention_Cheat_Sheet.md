@@ -1,50 +1,50 @@
-# Insecure Direct Object Reference Prevention Cheat Sheet
+# Шпаргалка по предотвращению Прямых Ненадежных Ссылок на Объекты (IDOR)
 
-## Introduction
+## Введение
 
-Insecure Direct Object Reference (IDOR) is a vulnerability that arises when attackers can access or modify objects by manipulating identifiers used in a web application's URLs or parameters. It occurs due to missing access control checks, which fail to verify whether a user should be allowed to access specific data.
+Прямая ненадежная ссылка на объект (IDOR) — это уязвимость, которая возникает, когда злоумышленники могут получить доступ к объектам или изменить их, манипулируя идентификаторами, используемыми в URL или параметрах веб-приложения. Она возникает из-за отсутствия проверок контроля доступа, которые не подтверждают, имеет ли пользователь право на доступ к конкретным данным.
 
-## Examples
+## Примеры
 
-For instance, when a user accesses their profile, the application might generate a URL like this:
+Например, когда пользователь заходит в свой профиль, приложение может создать URL такого вида:
 
 ```
 https://example.org/users/123
 ```
 
-The 123 in the URL is a direct reference to the user's record in the database, often represented by the primary key. If an attacker changes this number to 124 and gains access to another user's information, the application is vulnerable to Insecure Direct Object Reference. This happens because the app didn't properly check if the user had permission to view data for user 124 before displaying it.
+Число 123 в URL является прямой ссылкой на запись пользователя в базе данных, часто представленное первичным ключом. Если злоумышленник изменяет это число на 124 и получает доступ к информации другого пользователя, приложение уязвимо для IDOR. Это происходит потому, что приложение не проверило, имеет ли пользователь разрешение на просмотр данных пользователя 124 перед их отображением.
 
-In some cases, the identifier may not be in the URL, but rather in the POST body, as shown in the following example:
+В некоторых случаях идентификатор может находиться не в URL, а в POST-данных, как показано в следующем примере:
 
 ```
 <form action="/update_profile" method="post">
-  <!-- Other fields for updating name, email, etc. -->
+  <!-- Другие поля для обновления имени, email и т.д. -->
   <input type="hidden" name="user_id" value="12345">
-  <button type="submit">Update Profile</button>
+  <button type="submit">Обновить профиль</button>
 </form>
 ```
 
-In this example, the application allows users to update their profiles by submitting a form with the user ID in a hidden field. If the app doesn't perform proper access control on the server-side, attackers can manipulate the "user_id" field to modify profiles of other users without authorization.
+В этом примере приложение позволяет пользователям обновлять свои профили, отправляя форму с идентификатором пользователя в скрытом поле. Если приложение не выполняет надлежащую проверку контроля доступа на стороне сервера, злоумышленники могут манипулировать полем "user_id" для изменения профилей других пользователей без разрешения.
 
-## Identifier complexity
+## Сложность идентификаторов
 
-In some cases, using more complex identifiers like GUIDs can make it practically impossible for attackers to guess valid values. However, even with complex identifiers, access control checks are essential. If attackers obtain URLs for unauthorized objects, the application should still block their access attempts.
+В некоторых случаях использование более сложных идентификаторов, таких как GUID, может сделать практически невозможным для злоумышленников угадывание допустимых значений. Однако даже с сложными идентификаторами проверки контроля доступа необходимы. Если злоумышленники получают URL для неавторизованных объектов, приложение должно блокировать их попытки доступа.
 
-## Mitigation
+## Меры по предотвращению
 
-To mitigate IDOR, implement access control checks for each object that users try to access. Web frameworks often provide ways to facilitate this. Additionally, use complex identifiers as a defense-in-depth measure, but remember that access control is crucial even with these identifiers.
+Для предотвращения IDOR реализуйте проверки контроля доступа для каждого объекта, к которому пользователи пытаются получить доступ. Веб-фреймворки часто предоставляют способы упрощения этого процесса. Кроме того, используйте сложные идентификаторы в качестве дополнительной меры защиты, но помните, что контроль доступа остается критически важным, даже при использовании таких идентификаторов.
 
-Avoid exposing identifiers in URLs and POST bodies if possible. Instead, determine the currently authenticated user from session information. When using multi-step flows, pass identifiers in the session to prevent tampering.
+Избегайте раскрытия идентификаторов в URL и POST-данных, если это возможно. Вместо этого определяйте текущего аутентифицированного пользователя по информации о сессии. При использовании многоступенчатых потоков передавайте идентификаторы в сессии, чтобы предотвратить их подделку.
 
-When looking up objects based on primary keys, use datasets that users have access to. For example, in Ruby on Rails:
+При поиске объектов по первичным ключам используйте наборы данных, к которым у пользователей есть доступ. Например, в Ruby on Rails:
 
 ```
-// vulnerable, searches all projects
+# Уязвимо, ищет все проекты
 @project = Project.find(params[:id])
-// secure, searches projects related to the current user
+# Безопасно, ищет проекты, связанные с текущим пользователем
 @project = @current_user.projects.find(params[:id])
 ```
 
-Verify the user's permission every time an access attempt is made. Implement this structurally using the recommended approach for your web framework.
+Проверяйте разрешение пользователя каждый раз, когда осуществляется попытка доступа. Реализуйте это структурно, используя рекомендованный подход для вашего веб-фреймворка.
 
-As an additional defense-in-depth measure, replace enumerable numeric identifiers with more complex, random identifiers. You can achieve this by adding a column with random strings in the database table and using those strings in the URLs instead of numeric primary keys. Another option is to use UUIDs or other long random values as primary keys. Avoid encrypting identifiers as it can be challenging to do so securely.
+В качестве дополнительной меры защиты замените числовые идентификаторы на более сложные, случайные идентификаторы. Это можно сделать, добавив колонку со случайными строками в таблицу базы данных и используя эти строки в URL вместо числовых первичных ключей. Еще одним вариантом является использование UUID или других длинных случайных значений в качестве первичных ключей. Избегайте шифрования идентификаторов, так как это может быть сложно сделать безопасно.

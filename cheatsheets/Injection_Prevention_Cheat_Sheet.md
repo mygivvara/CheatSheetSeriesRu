@@ -1,234 +1,232 @@
-# Injection Prevention Cheat Sheet
+# Шпаргалка по предотвращению инъекций
 
-## Introduction
+## Введение
 
-This article is focused on providing clear, simple, actionable guidance for preventing the entire category of Injection flaws in your applications. Injection attacks, especially [SQL Injection](https://owasp.org/www-community/attacks/SQL_Injection), are unfortunately very common.
+Эта статья сосредоточена на предоставлении ясных, простых и практических рекомендаций по предотвращению всех видов уязвимостей инъекций в ваших приложениях. Атаки инъекций, особенно [SQL-инъекции](https://owasp.org/www-community/attacks/SQL_Injection), к сожалению, очень распространены.
 
-Application accessibility is a very important factor in protection and prevention of injection flaws. Only the minority of all applications within a company/enterprise are developed in house, where as most applications are from external sources. Open source applications give at least the opportunity to fix problems, but closed source applications need a different approach to injection flaws.
+Доступность приложения является важным фактором в защите и предотвращении уязвимостей инъекций. Только меньшинство всех приложений в компании/предприятии разрабатывается внутри компании, тогда как большинство приложений поступает из внешних источников. Открытые приложения по крайней мере дают возможность исправить проблемы, но закрытые приложения требуют другого подхода к уязвимостям инъекций.
 
-Injection flaws occur when an application sends untrusted data to an interpreter. Injection flaws are very prevalent, particularly in legacy code, often found in SQL queries, LDAP queries, XPath queries, OS commands, program arguments, etc. Injection flaws are easy to discover when examining code, but more difficult via testing. Scanners and fuzzers can help attackers find them.
+Уязвимости инъекций возникают, когда приложение отправляет ненадежные данные интерпретатору. Уязвимости инъекций очень распространены, особенно в старом коде, часто встречаются в SQL-запросах, LDAP-запросах, XPath-запросах, системных командах, аргументах программы и т.д. Уязвимости инъекций легко обнаружить при проверке кода, но сложнее — при тестировании. Сканеры и фуззеры могут помочь злоумышленникам найти их.
 
-Depending on the accessibility different actions must be taken in order to fix them. It is always the best way to fix the problem in source code itself, or even redesign some parts of the applications. But if the source code is not available or it is simply uneconomical to fix legacy software only virtual patching makes sense.
+В зависимости от доступности необходимо предпринимать различные действия для их исправления. Всегда лучше исправить проблему в исходном коде или даже перепроектировать некоторые части приложений. Но если исходный код недоступен или исправление старого ПО экономически нецелесообразно, то имеет смысл использовать виртуальное патчирование.
 
-## Application Types
+## Типы приложений
 
-Three classes of applications can usually be seen within a company. Those 3 types are needed to identify the actions which need to take place in order to prevent/fix injection flaws.
+В компании обычно можно выделить три класса приложений. Эти три типа необходимы для определения действий, которые нужно предпринять для предотвращения/исправления уязвимостей инъекций.
 
-### A1: New Application
+### A1: Новое приложение
 
-A new web application in the design phase, or in early stage development.
+Новое веб-приложение, находящееся на стадии проектирования или в ранней стадии разработки.
 
-### A2: Productive Open Source Application
+### A2: Продуктивное открытое приложение
 
-An already productive application, which can be easily adapted. A Model-View-Controller (MVC) type application is just one example of having a easily accessible application architecture.
+Уже продуктивное приложение, которое можно легко адаптировать. Приложение типа Model-View-Controller (MVC) является лишь одним примером легко доступной архитектуры приложения.
 
-### A3: Productive Closed Source Application
+### A3: Продуктивное закрытое приложение
 
-A productive application which cannot or only with difficulty be modified.
+Продуктивное приложение, которое нельзя или трудно изменить.
 
-## Forms of Injection
+## Формы инъекций
 
-There are several forms of injection targeting different technologies including SQL queries, LDAP queries, XPath queries and OS commands.
+Существует несколько форм инъекций, нацеленных на различные технологии, включая SQL-запросы, LDAP-запросы, XPath-запросы и системные команды.
 
-### Query languages
+### Языки запросов
 
-The most famous form of injection is SQL Injection where an attacker can modify existing database queries. For more information see the [SQL Injection Prevention Cheat Sheet](SQL_Injection_Prevention_Cheat_Sheet.md).
+Самая известная форма инъекции — SQL-инъекция, при которой злоумышленник может изменять существующие запросы к базе данных. Для получения дополнительной информации см. [Шпаргалку по предотвращению SQL-инъекций](SQL_Injection_Prevention_Cheat_Sheet.md).
 
-But also LDAP, SOAP, XPath and REST based queries can be susceptible to injection attacks allowing for data retrieval or control bypass.
+Однако также LDAP, SOAP, XPath и REST-запросы могут быть подвержены атакам инъекций, что позволяет получать данные или обойти контроль.
 
-#### SQL Injection
+#### SQL-инъекция
 
-An SQL injection attack consists of insertion or "injection" of either a partial or complete SQL query via the data input or transmitted from the client (browser) to the web application.
+Атака SQL-инъекции заключается во вставке или "инъекции" частичного или полного SQL-запроса через ввод данных или передаваемых с клиента (браузера) в веб-приложение.
 
-A successful SQL injection attack can read sensitive data from the database, modify database data (insert/update/delete), execute administration operations on the database (such as shutdown the DBMS), recover the content of a given file existing on the DBMS file system or write files into the file system, and, in some cases, issue commands to the operating system. SQL injection attacks are a type of injection attack, in which SQL commands are injected into data-plane input in order to affect the execution of predefined SQL commands.
+Успешная атака SQL-инъекции может читать конфиденциальные данные из базы данных, изменять данные базы данных (вставка/обновление/удаление), выполнять административные операции с базой данных (например, выключение СУБД), восстанавливать содержимое определенного файла, существующего на файловой системе СУБД, или записывать файлы в файловую систему, а в некоторых случаях выдавать команды операционной системе. Атаки SQL-инъекций являются типом атак инъекций, при которых SQL-команды внедряются в данные на уровне ввода, чтобы повлиять на выполнение заранее определенных SQL-команд.
 
-SQL Injection attacks can be divided into the following three classes:
+Атаки SQL-инъекций можно разделить на следующие три класса:
 
-- **Inband:** data is extracted using the same channel that is used to inject the SQL code. This is the most straightforward kind of attack, in which the retrieved data is presented directly in the application web page.
-- **Out-of-band:** data is retrieved using a different channel (e.g., an email with the results of the query is generated and sent to the tester).
-- **Inferential or Blind:** there is no actual transfer of data, but the tester is able to reconstruct the information by sending particular requests and observing the resulting behavior of the DB Server.
+- **Inband (внутренний):** данные извлекаются с помощью того же канала, который используется для инъекции SQL-кода. Это самый прямой вид атаки, при котором извлеченные данные отображаются непосредственно на веб-странице приложения.
+- **Out-of-band (внешний):** данные извлекаются с помощью другого канала (например, создается и отправляется по электронной почте отчет с результатами запроса).
+- **Inferential или Blind (инференциальный или слепой):** фактический перенос данных отсутствует, но тестер может восстановить информацию, отправляя определенные запросы и наблюдая за поведением сервера БД.
 
-##### How to test for the issue
+##### Как тестировать проблему
 
-###### During code review
+###### Во время ревизии кода
 
-please check for any queries to the database are not done via prepared statements.
+Пожалуйста, проверьте, что запросы к базе данных не выполняются через динамические запросы.
 
-If dynamic statements are being made please check if the data is sanitized before used as part of the statement.
+Если используются динамические запросы, убедитесь, что данные очищены перед использованием в запросе.
 
-Auditors should always look for uses of sp_execute, execute or exec within SQL Server stored procedures. Similar audit guidelines are necessary for similar functions for other vendors.
+Аудиторы всегда должны искать использования функций sp_execute, execute или exec в хранимых процедурах SQL Server. Аналогичные рекомендации по аудиту применимы и к другим функциям для других поставщиков.
 
-###### Automated Exploitation
+###### Автоматизированное использование
 
-Most of the situation and techniques below here can be performed in a automated way using some tools. In this article the tester can find information how to perform an automated auditing using [SQLMap](https://wiki.owasp.org/index.php/Automated_Audit_using_SQLMap)
+Многие из ситуаций и техник ниже могут быть выполнены автоматическим способом с помощью некоторых инструментов. В этой статье тестер может найти информацию о том, как выполнить автоматизированный аудит с помощью [SQLMap](https://wiki.owasp.org/index.php/Automated_Audit_using_SQLMap).
 
-Equally Static Code Analysis Data flow rules can detect of unsanitized user controlled input can change the SQL query.
+Аналогично, правила статического анализа кода могут обнаруживать неочищенные пользовательские вводы, которые могут изменить SQL-запрос.
 
-###### Stored Procedure Injection
+###### Инъекция в хранимую процедуру
 
-When using dynamic SQL within a stored procedure, the application must properly sanitize the user input to eliminate the risk of code injection. If not sanitized, the user could enter malicious SQL that will be executed within the stored procedure.
+При использовании динамического SQL в хранимой процедуре приложение должно правильно очищать пользовательский ввод, чтобы устранить риск инъекции кода. Если ввод не очищается, пользователь может ввести вредоносный SQL-код, который будет выполнен в хранимой процедуре.
 
-###### Time delay Exploitation technique
+###### Техника эксплуатации задержки времени
 
-The time delay exploitation technique is very useful when the tester find a Blind SQL Injection situation, in which nothing is known on the outcome of an operation. This technique consists in sending an injected query and in case the conditional is true, the tester can monitor the time taken to for the server to respond. If there is a delay, the tester can assume the result of the conditional query is true. This exploitation technique can be different from DBMS to DBMS (check DBMS specific section).
+Техника эксплуатации задержки времени очень полезна, когда тестер сталкивается с ситуацией Blind SQL Injection, в которой результат операции неизвестен. Эта техника заключается в отправке инъекционного запроса и, если условие истинно, тестер может отслеживать время ответа сервера. Если есть задержка, тестер может предположить, что результат условного запроса истинный. Эта техника эксплуатации может отличаться от СУБД к СУБД (см. раздел, специфичный для СУБД).
 
 ```text
 http://www.example.com/product.php?id=10 AND IF(version() like '5%', sleep(10), 'false'))--
 ```
 
-In this example the tester is checking whether the MySql version is 5.x or not, making the server delay the answer by 10 seconds. The tester can increase the delay time and monitor the responses. The tester also doesn't need to wait for the response. Sometimes they can set a very high value (e.g. 100) and cancel the request after some seconds.
+В этом примере тестер проверяет, является ли версия MySQL 5.x или нет, заставляя сервер задерживать ответ на 10 секунд. Тестер может увеличить время задержки и отслеживать ответы. Также не всегда нужно ждать ответа. Иногда можно установить очень высокое значение (например, 100) и отменить запрос через несколько секунд.
 
-###### Out of band Exploitation technique
+###### Техника внешней эксплуатации
 
-This technique is very useful when the tester find a Blind SQL Injection situation, in which nothing is known on the outcome of an operation. The technique consists of the use of DBMS functions to perform an out of band connection and deliver the results of the injected query as part of the request to the tester's server. Like the error based techniques, each DBMS has its own functions. Check for specific DBMS section.
+Эта техника очень полезна, когда тестер сталкивается с ситуацией Blind SQL Injection, при которой результат операции неизвестен. Техника состоит в использовании функций СУБД для выполнения внешнего соединения и передачи результатов инъекционного запроса в запрос к серверу тестера. Как и в случае с техниками на основе ошибок, каждая СУБД имеет свои функции. Проверьте раздел, специфичный для СУБД.
 
-##### Remediation
+##### Средства защиты
 
-###### Defense Option 1: Prepared Statements (with Parameterized Queries)
+###### Опция защиты 1: Подготовленные выражения (с параметризованными запросами)
 
-Prepared statements ensure that an attacker is not able to change the intent of a query, even if SQL commands are inserted by an attacker. In the safe example below, if an attacker were to enter the userID of `tom' or '1'='1`, the parameterized query would not be vulnerable and would instead look for a username which literally matched the entire string `tom' or '1'='1`.
+Подготовленные выражения гарантируют, что злоумышленник не сможет изменить намерение запроса, даже если SQL-команды вставлены злоумышленником. В приведенном ниже безопасном примере, если злоумышленник введет userID как `tom' or '1'='1`, параметризованный запрос не будет уязвим и вместо этого будет искать имя пользователя, которое буквально соответствует всей строке `tom' or '1'='1`.
 
-###### Defense Option 2: Stored Procedures
+###### Опция защиты 2: Хранимые процедуры
 
-The difference between prepared statements and stored procedures is that the SQL code for a stored procedure is defined and stored in the database itself, and then called from the application.
+Разница между подготовленными выражениями и хранимыми процедурами заключается в том, что SQL-код для хранимой процедуры определяется и хранится в самой базе данных, а затем вызывается из приложения.
 
-Both of these techniques have the same effectiveness in preventing SQL injection so your organization should choose which approach makes the most sense for you. Stored procedures are not always safe from SQL injection. However, certain standard stored procedure programming constructs have the same effect as the use of parameterized queries when implemented safely* which is the norm for most stored procedure languages.
+Обе эти техники имеют одинаковую эффективность в предотвращении SQL-инъекций, поэтому вашей организации следует выбрать, какой подход наиболее подходит для вас. Хранимые процедуры не всегда защищены от SQL-инъекций. Однако некоторые стандартные конструкции программирования хранимых процедур имеют тот же эффект, что и использование параметризованных запросов, если они реализованы безопасно, что является нормой для большинства языков программирования хранимых процедур.
 
-*Note:* 'Implemented safely' means the stored procedure does not include any unsafe dynamic SQL generation.
+*Примечание:* 'Реализовано безопасно' означает, что хранимая процедура не включает небезопасное динамическое создание SQL.
 
-###### Defense Option 3: Allow-List Input Validation
+###### Опция защиты 3: Проверка входных данных по белому списку
 
-Various parts of SQL queries aren't legal locations for the use of bind variables, such as the names of tables or columns, and the sort order indicator (ASC or DESC). In such situations, input validation or query redesign is the most appropriate defense. For the names of tables or columns, ideally those values come from the code, and not from user parameters.
+Некоторые части SQL-запросов не являются допустимыми местами для использования переменных привязки, такие как имена таблиц или столбцов и индикатор порядка сортировки (ASC или DESC). В таких ситуациях проверка входных данных или переработка запроса является наиболее подходящей защитой. Для имен таблиц или столбцов идеальным вариантом является получение этих значений из кода, а не из параметров пользователя.
 
-But if user parameter values are used to make different for table names and column names, then the parameter values should be mapped to the legal/expected table or column names to make sure unvalidated user input doesn't end up in the query. Please note, this is a symptom of poor design and a full rewrite should be considered if time allows.
+Если значения параметров пользователя используются для задания различных имен таблиц и столбцов, то значения параметров должны быть сопоставлены с законными/ожидаемыми именами таблиц или столбцов, чтобы гарантировать, что непроверенные входные данные пользователя не окажутся в запросе. Обратите внимание, что это симптом плохого дизайна, и полная переработка должна быть рассмотрена, если позволяет время.
 
-###### Defense Option 4: Escaping All User-Supplied Input
+###### Опция защиты 4: Экранирование всех данных, предоставляемых пользователем
 
-This technique should only be used as a last resort, when none of the above are feasible. Input validation is probably a better choice as this methodology is frail compared to other defenses and we cannot guarantee it will prevent all SQL Injection in all situations.
+Эта техника должна использоваться только в крайнем случае, когда ни одна из вышеупомянутых не применима. Проверка входных данных, вероятно, является лучшим выбором, так как эта методология является менее надежной по сравнению с другими методами защиты, и мы не можем гарантировать, что она предотвратит все SQL-инъекции в любых ситуациях.
 
-This technique is to escape user input before putting it in a query. It's usually only recommended to retrofit legacy code when implementing input validation isn't cost effective.
+Эта техника заключается в экранировании пользовательского ввода перед тем, как включить его в запрос. Обычно рекомендуется использовать ее только для старого кода, когда реализация проверки входных данных не является экономически целесообразной.
 
-##### Example code - Java
+##### Пример кода - Java
 
-###### Safe Java Prepared Statement Example
+###### Пример безопасного подготовленного запроса в Java
 
-The following code example uses a `PreparedStatement`, Java's implementation of a parameterized query, to execute the same database query.
+В следующем примере кода используется `PreparedStatement`, реализация параметризованного запроса в Java, для выполнения того же запроса к базе данных.
 
 ```java
-// This should REALLY be validated too
+// Это тоже следует проверить
 String custname = request.getParameter("customerName");
-// Perform input validation to detect attacks
+// Выполните проверку ввода для обнаружения атак
 String query = "SELECT account_balance FROM user_data WHERE user_name = ?";
 PreparedStatement pstmt = connection.prepareStatement(query);
 pstmt.setString(1, custname);
 ResultSet results = pstmt.executeQuery();
 ```
 
-We have shown examples in Java, but practically all other languages, including Cold Fusion, and Classic ASP, support parameterized query interfaces.
+В этом примере показаны примеры на Java, но практически все другие языки, включая Cold Fusion и Classic ASP, поддерживают интерфейсы параметризованных запросов.
 
-###### Safe Java Stored Procedure Example
+###### Пример безопасной хранимой процедуры в Java
 
-The following code example uses a `CallableStatement`, Java's implementation of the stored procedure interface, to execute the same database query. The `sp_getAccountBalance` stored procedure would have to be predefined in the database and implement the same functionality as the query defined above.
+В следующем примере кода используется `CallableStatement`, реализация интерфейса хранимой процедуры в Java, для выполнения того же запроса к базе данных. Хранимая процедура `sp_getAccountBalance` должна быть предварительно определена в базе данных и реализовывать ту же функциональность, что и запрос, указанный выше.
 
 ```java
-// This should REALLY be validated
+// Это тоже следует проверить
 String custname = request.getParameter("customerName");
 try {
  CallableStatement cs = connection.prepareCall("{call sp_getAccountBalance(?)}");
  cs.setString(1, custname);
  ResultSet results = cs.executeQuery();
- // Result set handling...
+ // Обработка набора результатов...
 } catch (SQLException se) {
- // Logging and error handling...
+ // Логирование и обработка ошибок...
 }
 ```
 
 #### LDAP Injection
 
-LDAP Injection is an attack used to exploit web based applications that construct LDAP statements based on user input. When an application fails to properly sanitize user input, it's possible to modify LDAP statements through techniques similar to [SQL Injection](https://owasp.org/www-community/attacks/SQL_Injection). LDAP injection attacks could result in the granting of permissions to unauthorized queries, and content modification inside the LDAP tree. For more information on LDAP Injection attacks, visit [LDAP injection](https://owasp.org/www-community/attacks/LDAP_Injection).
+LDAP Injection — это атака, используемая для эксплуатации веб-приложений, которые строят LDAP-запросы на основе ввода пользователя. Когда приложение не правильно обрабатывает ввод пользователя, это позволяет изменять LDAP-запросы с помощью методов, аналогичных [SQL Injection](https://owasp.org/www-community/attacks/SQL_Injection). Атаки LDAP-инъекции могут привести к предоставлению разрешений несанкционированным запросам и модификации содержимого внутри LDAP-дерева. Для получения дополнительной информации об атаках LDAP-инъекций, посетите [LDAP Injection](https://owasp.org/www-community/attacks/LDAP_Injection).
 
-[LDAP injection](https://owasp.org/www-community/attacks/LDAP_Injection) attacks are common due to two factors:
+Атаки [LDAP Injection](https://owasp.org/www-community/attacks/LDAP_Injection) распространены по двум причинам:
 
-1. The lack of safer, parameterized LDAP query interfaces
-2. The widespread use of LDAP to authenticate users to systems.
+1. Отсутствие более безопасных интерфейсов параметризованных LDAP-запросов.
+2. Широкое использование LDAP для аутентификации пользователей в системах.
 
-##### How to test for the issue
+##### Как протестировать проблему
 
-###### During code review
+###### Во время обзора кода
 
-Please check for any queries to the LDAP escape special characters, see [here](LDAP_Injection_Prevention_Cheat_Sheet.md#defense-option-1-escape-all-variables-using-the-right-ldap-encoding-function).
+Проверьте, чтобы запросы к LDAP экранировали специальные символы. См. [здесь](LDAP_Injection_Prevention_Cheat_Sheet.md#defense-option-1-escape-all-variables-using-the-right-ldap-encoding-function).
 
-###### Automated Exploitation
+###### Автоматизированная эксплуатация
 
-Scanner module of tool like OWASP [ZAP](https://www.zaproxy.org/) have module to detect LDAP injection issue.
+Модуль сканирования инструментов, таких как OWASP [ZAP](https://www.zaproxy.org/), имеет модуль для обнаружения проблем LDAP-инъекции.
 
-##### Remediation
+##### Устранение
 
-###### Escape all variables using the right LDAP encoding function
+###### Экранируйте все переменные с использованием правильной функции кодирования LDAP
 
-The main way LDAP stores names is based on DN ([distinguished name](https://ldapwiki.com/wiki/Distinguished%20Names)). You can think of this like a unique identifier. These are sometimes used to access resources, like a username.
+Основной способ хранения имен в LDAP основывается на DN ([distinguished name](https://ldapwiki.com/wiki/Distinguished%20Names)). Можно думать об этом как о уникальном идентификаторе. Эти имена иногда используются для доступа к ресурсам, таким как имя пользователя.
 
-A DN might look like this
+DN может выглядеть следующим образом:
 
 ```text
 cn=Richard Feynman, ou=Physics Department, dc=Caltech, dc=edu
 ```
 
-or
+или
 
 ```text
 uid=inewton, ou=Mathematics Department, dc=Cambridge, dc=com
 ```
 
-There are certain characters that are considered special characters in a DN. The exhaustive list is the following: `\ # + < > , ; " =` and leading or trailing spaces
+Существуют определенные символы, которые считаются специальными в DN. Полный список таков: `\ # + < > , ; " =` и пробелы в начале или в конце.
 
-Each DN points to exactly 1 entry, which can be thought of sort of like a row in a RDBMS. For each entry, there will be 1 or more attributes which are analogous to RDBMS columns. If you are interested in searching through LDAP for users will certain attributes, you may do so with search filters. In a search filter, you can use standard boolean logic to get a list of users matching an arbitrary constraint. Search filters are written in Polish notation AKA prefix notation.
+Каждый DN указывает на один элемент, который можно считать аналогом строки в RDBMS. Для каждого элемента будут 1 или несколько атрибутов, аналогичных столбцам в RDBMS. Если вы хотите искать пользователей в LDAP по определенным атрибутам, вы можете использовать фильтры поиска. В фильтре поиска можно использовать стандартную булеву логику для получения списка пользователей, соответствующих произвольному условию. Фильтры поиска записываются в польской нотации, также известной как префиксная нотация.
 
-Example:
+Пример:
 
 ```text
 (&(ou=Physics)(| (manager=cn=Freeman Dyson,ou=Physics,dc=Caltech,dc=edu)
-(manager=cn=Albert Einstein,ou=Physics,dc=Princeton,dc=edu) ))
+(manager=cn=Albert Einstein,ou=Physics,dc=Princeton,dc=edu)  ))
 ```
 
-When building LDAP queries in application code, you MUST escape any untrusted data that is added to any LDAP query. There are two forms of LDAP escaping. Encoding for LDAP Search and Encoding for LDAP DN (distinguished name). The proper escaping depends on whether you are sanitizing input for a search filter, or you are using a DN as a username-like credential for accessing some resource.
+При построении LDAP-запросов в коде приложения ВЫ ДОЛЖНЫ экранировать любые ненадежные данные, которые добавляются в LDAP-запрос. Существует два вида экранирования LDAP: кодирование для LDAP поиска и кодирование для LDAP DN (distinguished name). Правильное экранирование зависит от того, очищаете ли вы ввод для фильтра поиска или используете DN как идентификатор, подобный имени пользователя, для доступа к какому-либо ресурсу.
 
-##### Example code - Java
+##### Пример кода — Java
 
-###### Safe Java for LDAP escaping Example
+###### Безопасный пример экранирования LDAP в Java
 
 ```java
 public String escapeDN (String name) {
- //From RFC 2253 and the / character for JNDI
- final char[] META_CHARS = {'+', '"', '<', '>', ';', '/'};
- String escapedStr = new String(name);
- //Backslash is both a Java and an LDAP escape character,
- //so escape it first
- escapedStr = escapedStr.replaceAll("\\\\\\\\","\\\\\\\\");
- //Positional characters - see RFC 2253
- escapedStr = escapedStr.replaceAll("\^#","\\\\\\\\#");
- escapedStr = escapedStr.replaceAll("\^ | $","\\\\\\\\ ");
- for (int i=0 ; i < META_CHARS.length ; i++) {
-        escapedStr = escapedStr.replaceAll("\\\\" +
-                     META_CHARS[i],"\\\\\\\\" + META_CHARS[i]);
- }
- return escapedStr;
+    // Согласно RFC 2253 и символу / для JNDI
+    final char[] META_CHARS = {'+', '"', '<', '>', ';', '/'};
+    String escapedStr = new String(name);
+    // Обратная косая черта является как символом экранирования Java, так и LDAP,
+    // поэтому сначала экранируем ее
+    escapedStr = escapedStr.replaceAll("\\\\\\\\", "\\\\\\\\\\");
+    // Позиционные символы - см. RFC 2253
+    escapedStr = escapedStr.replaceAll("\\^#", "\\\\\\\\#");
+    escapedStr = escapedStr.replaceAll("\\^ | $", "\\\\\\\\ ");
+    for (int i = 0; i < META_CHARS.length; i++) {
+        escapedStr = escapedStr.replaceAll("\\\\" + META_CHARS[i], "\\\\\\\\" + META_CHARS[i]);
+    }
+    return escapedStr;
 }
 ```
 
-Note, that the backslash character is a Java String literal and a regular expression escape character.
+Обратите внимание, что символ обратной косой черты является как литералом строки Java, так и символом экранирования регулярных выражений.
 
 ```java
 public String escapeSearchFilter (String filter) {
- //From RFC 2254
- String escapedStr = new String(filter);
- escapedStr = escapedStr.replaceAll("\\\\\\\\","\\\\\\\\5c");
- escapedStr = escapedStr.replaceAll("\\\\\*","\\\\\\\\2a");
- escapedStr = escapedStr.replaceAll("\\\\(","\\\\\\\\28");
- escapedStr = escapedStr.replaceAll("\\\\)","\\\\\\\\29");
- escapedStr = escapedStr.replaceAll("\\\\" +
-               Character.toString('\\u0000'), "\\\\\\\\00");
- return escapedStr;
+    // Согласно RFC 2254
+    String escapedStr = new String(filter);
+    escapedStr = escapedStr.replaceAll("\\\\\\\\", "\\\\\\\\\\5c");
+    escapedStr = escapedStr.replaceAll("\\\\*", "\\\\\\\\\\2a");
+    escapedStr = escapedStr.replaceAll("\\\\(", "\\\\\\\\\\28");
+    escapedStr = escapedStr.replaceAll("\\\\)", "\\\\\\\\\\29");
+    escapedStr = escapedStr.replaceAll("\\\\" + Character.toString('\\u0000'), "\\\\\\\\00");
+    return escapedStr;
 }
 ```
 
@@ -236,58 +234,59 @@ public String escapeSearchFilter (String filter) {
 
 TODO
 
-### Scripting languages
+### Языки сценариев
 
-All scripting languages used in web applications have a form of an `eval` call which receives code at runtime and executes it. If code is crafted using unvalidated and unescaped user input code injection can occur which allows an attacker to subvert application logic and eventually to gain local access.
+Все языки сценариев, используемые в веб-приложениях, имеют форму вызова `eval`, которая получает код во время выполнения и выполняет его. Если код создается с использованием непроверенного и неэкранированного пользовательского ввода, может возникнуть внедрение кода, что позволяет злоумышленнику подменить логику приложения и в конечном итоге получить локальный доступ.
 
-Every time a scripting language is used, the actual implementation of the 'higher' scripting language is done using a 'lower' language like C. If the scripting language has a flaw in the data handling code '[Null Byte Injection](http://projects.webappsec.org/w/page/13246949/Null%20Byte%20Injection)' attack vectors can be deployed to gain access to other areas in memory, which results in a successful attack.
+Каждый раз, когда используется язык сценариев, фактическая реализация "высшего" языка сценариев выполняется с использованием "нижнего" языка, такого как C. Если язык сценариев имеет недостаток в коде обработки данных, могут быть использованы векторы атаки, такие как '[Null Byte Injection](http://projects.webappsec.org/w/page/13246949/Null%20Byte%20Injection)', чтобы получить доступ к другим областям памяти, что приведет к успешной атаке.
 
-### Operating System Commands
+### Команды операционной системы
 
-OS command injection is a technique used via a web interface in order to execute OS commands on a web server. The user supplies operating system commands through a web interface in order to execute OS commands.
+Внедрение команд операционной системы — это техника, используемая через веб-интерфейс для выполнения команд ОС на веб-сервере. Пользователь передает команды операционной системы через веб-интерфейс для их выполнения.
 
-Any web interface that is not properly sanitized is subject to this exploit. With the ability to execute OS commands, the user can upload malicious programs or even obtain passwords. OS command injection is preventable when security is emphasized during the design and development of applications.
+Любой веб-интерфейс, который не очищен должным образом, подвержен этой уязвимости. С возможностью выполнения команд ОС пользователь может загружать вредоносные программы или даже получить пароли. Внедрение команд ОС можно предотвратить, если безопасность будет приоритетом при проектировании и разработке приложений.
 
-#### How to test for the issue
+#### Как проверить проблему
 
-##### During code review
+##### Во время кода
 
-Check if any command execute methods are called and in unvalidated user input are taken as data for that command.
+Проверьте, вызываются ли методы выполнения команд и принимаются ли непроверенные пользовательские данные в качестве данных для этих команд.
 
-Out side of that, appending a semicolon to the end of a URL query parameter followed by an operating system command, will execute the command. `%3B` is URL encoded and decodes to semicolon. This is because the `;` is interpreted as a command separator.
+Кроме того, добавление точки с запятой в конец URL-параметра запроса, за которым следует команда операционной системы, выполнит эту команду. `%3B` является закодированным URL и декодируется в точку с запятой. Это связано с тем, что `;` интерпретируется как разделитель команд.
 
-Example: `http://sensitive/something.php?dir=%3Bcat%20/etc/passwd`
+Пример: `http://sensitive/something.php?dir=%3Bcat%20/etc/passwd`
 
-If the application responds with the output of the `/etc/passwd` file then you know the attack has been successful. Many web application scanners can be used to test for this attack as they inject variations of command injections and test the response.
+Если приложение отвечает выводом файла `/etc/passwd`, значит, атака прошла успешно. Многие сканеры веб-приложений можно использовать для проверки этой атаки, так как они внедряют различные вариации командных инъекций и тестируют ответ.
 
-Equally Static Code Analysis tools check the data flow of untrusted user input into a web application and check if the data is then entered into a dangerous method which executes the user input as a command.
+Аналогично, инструменты статического анализа кода проверяют поток данных непроверенного пользовательского ввода в веб-приложение и проверяют, передаются ли данные в опасный метод, который выполняет пользовательский ввод в качестве команды.
 
-#### Remediation
+#### Устранение
 
-If it is considered unavoidable the call to a system command incorporated with user-supplied, the following two layers of defense should be used within software in order to prevent attacks
+Если вызов системной команды с пользовательским вводом считается неизбежным, следует использовать два уровня защиты в программном обеспечении для предотвращения атак:
 
-1. **Parameterization** - If available, use structured mechanisms that automatically enforce the separation between data and command. These mechanisms can help to provide the relevant quoting, encoding.
-2. **Input validation** - the values for commands and the relevant arguments should be both validated. There are different degrees of validation for the actual command and its arguments:
-    - When it comes to the **commands** used, these must be validated against a list of allowed commands.
-    - In regards to the **arguments** used for these commands, they should be validated using the following options:
-        - Positive or allowlist input validation - where are the arguments allowed explicitly defined
-        - Allow-list Regular Expression - where is explicitly defined a list of good characters allowed and the maximum length of the string. Ensure that metacharacters like `& | ; $ > < \` \ !` and whitespaces are not part of the Regular Expression. For example, the following regular expression only allows lowercase letters and numbers, and does not contain metacharacters. The length is also being limited to 3-10 characters:
+1. **Параметризация** - Если это возможно, используйте структурированные механизмы, которые автоматически обеспечивают разделение между данными и командой. Эти механизмы могут помочь обеспечить соответствующее экранирование и кодирование.
+
+2. **Проверка ввода** - Значения команд и соответствующих аргументов должны быть проверены. Существуют разные уровни проверки для самой команды и её аргументов:
+    - Что касается **команд**, их необходимо проверять по списку разрешённых команд.
+    - Что касается **аргументов** для этих команд, их следует проверять с использованием следующих опций:
+        - Проверка ввода с разрешённым списком - где явно определён список допустимых аргументов.
+        - Регулярное выражение с разрешённым списком - где явно определён список допустимых символов и максимальная длина строки. Убедитесь, что метасимволы, такие как `& | ; $ > < \` \ !` и пробелы, не входят в регулярное выражение. Например, следующее регулярное выражение разрешает только строчные буквы и цифры и не содержит метасимволов. Длина также ограничена 3-10 символами:
 
 `^[a-z0-9]{3,10}$`
 
-#### Example code - Java
+#### Пример кода - Java
 
-##### Incorrect Usage
+##### Неправильное использование
 
 ```java
-ProcessBuilder b = new ProcessBuilder("C:\DoStuff.exe -arg1 -arg2");
+ProcessBuilder b = new ProcessBuilder("C:\\DoStuff.exe -arg1 -arg2");
 ```
 
-In this example, the command together with the arguments are passed as a one string, making easy to manipulate that expression and inject malicious strings.
+В этом примере команда вместе с аргументами передаётся в виде одной строки, что упрощает манипуляции с этим выражением и внедрение вредоносных строк.
 
-##### Correct Usage
+##### Правильное использование
 
-Here is an example that starts a process with a modified working directory. The command and each of the arguments are passed separately. This make it easy to validated each term and reduces the risk to insert malicious strings.
+Вот пример, который запускает процесс с изменённым рабочим каталогом. Команда и каждый аргумент передаются отдельно, что упрощает проверку каждого элемента и снижает риск вставки вредоносных строк.
 
 ```java
 ProcessBuilder pb = new ProcessBuilder("TrustedCmd", "TrustedArg1", "TrustedArg2");
@@ -296,30 +295,30 @@ pb.directory(new File("TrustedDir"));
 Process p = pb.start();
 ```
 
-### Network Protocols
+### Сетевые протоколы
 
-Web applications often communicate with network daemons (like SMTP, IMAP, FTP) where user input becomes part of the communication stream. Here it is possible to inject command sequences to abuse an established session.
+Веб-приложения часто общаются с сетевыми демонами (например, SMTP, IMAP, FTP), где пользовательский ввод становится частью потока передачи данных. В таких случаях можно внедрить команды для злоупотребления установленной сессией.
 
-## Injection Prevention Rules
+## Правила предотвращения инъекций
 
-### Rule \#1 (Perform proper input validation)
+### Правило \#1 (Проводите правильную проверку ввода)
 
-Perform proper input validation. Positive or allowlist input validation with appropriate canonicalization is also recommended, but **is not a complete defense** as many applications require special characters in their input.
+Проводите правильную проверку ввода. Рекомендуется также использование положительной проверки или списка разрешённых символов с соответствующей канонизацией, но это **не является полной защитой**, поскольку многие приложения требуют специальных символов во входных данных.
 
-### Rule \#2 (Use a safe API)
+### Правило \#2 (Используйте безопасный API)
 
-The preferred option is to use a safe API which avoids the use of the interpreter entirely or provides a parameterized interface. Be careful of APIs, such as stored procedures, that are parameterized, but can still introduce injection under the hood.
+Предпочтительный вариант — использовать безопасный API, который полностью избегает использования интерпретатора или предоставляет параметризованный интерфейс. Будьте осторожны с API, такими как хранимые процедуры, которые параметризованы, но всё же могут вводить инъекции "под капотом".
 
-### Rule \#3 (Contextually escape user data)
+### Правило \#3 (Контекстуально экранируйте пользовательские данные)
 
-If a parameterized API is not available, you should carefully escape special characters using the specific escape syntax for that interpreter.
+Если параметризованный API недоступен, необходимо тщательно экранировать специальные символы, используя синтаксис экранирования для конкретного интерпретатора.
 
-## Other Injection Cheatsheets
+## Другие читы по предотвращению инъекций
 
-[SQL Injection Prevention Cheat Sheet](SQL_Injection_Prevention_Cheat_Sheet.md)
+[Шпаргалка по предотвращению SQL-инъекций](SQL_Injection_Prevention_Cheat_Sheet.md)
 
-[OS Command Injection Defense Cheat Sheet](OS_Command_Injection_Defense_Cheat_Sheet.md)
+[Шпаргалка по защите от инъекций команд ОС](OS_Command_Injection_Defense_Cheat_Sheet.md)
 
-[LDAP Injection Prevention Cheat Sheet](LDAP_Injection_Prevention_Cheat_Sheet.md)
+[Шпаргалка по предотвращению LDAP-инъекций](LDAP_Injection_Prevention_Cheat_Sheet.md)
 
-[Injection Prevention Cheat Sheet in Java](Injection_Prevention_in_Java_Cheat_Sheet.md)
+[Шпаргалка по предотвращению инъекций в Java](Injection_Prevention_in_Java_Cheat_Sheet.md)
