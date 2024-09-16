@@ -21,7 +21,7 @@
 factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
 ```
 
-Отключение [DTD](https://www.w3schools.com/xml/xml_dtd.asp)s также обеспечивает защиту синтаксического анализатора от атак типа "отказ в обслуживании" (DOS), таких как [Миллиард смеха](https://en.wikipedia.org/wiki/Billion_laughs_attack). **Если невозможно полностью отключить DTDS, то внешние объекты и объявления типов внешних документов должны быть отключены способом, специфичным для каждого синтаксического анализатора.**
+Отключение [DTD](https://www.w3schools.com/xml/xml_dtd.asp)s также обеспечивает защиту синтаксического анализатора от атак типа "отказ в обслуживании" (DOS), таких как [billion laughts](https://en.wikipedia.org/wiki/Billion_laughs_attack). **Если невозможно полностью отключить DTDS, то внешние объекты и объявления типов внешних документов должны быть отключены способом, специфичным для каждого синтаксического анализатора.**
 
 **Ниже приведены подробные инструкции по предотвращению XXE для нескольких языков (C++, ColdFusion, Java, .NET, iOS, PHP, Python, правила Semgrep) и их широко используемых синтаксических анализаторов XML.**
 
@@ -36,7 +36,7 @@ factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
 
 Примечание:
 
-Согласно [этому посту] (https://mail.gnome.org/archives/xml/2012-October/msg00045.html), начиная с libxml2 версии 2.9, XXE по умолчанию отключен, что зафиксировано следующим [исправлением](https://gitlab.gnome.org/GNOME/libxml2/commit/4629ee02ac649c27f9c0cf98ba017c6b5526070f).
+Согласно [этому посту](https://mail.gnome.org/archives/xml/2012-October/msg00045.html), начиная с libxml2 версии 2.9, XXE по умолчанию отключен, что зафиксировано следующим [исправлением](https://gitlab.gnome.org/GNOME/libxml2/commit/4629ee02ac649c27f9c0cf98ba017c6b5526070f).
 
 Проверьте, используются ли следующие API-интерфейсы, и убедитесь, что в параметрах не определены `XML_PARSER_NO END` и `XML_PARSE_DTDLOAD`:
 
@@ -79,7 +79,7 @@ parser->setFeature(XMLUni::fgXercesDisableDefaultEntityResolution, true);
 
 ## ColdFusion
 
-Согласно [этой записи в блоге] (https://hoyahaxa.blogspot.com/2022/11/on-coldfusion-xxe-and-other-xml-attacks.html), как в Adobe ColdFusion, так и в Lucee есть встроенные механизмы отключения поддержки внешних XML-объектов.
+Согласно [этой записи в блоге](https://hoyahaxa.blogspot.com/2022/11/on-coldfusion-xxe-and-other-xml-attacks.html), как в Adobe ColdFusion, так и в Lucee есть встроенные механизмы отключения поддержки внешних XML-объектов.
 
 ### Adobe ColdFusion
 
